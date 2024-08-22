@@ -6,7 +6,7 @@ use actix_web::error::ErrorUnauthorized;
 use actix_web::Error;
 use futures_util::future::LocalBoxFuture;
 use std::future::{ready, Ready};
-use std::rc::Rc;
+use std::sync::Arc;
 
 // Middleware for external token validation factory
 pub struct ExternalTokenMiddlewareFactory {}
@@ -17,8 +17,8 @@ impl ExternalTokenMiddlewareFactory {
         ExternalTokenMiddlewareFactory {}
     }
 
-    pub(crate) fn create(&self) -> Rc<dyn ExternalIdentityValidator> {
-        Rc::new(ExternalIdentityValidatorImpl {})
+    pub(crate) fn create(&self) -> Arc<dyn ExternalIdentityValidator> {
+        Arc::new(ExternalIdentityValidatorImpl {})
     }
 }
 
@@ -42,7 +42,7 @@ where
     fn new_transform(&self, service: NextService) -> Self::Future {
         let validator = self.create();
         let mw = OauthMiddleware {
-            service: Rc::new(service),
+            service: Arc::new(service),
             external_identity_validator: validator,
         };
         ready(Ok(mw))
@@ -51,8 +51,8 @@ where
 
 // The middleware object
 pub struct OauthMiddleware<NextService> {
-    service: Rc<NextService>,
-    external_identity_validator: Rc<dyn ExternalIdentityValidator>,
+    service: Arc<NextService>,
+    external_identity_validator: Arc<dyn ExternalIdentityValidator>,
 }
 
 // The middleware implementation
@@ -72,8 +72,8 @@ where
     // Asynchronously handle the request and bypass it to the next service
     fn call(&self, req: ServiceRequest) -> Self::Future {
         // Clone the service and validator to be able to use them in the async block
-        let service = Rc::clone(&self.service);
-        let validator = Rc::clone(&self.external_identity_validator);
+        let service = Arc::clone(&self.service);
+        let validator = Arc::clone(&self.external_identity_validator);
 
         // The async block that will be executed when the middleware is called
         Box::pin(async move {
