@@ -36,6 +36,8 @@ mod tests {
     #[tokio::test]
     async fn test_validator_validates() {
         let validator = ExternalIdentityValidatorImpl;
+        
+        // It's a unit test, so it's okay to use unwrap here.
         let result = validator.validate("123").await.unwrap();
         assert_eq!(result, ExternalIdentity {
             user_id: "123".to_string(),
