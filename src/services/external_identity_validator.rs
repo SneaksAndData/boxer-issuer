@@ -2,6 +2,7 @@ use std::error::Error;
 use async_trait::async_trait;
 
 #[allow(dead_code)]
+#[derive(Debug, PartialEq)]
 pub  struct ExternalIdentity{
     pub user_id: String,
     pub identity_provider: String,
@@ -21,5 +22,24 @@ impl ExternalIdentityValidator for ExternalIdentityValidatorImpl {
             user_id: token.to_string(),
             identity_provider: "google".to_string(),
         })
+    }
+}
+
+// The convention is to create a module named tests in each file to contain the
+// test functions and to annotate the module with cfg(test).
+// see: https://doc.rust-lang.org/book/ch11-03-test-organization.html#unit-tests
+#
+[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_validator_validates() {
+        let validator = ExternalIdentityValidatorImpl;
+        let result = validator.validate("123").await.unwrap();
+        assert_eq!(result, ExternalIdentity {
+            user_id: "123".to_string(),
+            identity_provider: "google".to_string(),
+        });
     }
 }
