@@ -304,7 +304,6 @@ dependencies = [
  "async-trait",
  "futures-util",
  "jwt",
- "nject",
  "opentelemetry-datadog",
  "tokio",
 ]
@@ -820,26 +819,6 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys",
-]
-
-[[package]]
-name = "nject"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dec1815871de48b9911696784d0b7307b4294d5d83402261cef17e926fa8124"
-dependencies = [
- "nject-macro",
-]
-
-[[package]]
-name = "nject-macro"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1cd90716decd403112a507a1cffe40e6db5d7baae77df28219e53606d3ab743d"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
