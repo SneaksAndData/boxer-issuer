@@ -1,18 +1,22 @@
 use async_trait::async_trait;
 use std::error::Error;
 
+// Don't bother me with dead code warnings
 #[allow(dead_code)]
+// Derive the Debug and PartialEq traits to be able to compare instances in tests
 #[derive(Debug, PartialEq)]
 pub struct ExternalIdentity {
     pub user_id: String,
     pub identity_provider: String,
 }
 
+// The validator trait
 #[async_trait]
 pub trait ExternalIdentityValidator {
     async fn validate(&self, token: &str) -> Result<ExternalIdentity, Box<dyn Error>>;
 }
 
+// Dummy implementation
 pub struct ExternalIdentityValidatorImpl;
 
 #[async_trait]
@@ -25,6 +29,7 @@ impl ExternalIdentityValidator for ExternalIdentityValidatorImpl {
     }
 }
 
+// Unit tests
 // The convention is to create a module named tests in each file to contain the
 // test functions and to annotate the module with cfg(test).
 // see: https://doc.rust-lang.org/book/ch11-03-test-organization.html#unit-tests

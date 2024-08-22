@@ -25,21 +25,21 @@ impl ExternalTokenMiddlewareFactory {
 // Transform trait implementation
 // `NextServiceType` - type of the next service
 // `BodyType` - type of response's body
-impl<NextServiceType, BodyType> Transform<NextServiceType, ServiceRequest>
+impl<NextService, BodyType> Transform<NextService, ServiceRequest>
     for ExternalTokenMiddlewareFactory
 where
-    NextServiceType:
+    NextService:
         Service<ServiceRequest, Response = ServiceResponse<BodyType>, Error = Error> + 'static,
-    NextServiceType::Future: 'static,
+    NextService::Future: 'static,
     BodyType: 'static,
 {
     type Response = ServiceResponse<BodyType>;
     type Error = Error;
-    type Transform = OauthMiddleware<NextServiceType>;
+    type Transform = OauthMiddleware<NextService>;
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
-    fn new_transform(&self, service: NextServiceType) -> Self::Future {
+    fn new_transform(&self, service: NextService) -> Self::Future {
         let validator = self.create();
         let mw = OauthMiddleware {
             service: Rc::new(service),
@@ -49,16 +49,18 @@ where
     }
 }
 
-pub struct OauthMiddleware<NextServiceType> {
-    service: Rc<NextServiceType>,
+// The middleware object
+pub struct OauthMiddleware<NextService> {
+    service: Rc<NextService>,
     external_identity_validator: Rc<dyn ExternalIdentityValidator>,
 }
 
-impl<NextServiceType, BodyType> Service<ServiceRequest> for OauthMiddleware<NextServiceType>
+// The middleware implementation
+impl<NextService, BodyType> Service<ServiceRequest> for OauthMiddleware<NextService>
 where
-    NextServiceType:
+    NextService:
         Service<ServiceRequest, Response = ServiceResponse<BodyType>, Error = Error> + 'static,
-    NextServiceType::Future: 'static,
+    NextService::Future: 'static,
     BodyType: 'static,
 {
     type Response = ServiceResponse<BodyType>;
@@ -67,9 +69,13 @@ where
 
     forward_ready!(service);
 
+    // Asynchronously handle the request and bypass it to the next service
     fn call(&self, req: ServiceRequest) -> Self::Future {
+        // Clone the service and validator to be able to use them in the async block
         let service = Rc::clone(&self.service);
         let validator = Rc::clone(&self.external_identity_validator);
+
+        // The async block that will be executed when the middleware is called
         Box::pin(async move {
             let validation_result = validator.validate("token").await;
             if validation_result.is_err() {

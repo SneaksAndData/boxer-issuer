@@ -5,6 +5,7 @@ use actix_web::{get, web, App, HttpServer};
 use filters::oauth_filter::ExternalTokenMiddlewareFactory;
 use std::io::Result;
 
+// Dummy implementation of the token endpoint
 #[get("/token/{identity_provider}")]
 async fn token(identity_provider: web::Path<String>) -> String {
     format!(
@@ -12,6 +13,7 @@ async fn token(identity_provider: web::Path<String>) -> String {
         identity_provider.as_str()
     )
 }
+
 #[actix_web::main]
 async fn main() -> Result<()> {
     let addr = ("127.0.0.1", 8080);
