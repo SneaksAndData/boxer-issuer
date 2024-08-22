@@ -1,6 +1,7 @@
 use std::error::Error;
 use async_trait::async_trait;
 
+#[allow(dead_code)]
 pub  struct ExternalIdentity{
     pub user_id: String,
     pub identity_provider: String,
@@ -17,7 +18,7 @@ pub struct ExternalIdentityValidatorImpl;
 impl ExternalIdentityValidator for ExternalIdentityValidatorImpl {
     async fn validate(&self, token: &str) -> Result<ExternalIdentity, Box<dyn Error>> {
         Ok(ExternalIdentity {
-            user_id: "123".to_string(),
+            user_id: token.to_string(),
             identity_provider: "google".to_string(),
         })
     }
