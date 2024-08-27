@@ -3,14 +3,12 @@ mod models;
 mod services;
 
 use crate::http::urls::token;
-use crate::models::external::identity_provider::ExternalIdentityProvider;
-use crate::models::external::token::ExternalToken;
 use crate::services::configuration_manager::ConfigurationManager;
 use crate::services::identity_validator_provider;
 use crate::services::policy_repository::InMemoryPolicyRepository;
-use crate::services::token_service::{TokenProvider, TokenService};
-use actix_web::{error, get, web, App, HttpRequest, HttpServer};
-use log::{error, info};
+use crate::services::token_service::{TokenService};
+use actix_web::{web, App, HttpServer};
+use log::{info};
 use std::io::Result;
 use std::sync::Arc;
 

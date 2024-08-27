@@ -1,16 +1,13 @@
 use crate::models::external::identity::ExternalIdentity;
 use crate::models::external::identity_provider::ExternalIdentityProvider;
 use crate::models::external::token::ExternalToken;
-use crate::models::internal::v1::token;
-use crate::models::internal::v1::token::{InternalToken, TokenMetadata};
+use crate::models::internal::v1::token::{InternalToken};
 use crate::services::identity_validator_provider::{
     ExternalIdentityValidationService, ExternalIdentityValidatorProvider,
 };
 use crate::services::policy_repository::PolicyRepository;
-use actix_web::web::to;
 use anyhow::bail;
 use async_trait::async_trait;
-use hmac::digest::consts::U0;
 use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
 use log::error;

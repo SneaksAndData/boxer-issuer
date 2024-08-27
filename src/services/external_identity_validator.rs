@@ -8,7 +8,6 @@ use jwt_authorizer::{Authorizer, AuthorizerBuilder, JwtAuthorizer, Validation};
 use log::info;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::error::Error;
 use std::sync::Arc;
 
 /// Validator for external identity.
