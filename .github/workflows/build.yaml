@@ -84,7 +84,7 @@ jobs:
         uses: docker/setup-buildx-action@v3.4.0
         with:
           use: true
-          platforms: linux/arm64,linux/amd64
+          platforms: linux/arm64
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6.2.0
@@ -96,12 +96,14 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/arm64
 
-#      - name: Build and Push Chart
-#        uses: SneaksAndData/github-actions/build_helm_chart@v0.1.9
-#        with:
-#          application: ${{ github.event.repository.name }}
-#          app_version: ${{ steps.meta.outputs.version }}
-#          container_registry_user: ${{ github.actor }}
-#          container_registry_token: ${{ secrets.GITHUB_TOKEN }}
-#          container_registry_address: ghcr.io/sneaksanddata/
+      - name: Build and Push Chart
+        # Skip for now
+        if: ${{ false }}
+        uses: SneaksAndData/github-actions/build_helm_chart@v0.1.9
+        with:
+          application: ${{ github.event.repository.name }}
+          app_version: ${{ steps.meta.outputs.version }}
+          container_registry_user: ${{ github.actor }}
+          container_registry_token: ${{ secrets.GITHUB_TOKEN }}
+          container_registry_address: ghcr.io/sneaksanddata/
  

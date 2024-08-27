@@ -1,5 +1,5 @@
 # Specify the base image that has Rust installed
-FROM rust:1.67 as build-env
+FROM rust:1.80.1-bookworm AS build-env
 
 WORKDIR /app/src
 
