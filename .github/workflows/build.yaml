@@ -94,7 +94,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/arm64,linux/amd64
+          platforms: linux/arm64
 
 #      - name: Build and Push Chart
 #        uses: SneaksAndData/github-actions/build_helm_chart@v0.1.9
