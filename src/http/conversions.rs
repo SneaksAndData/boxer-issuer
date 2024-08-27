@@ -1,6 +1,6 @@
+use crate::models::external::token::ExternalToken;
 use actix_web::http::header::HeaderValue;
 use anyhow::bail;
-use crate::models::external::token::ExternalToken;
 
 impl TryFrom<&HeaderValue> for ExternalToken {
     type Error = anyhow::Error;
@@ -30,8 +30,8 @@ impl TryFrom<&HeaderValue> for ExternalToken {
 
 #[cfg(test)]
 mod tests {
-    use rstest::rstest;
     use super::*;
+    use rstest::rstest;
 
     #[rstest]
     fn test_parsing_valid_token() {
@@ -40,7 +40,7 @@ mod tests {
         let string_token: String = token.into();
         assert_eq!(string_token, "token".to_string());
     }
-    
+
     #[rstest]
     #[case("token")]
     #[case("My token")]
@@ -50,6 +50,9 @@ mod tests {
     fn test_parsing_invalid_token(#[case] token: &str) {
         let header = HeaderValue::from_str(token).unwrap();
         let token = ExternalToken::try_from(&header);
-        assert_eq!(token.is_err_and(|e| e.to_string() == "Invalid token format"), true);
+        assert_eq!(
+            token.is_err_and(|e| e.to_string() == "Invalid token format"),
+            true
+        );
     }
 }
