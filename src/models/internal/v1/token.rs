@@ -35,27 +35,22 @@ impl TryInto<HashMap<String, String>> for InternalToken {
     type Error = anyhow::Error;
 
     fn try_into(self) -> Result<HashMap<String, String>, Self::Error> {
-        let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
-        e.write_all(self.policy.as_bytes())?;
-        let compressed = e.finish()?;
+        const API_VERSION_KEY: &str = "boxer.sneaksanddata.com/api-version";
+        const POLICY_KEY: &str = "boxer.sneaksanddata.com/policy";
+        const USER_ID_KEY: &str = "boxer.sneaksanddata.com/user-id";
+        const IDENTITY_PROVIDER_KEY: &str = "boxer.sneaksanddata.com/identity-provider";
+
+        let compressed_policy = {
+            let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+            encoder.write_all(self.policy.as_bytes())?;
+            encoder.finish()?
+        };
 
         let mut map = HashMap::new();
-        map.insert(
-            "boxer.sneaksanddata.com/api-version".to_string(),
-            self.version,
-        );
-        map.insert(
-            "boxer.sneaksanddata.com/policy".to_string(),
-            STANDARD.encode(&compressed),
-        );
-        map.insert(
-            "boxer.sneaksanddata.com/user-id".to_string(),
-            self.metadata.user_id,
-        );
-        map.insert(
-            "boxer.sneaksanddata.com/identity-provider".to_string(),
-            self.metadata.identity_provider.name(),
-        );
+        map.insert(API_VERSION_KEY.to_string(), self.version);
+        map.insert(POLICY_KEY.to_string(), STANDARD.encode(&compressed_policy));
+        map.insert(USER_ID_KEY.to_string(), self.metadata.user_id);
+        map.insert(IDENTITY_PROVIDER_KEY.to_string(), self.metadata.identity_provider.name());
+
         Ok(map)
-    }
 }
