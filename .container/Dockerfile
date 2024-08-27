@@ -1,0 +1,19 @@
+# Specify the base image that has Rust installed
+FROM rust:1.80.1-bookworm AS build-env
+
+WORKDIR /app/src
+
+COPY . .
+
+RUN cargo build --release
+
+ARG TARGETARCH
+
+FROM debian:bookworm-slim
+# RUN apt-get update -y && apt-get install -y curl
+
+WORKDIR /app
+COPY --from=build-env /app/src/target/release .
+USER app
+ENTRYPOINT ["boxer-issuer"]
+

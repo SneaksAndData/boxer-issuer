@@ -11,3 +11,12 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+
+# If the dockerfile was not updated for the long time, the docker container build can consume a lot of time.
+# In this case Cargo hangs on "updating crates.io registry" and it can consume a lot of time.
+# So, dockerfile updates are quite important for us.
+  - package-ecosystem: "docker"
+    directory: ".container/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
