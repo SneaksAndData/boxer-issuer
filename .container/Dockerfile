@@ -10,10 +10,10 @@ RUN cargo build --release
 ARG TARGETARCH
 
 FROM debian:bookworm-slim
-RUN apt-get update -y && apt-get install -y curl
+# RUN apt-get update -y && apt-get install -y curl
 
 WORKDIR /app
-COPY --from=build-env /app/target/release .
+COPY --from=build-env /app/src/target/release .
 USER app
 ENTRYPOINT ["boxer-issuer"]
 
