@@ -1,20 +1,20 @@
 use crate::models::external::identity::ExternalIdentity;
 use crate::models::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
 use crate::models::external::token::ExternalToken;
+use anyhow::bail;
 use async_trait::async_trait;
 use jwt_authorizer::error::InitError;
 use jwt_authorizer::{Authorizer, AuthorizerBuilder, JwtAuthorizer, Validation};
 use log::info;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::error::Error;
 use std::sync::Arc;
 
 /// Validator for external identity.
 #[async_trait]
 pub trait ExternalIdentityValidator {
     /// Validate the external identity token and return the external identity.
-    async fn validate(&self, token: ExternalToken) -> Result<ExternalIdentity, Box<dyn Error>>;
+    async fn validate(&self, token: ExternalToken) -> Result<ExternalIdentity, anyhow::Error>;
 }
 
 /// Instantiates a new external identity validator with given name and settings.
@@ -39,21 +39,19 @@ struct ExternalIdentityValidatorImpl {
 
 #[async_trait]
 impl ExternalIdentityValidator for ExternalIdentityValidatorImpl {
-    async fn validate(&self, token: ExternalToken) -> Result<ExternalIdentity, Box<dyn Error>> {
+    async fn validate(&self, token: ExternalToken) -> Result<ExternalIdentity, anyhow::Error> {
         let token_str: String = token.into();
-        let result = self.authorizer.check_auth(&token_str).await;
-
-        match result {
-            Ok(data) => {
-                extract_user_id(&data.claims, &self.user_id_claim).map(|user_id| ExternalIdentity {
-                    user_id,
-                    identity_provider: self.name.clone(),
-                })
+        let result = self.authorizer.check_auth(&token_str).await?;
+        let maybe_ext_id = extract_user_id(&result.claims, &self.user_id_claim, self.name.clone());
+        match maybe_ext_id {
+            Some(ext_id) => {
+                info!(
+                    "Successfully validated token for user {}/{}",
+                    ext_id.user_id, self.name
+                );
+                Ok(ext_id)
             }
-            Err(_) => {
-                info!("Provided token is invalid");
-                Err("Unauthorized".into())
-            }
+            None => bail!("Failed to extract user id from token"),
         }
     }
 }
@@ -61,15 +59,11 @@ impl ExternalIdentityValidator for ExternalIdentityValidatorImpl {
 fn extract_user_id(
     claims: &DynamicClaimsCollection,
     user_id_claim: &str,
-) -> Result<String, Box<dyn Error>> {
-    let maybe_user_id = claims.get(user_id_claim);
-    match maybe_user_id {
-        Some(user) => Ok(user.to_owned().to_string()),
-        None => {
-            info!("User ID claim '{}' not found in the token", user_id_claim);
-            Err("Unauthorized".into())
-        }
-    }
+    identity_provider: String,
+) -> Option<ExternalIdentity> {
+    let value = claims.get(user_id_claim)?;
+    let user_id = value.as_str()?.to_owned();
+    Some(ExternalIdentity::new(user_id, identity_provider))
 }
 
 #[async_trait]

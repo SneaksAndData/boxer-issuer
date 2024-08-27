@@ -440,14 +440,18 @@ dependencies = [
  "actix-web",
  "anyhow",
  "async-trait",
+ "base64 0.22.1",
  "env_logger",
+ "flate2",
  "futures-util",
+ "hmac",
  "jwt",
  "jwt-authorizer",
  "log",
  "opentelemetry-datadog",
  "rstest",
  "serde_json",
+ "sha2",
  "tokio",
 ]
 

@@ -11,6 +11,9 @@ use tokio::time::sleep;
 pub trait ConfigurationManager {
     /// Watches for IdentityProviderSettings update and upserts them into the identity validator provider.
     async fn watch_for_identity_providers(self);
+
+    /// Reads the key for signing the issued tokens
+    fn get_signing_key(&self) -> Vec<u8>;
 }
 
 /// Dummy implementation of the ConfigurationManager trait.
@@ -23,9 +26,12 @@ where
         let provider = ExternalIdentityProvider::from("provider".to_string());
         let settings = OidcExternalIdentityProviderSettings {
             user_id_claim: "upn".to_string(),
-            discovery_url: "https://example.com/".to_string(),
-            issuers: vec!["https://example.com/".to_string()],
-            audiences: vec!["https://example.com/".to_string()],
+            discovery_url: "https://sts.windows.net/06152121-b4c5-4544-abf5-9268e75db448/"
+                .to_string(),
+            issuers: vec![
+                "https://sts.windows.net/06152121-b4c5-4544-abf5-9268e75db448/".to_string(),
+            ],
+            audiences: vec!["https://management.core.windows.net/".to_string()],
         };
         let result = self.put(provider.clone(), settings).await;
         match result {
@@ -39,5 +45,9 @@ where
         loop {
             sleep(std::time::Duration::from_secs(10)).await;
         }
+    }
+
+    fn get_signing_key(&self) -> Vec<u8> {
+        vec!["dummy-secret".as_bytes()].concat()
     }
 }
