@@ -10,8 +10,6 @@ use crate::services::token_service::{TokenProvider, TokenService};
 use actix_web::{error, get, web, App, HttpRequest, HttpServer};
 use std::io::Result;
 use std::sync::Arc;
-use actix_web::http::header::HeaderValue;
-use anyhow::bail;
 use log::{error, info};
 
 #[get("/token/{identity_provider}")]

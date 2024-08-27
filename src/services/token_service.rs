@@ -4,7 +4,7 @@ use crate::services::identity_validator_provider::{ExternalIdentityValidationSer
 use async_trait::async_trait;
 use std::sync::Arc;
 use anyhow::bail;
-use log::{error, info};
+use log::{error};
 
 #[async_trait]
 pub trait TokenProvider {
