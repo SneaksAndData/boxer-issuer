@@ -11,7 +11,7 @@ use tokio::time::sleep;
 pub trait ConfigurationManager {
     /// Watches for IdentityProviderSettings update and upserts them into the identity validator provider.
     async fn watch_for_identity_providers(self);
-    
+
     /// Reads the key for signing the issued tokens
     fn get_signing_key(&self) -> Vec<u8>;
 }

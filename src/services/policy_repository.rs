@@ -1,13 +1,12 @@
 use crate::models::external::identity::ExternalIdentity;
+use anyhow::bail;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
-use anyhow::bail;
 
 #[async_trait]
 /// Represents a repository for policies
 pub trait PolicyRepository {
-    
     /// Retrieves a policy for the given external identity
     async fn get_policy(
         &self,

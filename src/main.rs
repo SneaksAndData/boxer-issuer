@@ -6,9 +6,9 @@ use crate::http::urls::token;
 use crate::services::configuration_manager::ConfigurationManager;
 use crate::services::identity_validator_provider;
 use crate::services::policy_repository::InMemoryPolicyRepository;
-use crate::services::token_service::{TokenService};
+use crate::services::token_service::TokenService;
 use actix_web::{web, App, HttpServer};
-use log::{info};
+use log::info;
 use std::io::Result;
 use std::sync::Arc;
 

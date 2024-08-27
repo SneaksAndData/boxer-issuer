@@ -1,7 +1,7 @@
 use crate::models::external::identity::ExternalIdentity;
 use crate::models::external::identity_provider::ExternalIdentityProvider;
 use crate::models::external::token::ExternalToken;
-use crate::models::internal::v1::token::{InternalToken};
+use crate::models::internal::v1::token::InternalToken;
 use crate::services::identity_validator_provider::{
     ExternalIdentityValidationService, ExternalIdentityValidatorProvider,
 };

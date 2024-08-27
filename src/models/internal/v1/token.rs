@@ -50,7 +50,11 @@ impl TryInto<HashMap<String, String>> for InternalToken {
         map.insert(API_VERSION_KEY.to_string(), self.version);
         map.insert(POLICY_KEY.to_string(), STANDARD.encode(&compressed_policy));
         map.insert(USER_ID_KEY.to_string(), self.metadata.user_id);
-        map.insert(IDENTITY_PROVIDER_KEY.to_string(), self.metadata.identity_provider.name());
+        map.insert(
+            IDENTITY_PROVIDER_KEY.to_string(),
+            self.metadata.identity_provider.name(),
+        );
 
         Ok(map)
+    }
 }
