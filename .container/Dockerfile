@@ -9,7 +9,7 @@ RUN cargo build --release
 
 ARG TARGETARCH
 
-FROM debian:bookworkworm
+FROM debian:bookworm-slim
 RUN apt-get update -y && apt-get install -y curl
 
 WORKDIR /app
