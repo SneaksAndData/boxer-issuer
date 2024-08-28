@@ -47,7 +47,7 @@ jobs:
   
   build_image:
     name: Build Docker Image and Helm Charts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-32-cores
     needs: [ validate_commit ]
     if: ${{ always() && (needs.validate_commit.result == 'success' || needs.validate_commit.result == 'skipped') }}
     permissions:
@@ -84,7 +84,7 @@ jobs:
         uses: docker/setup-buildx-action@v3.4.0
         with:
           use: true
-          platforms: linux/amd64
+          platforms: linux/arm64
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6.2.0
@@ -94,7 +94,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64
+          platforms: linux/arm64
 
       - name: Build and Push Chart
         # Skip for now
