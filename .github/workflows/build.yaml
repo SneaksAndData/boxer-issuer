@@ -84,7 +84,7 @@ jobs:
         uses: docker/setup-buildx-action@v3.4.0
         with:
           use: true
-          platforms: linux/arm64
+          platforms: linux/amd64
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6.2.0
@@ -94,7 +94,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/arm64
+          platforms: linux/amd64
 
       - name: Build and Push Chart
         # Skip for now
