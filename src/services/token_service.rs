@@ -9,7 +9,7 @@ use crate::services::policy_repository::PolicyRepository;
 use anyhow::bail;
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
-use jwt::SignWithKey;
+use jwt::{Claims, SignWithKey};
 use log::error;
 use sha2::Sha256;
 use std::collections::HashMap;
@@ -59,7 +59,7 @@ impl TokenProvider for TokenService {
     async fn generate_token(&self, identity: ExternalIdentity) -> Result<String, anyhow::Error> {
         let policy = self.policy_repository.get_policy(&identity).await?;
         let token = InternalToken::new(policy, identity.user_id, identity.identity_provider);
-        let claims: HashMap<String, String> = token.try_into()?;
+        let claims: Claims = token.try_into()?;
         let key: Hmac<Sha256> = Hmac::new_from_slice(&self.sign_secret)?;
         claims.sign_with_key(&key).map_err(|e| {
             error!("Failed to issue token: {:?}", e);
