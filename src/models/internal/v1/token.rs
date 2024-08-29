@@ -38,12 +38,12 @@ impl TryInto<Claims> for InternalToken {
     fn try_into(self) -> Result<Claims, Self::Error> {
         // This claim should be always present in the boxer token
         const API_VERSION_KEY: &str = "boxer.sneaksanddata.com/api-version";
-        
+
         // Constants related to a particular API version
         const POLICY_KEY: &str = "boxer.sneaksanddata.com/policy";
         const USER_ID_KEY: &str = "boxer.sneaksanddata.com/user-id";
         const IDENTITY_PROVIDER_KEY: &str = "boxer.sneaksanddata.com/identity-provider";
-        
+
         // The constants below to be moved in the service configuration file in the future.
         const BOXER_ISSUER: &str = "boxer.sneaksanddata.com";
         const BOXER_AUDIENCE: &str = "boxer.sneaksanddata.com";
