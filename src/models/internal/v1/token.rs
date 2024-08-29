@@ -3,8 +3,9 @@ use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
-use std::collections::HashMap;
+use jwt::Claims;
 use std::io::Write;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// Represents an internal JWT Token issued by `boxer-issuer`
 pub struct InternalToken {
@@ -31,14 +32,21 @@ impl InternalToken {
     }
 }
 
-impl TryInto<HashMap<String, String>> for InternalToken {
+impl TryInto<Claims> for InternalToken {
     type Error = anyhow::Error;
 
-    fn try_into(self) -> Result<HashMap<String, String>, Self::Error> {
+    fn try_into(self) -> Result<Claims, Self::Error> {
+        // This claim should be always present in the boxer token
         const API_VERSION_KEY: &str = "boxer.sneaksanddata.com/api-version";
+
+        // Constants related to a particular API version
         const POLICY_KEY: &str = "boxer.sneaksanddata.com/policy";
         const USER_ID_KEY: &str = "boxer.sneaksanddata.com/user-id";
         const IDENTITY_PROVIDER_KEY: &str = "boxer.sneaksanddata.com/identity-provider";
+
+        // The constants below to be moved in the service configuration file in the future.
+        const BOXER_ISSUER: &str = "boxer.sneaksanddata.com";
+        const BOXER_AUDIENCE: &str = "boxer.sneaksanddata.com";
 
         let compressed_policy = {
             let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
@@ -46,15 +54,26 @@ impl TryInto<HashMap<String, String>> for InternalToken {
             encoder.finish()?
         };
 
-        let mut map = HashMap::new();
-        map.insert(API_VERSION_KEY.to_string(), self.version);
-        map.insert(POLICY_KEY.to_string(), STANDARD.encode(&compressed_policy));
-        map.insert(USER_ID_KEY.to_string(), self.metadata.user_id);
-        map.insert(
+        let mut claims: Claims /* Type */ = Default::default();
+        claims
+            .private
+            .insert(API_VERSION_KEY.to_string(), self.version.into());
+        claims.private.insert(
+            POLICY_KEY.to_string(),
+            STANDARD.encode(&compressed_policy).into(),
+        );
+        claims
+            .private
+            .insert(USER_ID_KEY.to_string(), self.metadata.user_id.into());
+        claims.private.insert(
             IDENTITY_PROVIDER_KEY.to_string(),
-            self.metadata.identity_provider.name(),
+            self.metadata.identity_provider.name().into(),
         );
 
-        Ok(map)
+        claims.registered.issuer = Some(BOXER_ISSUER.to_string());
+        claims.registered.audience = Some(BOXER_AUDIENCE.to_string());
+        let one_hour = SystemTime::now() + Duration::from_secs(3600);
+        claims.registered.expiration = Some(one_hour.duration_since(UNIX_EPOCH)?.as_secs());
+        Ok(claims)
     }
 }
