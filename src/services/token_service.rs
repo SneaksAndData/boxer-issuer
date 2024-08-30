@@ -1,11 +1,11 @@
-use crate::models::external::identity::ExternalIdentity;
+use crate::models::external::identity::{ExternalIdentity, Policy};
 use crate::models::external::identity_provider::ExternalIdentityProvider;
 use crate::models::external::token::ExternalToken;
 use crate::models::internal::v1::token::InternalToken;
+use crate::services::base::upsert_repository::{PolicyAttachmentRepository, PolicyRepository};
 use crate::services::identity_validator_provider::{
     ExternalIdentityValidationService, ExternalIdentityValidatorProvider,
 };
-use crate::services::policy_repository::PolicyRepository;
 use anyhow::bail;
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
@@ -26,7 +26,8 @@ pub trait TokenProvider {
 
 pub struct TokenService {
     validators: Arc<ExternalIdentityValidationService>,
-    policy_repository: Arc<dyn PolicyRepository + Sync + Send>,
+    policy_attachment_repository: Arc<PolicyAttachmentRepository>,
+    policy_repository: Arc<PolicyRepository>,
     sign_secret: Arc<Vec<u8>>,
 }
 
@@ -56,8 +57,17 @@ impl TokenProvider for TokenService {
         }
     }
     async fn generate_token(&self, identity: ExternalIdentity) -> Result<String, anyhow::Error> {
-        let policy = self.policy_repository.get_policy(&identity).await?;
-        let token = InternalToken::new(policy, identity.user_id, identity.identity_provider);
+        let attachment = self
+            .policy_attachment_repository
+            .get(identity.clone())
+            .await?;
+        let policies = Policy::empty();
+        for p in attachment.policies {
+            let policy = self.policy_repository.get(p).await?;
+            policies.merge(policy);
+        }
+
+        let token = InternalToken::new(policies, identity.user_id, identity.identity_provider);
         let claims: Claims = token.try_into()?;
         let key: Hmac<Sha256> = Hmac::new_from_slice(&self.sign_secret)?;
         claims.sign_with_key(&key).map_err(|e| {
@@ -70,12 +80,14 @@ impl TokenProvider for TokenService {
 impl TokenService {
     pub fn new(
         validators: Arc<ExternalIdentityValidationService>,
-        policy_repository: Arc<dyn PolicyRepository + Sync + Send>,
+        policy_repository: Arc<PolicyRepository>,
+        policy_attachment_repository: Arc<PolicyAttachmentRepository>,
         sign_secret: Arc<Vec<u8>>,
     ) -> Self {
         TokenService {
             validators,
             policy_repository,
+            policy_attachment_repository,
             sign_secret,
         }
     }

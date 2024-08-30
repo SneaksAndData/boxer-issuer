@@ -1,3 +1,4 @@
+use crate::models::external::identity::Policy;
 use crate::models::external::identity_provider::ExternalIdentityProvider;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
@@ -9,7 +10,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// Represents an internal JWT Token issued by `boxer-issuer`
 pub struct InternalToken {
-    pub policy: String,
+    pub policy: Policy,
     pub metadata: TokenMetadata,
     version: String,
 }
@@ -20,7 +21,7 @@ pub struct TokenMetadata {
 }
 
 impl InternalToken {
-    pub fn new(policy: String, user_id: String, external_identity_provider: String) -> Self {
+    pub fn new(policy: Policy, user_id: String, external_identity_provider: String) -> Self {
         InternalToken {
             policy,
             metadata: TokenMetadata {
@@ -50,7 +51,7 @@ impl TryInto<Claims> for InternalToken {
 
         let compressed_policy = {
             let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-            encoder.write_all(self.policy.as_bytes())?;
+            encoder.write_all(self.policy.content.as_bytes())?;
             encoder.finish()?
         };
 
