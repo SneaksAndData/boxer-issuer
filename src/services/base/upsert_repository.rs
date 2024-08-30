@@ -11,10 +11,10 @@ pub trait UpsertRepository<Entity, Key> {
     async fn get(&self, key: Key) -> Result<Entity, Self::Error>;
 
     /// Updates or inserts a policy by id
-    async fn upsert(&mut self, key: Key, entity: Entity) -> Result<(), Self::Error>;
+    async fn upsert(&self, key: Key, entity: Entity) -> Result<(), Self::Error>;
 
     /// Deletes policy by id
-    async fn delete(&mut self, key: Key) -> Result<(), Self::Error>;
+    async fn delete(&self, key: Key) -> Result<(), Self::Error>;
 }
 #[allow(dead_code)]
 pub type IdentityRepository =

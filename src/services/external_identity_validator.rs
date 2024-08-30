@@ -63,7 +63,7 @@ fn extract_user_id(
 ) -> Option<ExternalIdentity> {
     let value = claims.get(user_id_claim)?;
     let user_id = value.as_str()?.to_owned();
-    Some(ExternalIdentity::new(user_id, identity_provider))
+    Some(ExternalIdentity::new(identity_provider, user_id))
 }
 
 #[async_trait]
