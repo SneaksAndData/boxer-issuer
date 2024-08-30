@@ -2,15 +2,15 @@ mod http;
 mod models;
 mod services;
 
-use std::collections::HashMap;
 use crate::http::urls::token;
 use crate::services::configuration_manager::ConfigurationManager;
 use crate::services::identity_validator_provider;
 use crate::services::token_service::TokenService;
 use actix_web::{web, App, HttpServer};
 use log::info;
+use std::collections::HashMap;
 use std::io::Result;
-use std::sync::{Arc};
+use std::sync::Arc;
 use tokio::sync::RwLock;
 
 #[actix_web::main]

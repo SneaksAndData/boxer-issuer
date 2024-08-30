@@ -29,12 +29,12 @@ pub struct PolicyAttachment {
 
 #[allow(dead_code)]
 impl PolicyAttachment {
-   pub fn new(external_identity: ExternalIdentity, policies: HashSet<String>) -> Self {
-       PolicyAttachment {
-           external_identity,
-           policies,
-       }
-   } 
+    pub fn new(external_identity: ExternalIdentity, policies: HashSet<String>) -> Self {
+        PolicyAttachment {
+            external_identity,
+            policies,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -45,20 +45,18 @@ pub struct Policy {
 #[allow(dead_code)]
 impl Policy {
     pub fn new(content: String) -> Self {
-        Policy {
-            content,
-        }
+        Policy { content }
     }
-    
+
     pub fn empty() -> Self {
         Policy {
             content: String::new(),
         }
     }
-    
+
     pub fn merge(&self, other: Policy) -> Self {
         Policy {
-            content: format ! ("{}\n{}", self.content, other.content),
+            content: format!("{}\n{}", self.content, other.content),
         }
     }
 }

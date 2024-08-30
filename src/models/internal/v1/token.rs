@@ -1,3 +1,4 @@
+use crate::models::external::identity::Policy;
 use crate::models::external::identity_provider::ExternalIdentityProvider;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
@@ -6,7 +7,6 @@ use flate2::Compression;
 use jwt::Claims;
 use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use crate::models::external::identity::Policy;
 
 /// Represents an internal JWT Token issued by `boxer-issuer`
 pub struct InternalToken {

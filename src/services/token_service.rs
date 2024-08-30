@@ -2,6 +2,7 @@ use crate::models::external::identity::{ExternalIdentity, Policy};
 use crate::models::external::identity_provider::ExternalIdentityProvider;
 use crate::models::external::token::ExternalToken;
 use crate::models::internal::v1::token::InternalToken;
+use crate::services::base::upsert_repository::{PolicyAttachmentRepository, PolicyRepository};
 use crate::services::identity_validator_provider::{
     ExternalIdentityValidationService, ExternalIdentityValidatorProvider,
 };
@@ -12,7 +13,6 @@ use jwt::{Claims, SignWithKey};
 use log::error;
 use sha2::Sha256;
 use std::sync::Arc;
-use crate::services::base::upsert_repository::{PolicyAttachmentRepository, PolicyRepository};
 
 #[async_trait]
 pub trait TokenProvider {
@@ -57,13 +57,16 @@ impl TokenProvider for TokenService {
         }
     }
     async fn generate_token(&self, identity: ExternalIdentity) -> Result<String, anyhow::Error> {
-        let attachment= self.policy_attachment_repository.get(identity.clone()).await?;
+        let attachment = self
+            .policy_attachment_repository
+            .get(identity.clone())
+            .await?;
         let policies = Policy::empty();
         for p in attachment.policies {
             let policy = self.policy_repository.get(p).await?;
             policies.merge(policy);
         }
-        
+
         let token = InternalToken::new(policies, identity.user_id, identity.identity_provider);
         let claims: Claims = token.try_into()?;
         let key: Hmac<Sha256> = Hmac::new_from_slice(&self.sign_secret)?;
