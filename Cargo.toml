@@ -19,6 +19,7 @@ flate2 = "1.0"
 base64 = "0.22.1"
 hmac = "0.12.1"
 sha2 = "0.10.8"
+serde = { version = "1.0.207", features = ["derive"] }
 
 [dev-dependencies]
 rstest = "0.22.0"

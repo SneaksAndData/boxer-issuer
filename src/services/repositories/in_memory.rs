@@ -20,7 +20,7 @@ impl UpsertRepository<ExternalIdentity, (String, String)>
     }
 
     async fn upsert(
-        &mut self,
+        &self,
         key: (String, String),
         entity: ExternalIdentity,
     ) -> Result<(), Self::Error> {
@@ -29,7 +29,7 @@ impl UpsertRepository<ExternalIdentity, (String, String)>
         Ok(())
     }
 
-    async fn delete(&mut self, key: (String, String)) -> Result<(), Self::Error> {
+    async fn delete(&self, key: (String, String)) -> Result<(), Self::Error> {
         let mut write_guard = self.write().await;
         (*write_guard).remove(&key);
         Ok(())
@@ -48,13 +48,13 @@ impl UpsertRepository<Policy, String> for RwLock<HashMap<String, Policy>> {
         }
     }
 
-    async fn upsert(&mut self, key: String, entity: Policy) -> Result<(), Self::Error> {
+    async fn upsert(&self, key: String, entity: Policy) -> Result<(), Self::Error> {
         let mut write_guard = self.write().await;
         (*write_guard).insert(key, entity);
         Ok(())
     }
 
-    async fn delete(&mut self, key: String) -> Result<(), Self::Error> {
+    async fn delete(&self, key: String) -> Result<(), Self::Error> {
         let mut write_guard = self.write().await;
         (*write_guard).remove(&key);
         Ok(())
@@ -76,7 +76,7 @@ impl UpsertRepository<PolicyAttachment, ExternalIdentity>
     }
 
     async fn upsert(
-        &mut self,
+        &self,
         key: ExternalIdentity,
         entity: PolicyAttachment,
     ) -> Result<(), Self::Error> {
@@ -85,7 +85,6 @@ impl UpsertRepository<PolicyAttachment, ExternalIdentity>
             Some(entity) => {
                 let new_policies = entity.policies.union(&entity.policies).cloned().collect();
                 let new_entity = PolicyAttachment {
-                    external_identity: entity.external_identity.clone(),
                     policies: new_policies,
                 };
                 (*write_guard).insert(key, new_entity);
@@ -97,7 +96,7 @@ impl UpsertRepository<PolicyAttachment, ExternalIdentity>
         Ok(())
     }
 
-    async fn delete(&mut self, key: ExternalIdentity) -> Result<(), Self::Error> {
+    async fn delete(&self, key: ExternalIdentity) -> Result<(), Self::Error> {
         let mut write_guard = self.write().await;
         (*write_guard).remove(&key);
         Ok(())
