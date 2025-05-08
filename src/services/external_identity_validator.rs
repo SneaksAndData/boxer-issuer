@@ -45,10 +45,7 @@ impl ExternalIdentityValidator for ExternalIdentityValidatorImpl {
         let maybe_ext_id = extract_user_id(&result.claims, &self.user_id_claim, self.name.clone());
         match maybe_ext_id {
             Some(ext_id) => {
-                info!(
-                    "Successfully validated token for user {}/{}",
-                    ext_id.user_id, self.name
-                );
+                info!("Successfully validated token for user {}/{}", self.name, ext_id.user_id);
                 Ok(ext_id)
             }
             None => bail!("Failed to extract user id from token"),

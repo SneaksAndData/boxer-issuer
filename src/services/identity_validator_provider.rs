@@ -1,8 +1,6 @@
 use crate::models::external::identity_provider::ExternalIdentityProvider;
 use crate::models::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
-use crate::services::external_identity_validator::{
-    ExternalIdentityValidator, ExternalIdentityValidatorFactory,
-};
+use crate::services::external_identity_validator::{ExternalIdentityValidator, ExternalIdentityValidatorFactory};
 use anyhow::bail;
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -34,8 +32,7 @@ pub trait ExternalIdentityValidatorProvider {
 }
 
 pub struct ExternalIdentityValidationService {
-    validators:
-        RwLock<HashMap<ExternalIdentityProvider, Arc<dyn ExternalIdentityValidator + Send + Sync>>>,
+    validators: RwLock<HashMap<ExternalIdentityProvider, Arc<dyn ExternalIdentityValidator + Send + Sync>>>,
 }
 
 #[async_trait]

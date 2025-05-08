@@ -57,10 +57,7 @@ impl TokenProvider for TokenService {
         }
     }
     async fn generate_token(&self, identity: ExternalIdentity) -> Result<String, anyhow::Error> {
-        let attachment = self
-            .policy_attachment_repository
-            .get(identity.clone())
-            .await?;
+        let attachment = self.policy_attachment_repository.get(identity.clone()).await?;
         let policies = Policy::empty();
         for p in attachment.policies {
             let policy = self.policy_repository.get(p).await?;

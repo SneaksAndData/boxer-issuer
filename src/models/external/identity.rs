@@ -58,9 +58,7 @@ impl Policy {
     }
 
     pub fn empty() -> Self {
-        Policy {
-            content: String::new(),
-        }
+        Policy { content: String::new() }
     }
 
     pub fn merge(&self, other: Policy) -> Self {

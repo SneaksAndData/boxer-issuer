@@ -50,9 +50,6 @@ mod tests {
     fn test_parsing_invalid_token(#[case] token: &str) {
         let header = HeaderValue::from_str(token).unwrap();
         let token = ExternalToken::try_from(&header);
-        assert_eq!(
-            token.is_err_and(|e| e.to_string() == "Invalid token format"),
-            true
-        );
+        assert_eq!(token.is_err_and(|e| e.to_string() == "Invalid token format"), true);
     }
 }

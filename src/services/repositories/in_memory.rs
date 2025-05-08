@@ -6,9 +6,7 @@ use std::collections::HashMap;
 use tokio::sync::RwLock;
 
 #[async_trait]
-impl UpsertRepository<ExternalIdentity, (String, String)>
-    for RwLock<HashMap<(String, String), ExternalIdentity>>
-{
+impl UpsertRepository<ExternalIdentity, (String, String)> for RwLock<HashMap<(String, String), ExternalIdentity>> {
     type Error = anyhow::Error;
 
     async fn get(&self, key: (String, String)) -> Result<ExternalIdentity, Self::Error> {
@@ -19,11 +17,7 @@ impl UpsertRepository<ExternalIdentity, (String, String)>
         }
     }
 
-    async fn upsert(
-        &self,
-        key: (String, String),
-        entity: ExternalIdentity,
-    ) -> Result<(), Self::Error> {
+    async fn upsert(&self, key: (String, String), entity: ExternalIdentity) -> Result<(), Self::Error> {
         let mut write_guard = self.write().await;
         (*write_guard).insert(key, entity);
         Ok(())
@@ -62,9 +56,7 @@ impl UpsertRepository<Policy, String> for RwLock<HashMap<String, Policy>> {
 }
 
 #[async_trait]
-impl UpsertRepository<PolicyAttachment, ExternalIdentity>
-    for RwLock<HashMap<ExternalIdentity, PolicyAttachment>>
-{
+impl UpsertRepository<PolicyAttachment, ExternalIdentity> for RwLock<HashMap<ExternalIdentity, PolicyAttachment>> {
     type Error = anyhow::Error;
 
     async fn get(&self, key: ExternalIdentity) -> Result<PolicyAttachment, Self::Error> {
@@ -75,18 +67,12 @@ impl UpsertRepository<PolicyAttachment, ExternalIdentity>
         }
     }
 
-    async fn upsert(
-        &self,
-        key: ExternalIdentity,
-        entity: PolicyAttachment,
-    ) -> Result<(), Self::Error> {
+    async fn upsert(&self, key: ExternalIdentity, entity: PolicyAttachment) -> Result<(), Self::Error> {
         let mut write_guard = self.write().await;
         match (*write_guard).get(&key) {
             Some(entity) => {
                 let new_policies = entity.policies.union(&entity.policies).cloned().collect();
-                let new_entity = PolicyAttachment {
-                    policies: new_policies,
-                };
+                let new_entity = PolicyAttachment { policies: new_policies };
                 (*write_guard).insert(key, new_entity);
             }
             None => {

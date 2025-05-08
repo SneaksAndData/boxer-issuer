@@ -19,7 +19,8 @@ pub trait UpsertRepository<Entity, Key> {
 #[allow(dead_code)]
 pub type IdentityRepository =
     dyn UpsertRepository<ExternalIdentity, (String, String), Error = anyhow::Error> + Send + Sync;
-pub type PolicyRepository =
-    dyn UpsertRepository<Policy, String, Error = anyhow::Error> + Send + Sync;
+
+pub type PolicyRepository = dyn UpsertRepository<Policy, String, Error = anyhow::Error> + Send + Sync;
+
 pub type PolicyAttachmentRepository =
     dyn UpsertRepository<PolicyAttachment, ExternalIdentity, Error = anyhow::Error> + Send + Sync;

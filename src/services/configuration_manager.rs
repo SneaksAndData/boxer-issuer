@@ -26,21 +26,14 @@ where
         let provider = ExternalIdentityProvider::from("provider".to_string());
         let settings = OidcExternalIdentityProviderSettings {
             user_id_claim: "upn".to_string(),
-            discovery_url: "https://sts.windows.net/06152121-b4c5-4544-abf5-9268e75db448/"
-                .to_string(),
-            issuers: vec![
-                "https://sts.windows.net/06152121-b4c5-4544-abf5-9268e75db448/".to_string(),
-            ],
+            discovery_url: "https://sts.windows.net/tenantid/".to_string(),
+            issuers: vec!["https://sts.windows.net/tenantid/".to_string()],
             audiences: vec!["https://management.core.windows.net/".to_string()],
         };
         let result = self.put(provider.clone(), settings).await;
         match result {
             Ok(_) => info!("Successfully updated identity provider settings"),
-            Err(e) => error!(
-                "Failed to initialize provider with name {}: {:?}",
-                provider.name(),
-                e
-            ),
+            Err(e) => error!("Failed to initialize provider with name {}: {:?}", provider.name(), e),
         }
         loop {
             sleep(std::time::Duration::from_secs(10)).await;
