@@ -57,7 +57,9 @@ impl TryInto<Claims> for InternalToken {
 
         let mut claims: Claims /* Type */ = Default::default();
         claims.private.insert(API_VERSION_KEY.to_string(), self.version.into());
-        claims.private.insert(POLICY_KEY.to_string(), STANDARD.encode(&compressed_policy).into());
+        claims
+            .private
+            .insert(POLICY_KEY.to_string(), STANDARD.encode(&compressed_policy).into());
         claims
             .private
             .insert(USER_ID_KEY.to_string(), self.metadata.user_id.into());
