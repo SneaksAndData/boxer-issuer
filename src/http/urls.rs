@@ -10,6 +10,7 @@ use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
 use log::{error, info};
 use std::sync::Arc;
 
+#[utoipa::path(responses((status = OK)))]
 #[get("/token/{identity_provider}")]
 pub async fn token(data: Data<Arc<TokenService>>, identity_provider: Path<String>, req: HttpRequest) -> Result<String> {
     let ip = ExternalIdentityProvider::from(identity_provider.to_string());
@@ -29,6 +30,7 @@ pub async fn token(data: Data<Arc<TokenService>>, identity_provider: Path<String
     }
 }
 
+#[utoipa::path(responses((status = OK)))]
 #[post("/policy/{id}")]
 pub async fn post_policy(id: Path<String>, policy: String, data: Data<Arc<PolicyRepository>>) -> Result<HttpResponse> {
     data.upsert(id.to_string(), Policy::new(policy)).await.map_err(|e| {
@@ -38,6 +40,7 @@ pub async fn post_policy(id: Path<String>, policy: String, data: Data<Arc<Policy
     Ok(HttpResponse::Ok().finish())
 }
 
+#[utoipa::path(responses((status = OK)))]
 #[get("/policy/{id}")]
 pub async fn get_policy(id: Path<String>, data: Data<Arc<PolicyRepository>>) -> Result<String> {
     let policy = data.get(id.to_string()).await.map_err(|e| {
@@ -47,6 +50,7 @@ pub async fn get_policy(id: Path<String>, data: Data<Arc<PolicyRepository>>) -> 
     Ok(policy.content)
 }
 
+#[utoipa::path(responses((status = OK)))]
 #[delete("/policy/{id}")]
 pub async fn delete_policy(id: Path<String>, data: Data<Arc<PolicyRepository>>) -> Result<HttpResponse> {
     data.delete(id.to_string()).await.map_err(|e| {
@@ -56,6 +60,7 @@ pub async fn delete_policy(id: Path<String>, data: Data<Arc<PolicyRepository>>) 
     Ok(HttpResponse::Ok().finish())
 }
 
+#[utoipa::path(responses((status = OK)))]
 #[post("/identity/{identity_provider}/{id}")]
 pub async fn post_identity(
     params: Path<(String, String)>,
@@ -71,6 +76,7 @@ pub async fn post_identity(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[utoipa::path(responses((status = OK)))]
 #[get("/identity/{identity_provider}/{id}")]
 pub async fn get_identity(
     params: Path<(String, String)>,
@@ -83,6 +89,7 @@ pub async fn get_identity(
     Ok(web::Json(eid))
 }
 
+#[utoipa::path(responses((status = OK)))]
 #[delete("/identity/{identity_provider}/{id}")]
 pub async fn delete_identity(
     params: Path<(String, String)>,
@@ -95,6 +102,7 @@ pub async fn delete_identity(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[utoipa::path(responses((status = OK)))]
 #[post("/attachment/{identity_provider}/{id}/{policy_id}")]
 pub async fn post_policy_attachment(
     params: Path<(String, String, String)>,
@@ -110,6 +118,7 @@ pub async fn post_policy_attachment(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[utoipa::path(responses((status = OK)))]
 #[post("/attachment/{identity_provider}/{id}")]
 pub async fn get_policy_attachment(
     params: Path<(String, String)>,
@@ -124,6 +133,7 @@ pub async fn get_policy_attachment(
     Ok(web::Json(result))
 }
 
+#[utoipa::path(responses((status = OK)))]
 #[delete("/attachment/{identity_provider}/{id}")]
 pub async fn delete_policy_attachment(
     params: Path<(String, String)>,
