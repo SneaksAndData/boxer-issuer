@@ -10,7 +10,7 @@ use crate::services::base::upsert_repository::{IdentityRepository, PolicyAttachm
 use crate::services::configuration_manager::ConfigurationManager;
 use crate::services::identity_validator_provider;
 use crate::services::token_service::TokenService;
-use actix_web::web::{Data};
+use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::info;
 use std::collections::HashMap;
@@ -18,14 +18,14 @@ use std::io::Result;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use utoipa_swagger_ui::SwaggerUi;
 use utoipa::{
     openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
     Modify, OpenApi,
 };
+use utoipa_swagger_ui::SwaggerUi;
 
-use utoipa_actix_web::{scope, AppExt};
 use crate::http::urls;
+use utoipa_actix_web::{scope, AppExt};
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -45,22 +45,20 @@ async fn main() -> Result<()> {
     let identity_repository: Arc<IdentityRepository> = Arc::new(RwLock::new(HashMap::new()));
 
     #[derive(OpenApi)]
-    #[openapi(
-        paths(
-            urls::token,
-            urls::post_policy,
-            urls::get_policy,
-            urls::delete_policy,
-            urls::post_identity,
-            urls::get_identity,
-            urls::delete_identity,
-            urls::post_policy_attachment,
-            urls::get_policy_attachment,
-            urls::delete_policy_attachment,
-        ),
-    )]
+    #[openapi(paths(
+        urls::token,
+        urls::post_policy,
+        urls::get_policy,
+        urls::delete_policy,
+        urls::post_identity,
+        urls::get_identity,
+        urls::delete_identity,
+        urls::post_policy_attachment,
+        urls::get_policy_attachment,
+        urls::delete_policy_attachment,
+    ))]
     struct ApiDoc;
-    
+
     info!("listening on {}:{}", &addr.0, &addr.1);
     HttpServer::new(move || {
         let token_provider = Arc::new(TokenService::new(
@@ -92,9 +90,7 @@ async fn main() -> Result<()> {
             .service(delete_policy_attachment)
             // Swagger UI
             .into_app()
-            .service(
-                SwaggerUi::new("/swagger/{_:.*}") .url("/api-docs/openapi.json", ApiDoc::openapi()),
-            )
+            .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
     .bind(addr)?
     .run()
