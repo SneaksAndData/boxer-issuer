@@ -15,17 +15,13 @@ use actix_web::{App, HttpServer};
 use log::info;
 use std::collections::HashMap;
 use std::io::Result;
-use std::net::Ipv4Addr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use utoipa::{
-    openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
-    Modify, OpenApi,
-};
+use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::http::urls;
-use utoipa_actix_web::{scope, AppExt};
+use utoipa_actix_web::AppExt;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
