@@ -36,6 +36,13 @@ jobs:
       - name: Rustfmt Check
         uses: actions-rust-lang/rustfmt@v1
 
+      - name: Build the Docker Compose stack
+        run: docker compose up --quiet-pull -d
+        
+      - name: Get Compose Logs
+        if: always()
+        run: docker compose logs
+        
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 

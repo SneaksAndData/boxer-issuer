@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  
+  cassandra:
+    image: cassandra:5.0.4
+    container_name: cassandra-node
+    ports: 
+      - "9042:9042"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2.4
+    container_name: keycloak
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    command:
+      - "start-dev"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: timeout 10 echo 1 > /dev/tcp/127.0.0.1/8080
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  keycloak_init:
+    image: ghcr.io/opentofu/opentofu:latest
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    volumes:
+      - ./integration-tests/:/tofu
+    command:
+      - init
+    working_dir: /tofu
+    restart: "no"
+  
+  keycloak_plan:
+    image: ghcr.io/opentofu/opentofu:latest
+    depends_on:
+      keycloak_init:
+        condition: service_completed_successfully
+    volumes:
+      - ./integration-tests/:/tofu
+    command:
+      - plan
+    working_dir: /tofu
+    restart: "no"
+  
+  keycloak_apply:
+    image: ghcr.io/opentofu/opentofu:latest
+    depends_on:
+      keycloak_plan:
+        condition: service_completed_successfully
+    volumes:
+      - ./integration-tests/:/tofu
+    command:
+      - apply
+      - -auto-approve
+    working_dir: /tofu
+    restart: "no"
+  
