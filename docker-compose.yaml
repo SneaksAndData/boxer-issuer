@@ -24,7 +24,7 @@ services:
       timeout: 10s
       retries: 5
 
-  keycloak_init:
+  tofu_init:
     image: ghcr.io/opentofu/opentofu:latest
     depends_on:
       keycloak:
@@ -36,10 +36,10 @@ services:
     working_dir: /tofu
     restart: "no"
   
-  keycloak_plan:
+  tofu_plan:
     image: ghcr.io/opentofu/opentofu:latest
     depends_on:
-      keycloak_init:
+      tofu_init:
         condition: service_completed_successfully
     volumes:
       - ./integration-tests/:/tofu
@@ -48,10 +48,10 @@ services:
     working_dir: /tofu
     restart: "no"
   
-  keycloak_apply:
+  tofu_apply:
     image: ghcr.io/opentofu/opentofu:latest
     depends_on:
-      keycloak_plan:
+      tofu_plan:
         condition: service_completed_successfully
     volumes:
       - ./integration-tests/:/tofu
