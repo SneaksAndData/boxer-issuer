@@ -27,7 +27,7 @@ use utoipa_actix_web::AppExt;
 async fn main() -> Result<()> {
     std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
-    let addr = ("127.0.0.1", 8080);
+    let addr = ("127.0.0.1", 8888);
     let validator_provider = Arc::new(identity_validator_provider::new());
     let cm = Arc::clone(&validator_provider);
     let secret = Arc::new(cm.get_signing_key());

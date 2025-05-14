@@ -63,7 +63,7 @@ impl UpsertRepository<PolicyAttachment, ExternalIdentity> for RwLock<HashMap<Ext
         let read_guard = self.read().await;
         match (*read_guard).get(&key) {
             Some(entity) => Ok(entity.clone()),
-            None => bail!("Entity not found"),
+            None => bail!("Entity {:?} not found", key),
         }
     }
 

@@ -26,9 +26,9 @@ where
         let provider = ExternalIdentityProvider::from("provider".to_string());
         let settings = OidcExternalIdentityProviderSettings {
             user_id_claim: "upn".to_string(),
-            discovery_url: "https://sts.windows.net/tenantid/".to_string(),
-            issuers: vec!["https://sts.windows.net/tenantid/".to_string()],
-            audiences: vec!["https://management.core.windows.net/".to_string()],
+            discovery_url: "http://localhost:8080/realms/master/".to_string(),
+            issuers: vec!["http://localhost:8080/realms/master".to_string()],
+            audiences: vec!["account".to_string()],
         };
         let result = self.put(provider.clone(), settings).await;
         match result {

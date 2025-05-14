@@ -109,7 +109,7 @@ pub async fn post_policy_attachment(
     data: Data<Arc<PolicyAttachmentRepository>>,
 ) -> Result<HttpResponse> {
     let (identity_provider, id, policy_id) = params.into_inner();
-    let eid = ExternalIdentity::new(id, identity_provider);
+    let eid = ExternalIdentity::new(identity_provider, id);
     let attachment = PolicyAttachment::single(policy_id);
     data.upsert(eid, attachment).await.map_err(|e| {
         error!("Error: {:?}", e);
@@ -119,13 +119,13 @@ pub async fn post_policy_attachment(
 }
 
 #[utoipa::path(responses((status = OK)))]
-#[post("/attachment/{identity_provider}/{id}")]
+#[get("/attachment/{identity_provider}/{id}")]
 pub async fn get_policy_attachment(
     params: Path<(String, String)>,
     data: Data<Arc<PolicyAttachmentRepository>>,
 ) -> Result<impl Responder> {
     let (identity_provider, id) = params.into_inner();
-    let eid = ExternalIdentity::new(id, identity_provider);
+    let eid = ExternalIdentity::new(identity_provider, id);
     let result = data.get(eid).await.map_err(|e| {
         error!("Error: {:?}", e);
         ErrorInternalServerError("Failed to upsert policy")

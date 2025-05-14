@@ -38,3 +38,16 @@ resource "keycloak_openid_client" "test_client" {
   enabled                      = true
   direct_access_grants_enabled = true
 }
+
+resource "keycloak_openid_client_default_scopes" "client_default_scopes" {
+  realm_id  = data.keycloak_realm.master.id
+  client_id = keycloak_openid_client.test_client.id
+
+  default_scopes = [
+    "profile",
+    "email",
+    "roles",
+    "web-origins",
+    "microprofile-jwt",
+  ]
+}
