@@ -8,7 +8,10 @@ use std::sync::Arc;
 
 #[utoipa::path(context_path = "/attachment/", responses((status = OK)))]
 #[post("{identity_provider}/{id}/{policy_id}")]
-pub async fn create( params: Path<(String, String, String)>, data: Data<Arc<PolicyAttachmentRepository>>) -> Result<HttpResponse> {
+pub async fn create(
+    params: Path<(String, String, String)>,
+    data: Data<Arc<PolicyAttachmentRepository>>,
+) -> Result<HttpResponse> {
     let (identity_provider, id, policy_id) = params.into_inner();
     let eid = ExternalIdentity::new(identity_provider, id);
     let attachment = PolicyAttachment::single(policy_id);
@@ -18,7 +21,10 @@ pub async fn create( params: Path<(String, String, String)>, data: Data<Arc<Poli
 
 #[utoipa::path(context_path = "/attachment/", responses((status = OK)))]
 #[get("{identity_provider}/{id}")]
-pub async fn get( params: Path<(String, String)>, data: Data<Arc<PolicyAttachmentRepository>>) -> Result<impl Responder> {
+pub async fn get(
+    params: Path<(String, String)>,
+    data: Data<Arc<PolicyAttachmentRepository>>,
+) -> Result<impl Responder> {
     let (identity_provider, id) = params.into_inner();
     let eid = ExternalIdentity::new(identity_provider, id);
     let result = data.get(eid).await?;
@@ -27,7 +33,10 @@ pub async fn get( params: Path<(String, String)>, data: Data<Arc<PolicyAttachmen
 
 #[utoipa::path(context_path = "/attachment/", responses((status = OK)))]
 #[delete("{identity_provider}/{id}")]
-pub async fn delete(params: Path<(String, String)>, data: Data<Arc<PolicyAttachmentRepository>>) -> Result<HttpResponse> {
+pub async fn delete(
+    params: Path<(String, String)>,
+    data: Data<Arc<PolicyAttachmentRepository>>,
+) -> Result<HttpResponse> {
     let (identity_provider, id) = params.into_inner();
     let eid = ExternalIdentity::new(id, identity_provider);
     data.delete(eid).await?;
@@ -35,8 +44,5 @@ pub async fn delete(params: Path<(String, String)>, data: Data<Arc<PolicyAttachm
 }
 
 pub fn crud() -> impl HttpServiceFactory {
-    web::scope("/attachment")
-        .service(create)
-        .service(get)
-        .service(delete)
+    web::scope("/attachment").service(create).service(get).service(delete)
 }

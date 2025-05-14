@@ -6,7 +6,7 @@ impl Error {
     pub fn new(msg: &'static str) -> Self {
         Self(anyhow::anyhow!(msg))
     }
-    
+
     pub fn from_error(err: anyhow::Error) -> Self {
         Self(err)
     }

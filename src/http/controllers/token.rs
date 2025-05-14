@@ -6,7 +6,6 @@ use actix_web::web::{Data, Path};
 use actix_web::{get, HttpRequest};
 use std::sync::Arc;
 
-
 #[utoipa::path(responses((status = OK)))]
 #[get("/token/{identity_provider}")]
 pub async fn token(data: Data<Arc<TokenService>>, identity_provider: Path<String>, req: HttpRequest) -> Result<String> {
@@ -15,12 +14,12 @@ pub async fn token(data: Data<Arc<TokenService>>, identity_provider: Path<String
         let token = ExternalToken::try_from(header)?;
         data.issue_token(ip, token).await
     });
-    
+
     match maybe_header {
         Some(fut) => {
             let token = fut.await?;
             Ok(token)
         }
-        None => Err(Error::new("Unauthorized"))
+        None => Err(Error::new("Unauthorized")),
     }
 }

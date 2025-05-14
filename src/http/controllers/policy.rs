@@ -1,10 +1,10 @@
+use crate::http::errors::*;
 use crate::models::external::identity::Policy;
 use crate::services::base::upsert_repository::PolicyRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Path};
 use actix_web::{delete, get, post, web, HttpResponse};
 use std::sync::Arc;
-use crate::http::errors::*;
 
 #[utoipa::path(context_path = "/policy/", responses((status = OK)))]
 #[post("{id}")]
@@ -27,10 +27,6 @@ async fn delete(id: Path<String>, data: Data<Arc<PolicyRepository>>) -> Result<H
     Ok(HttpResponse::Ok().finish())
 }
 
-
 pub fn crud() -> impl HttpServiceFactory {
-    web::scope("/policy")
-        .service(create)
-        .service(get)
-        .service(delete)
+    web::scope("/policy").service(create).service(get).service(delete)
 }

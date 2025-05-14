@@ -2,7 +2,7 @@ mod http;
 mod models;
 mod services;
 
-use crate::http::controllers::{policy, identity, attachment, token::token};
+use crate::http::controllers::{attachment, identity, policy, token::token};
 use crate::services::base::upsert_repository::{IdentityRepository, PolicyAttachmentRepository, PolicyRepository};
 use crate::services::configuration_manager::ConfigurationManager;
 use crate::services::identity_validator_provider;

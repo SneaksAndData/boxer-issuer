@@ -1,5 +1,5 @@
-use utoipa::OpenApi;
 use crate::http::controllers;
+use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(paths(
@@ -15,4 +15,3 @@ use crate::http::controllers;
     controllers::token::token,
 ))]
 pub struct ApiDoc;
-
