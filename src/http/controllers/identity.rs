@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 #[utoipa::path(context_path = "/identity/", responses((status = OK)))]
 #[post("{identity_provider}/{id}")]
-pub async fn create(params: Path<(String, String)>, data: Data<Arc<IdentityRepository>>) -> Result<HttpResponse> {
+pub async fn post(params: Path<(String, String)>, data: Data<Arc<IdentityRepository>>) -> Result<HttpResponse> {
     let key = params.into_inner();
     let eid = ExternalIdentity::from(key.clone());
     data.upsert(key, eid).await?;
@@ -30,5 +30,5 @@ pub async fn delete(params: Path<(String, String)>, data: Data<Arc<IdentityRepos
 }
 
 pub fn crud() -> impl HttpServiceFactory {
-    web::scope("/identity").service(create).service(get).service(delete)
+    web::scope("/identity").service(post).service(get).service(delete)
 }

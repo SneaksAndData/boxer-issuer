@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 #[utoipa::path(context_path = "/attachment/", responses((status = OK)))]
 #[post("{identity_provider}/{id}/{policy_id}")]
-pub async fn create(
+pub async fn post(
     params: Path<(String, String, String)>,
     data: Data<Arc<PolicyAttachmentRepository>>,
 ) -> Result<HttpResponse> {
@@ -44,5 +44,5 @@ pub async fn delete(
 }
 
 pub fn crud() -> impl HttpServiceFactory {
-    web::scope("/attachment").service(create).service(get).service(delete)
+    web::scope("/attachment").service(post).service(get).service(delete)
 }

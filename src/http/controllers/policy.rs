@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 #[utoipa::path(context_path = "/policy/", responses((status = OK)))]
 #[post("{id}")]
-async fn create(id: Path<String>, policy: String, data: Data<Arc<PolicyRepository>>) -> Result<HttpResponse> {
+async fn post(id: Path<String>, policy: String, data: Data<Arc<PolicyRepository>>) -> Result<HttpResponse> {
     data.upsert(id.to_string(), Policy::new(policy)).await?;
     Ok(HttpResponse::Ok().finish())
 }
@@ -28,5 +28,5 @@ async fn delete(id: Path<String>, data: Data<Arc<PolicyRepository>>) -> Result<H
 }
 
 pub fn crud() -> impl HttpServiceFactory {
-    web::scope("/policy").service(create).service(get).service(delete)
+    web::scope("/policy").service(post).service(get).service(delete)
 }
