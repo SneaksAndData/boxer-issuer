@@ -7,7 +7,7 @@ use cedar_policy::Entities;
 use futures::StreamExt;
 use std::sync::Arc;
 
-const MAX_SIZE: usize = 262_144; // max payload size is 256k
+const MAX_SCHEMA_SIZE: usize = 262_144; // max payload size is 256k
 
 #[utoipa::path(context_path = "/schema/", responses((status = OK)))]
 #[post("{id}")]
@@ -16,7 +16,7 @@ async fn post(id: Path<String>, mut payload: Payload, data: Data<Arc<SchemaRepos
     while let Some(chunk) = payload.next().await {
         let chunk = chunk?;
         // limit max size of in-memory payload
-        if (body.len() + chunk.len()) > MAX_SIZE {
+        if (body.len() + chunk.len()) > MAX_SCHEMA_SIZE {
             return Err(Error::new("Overflow"));
         }
         body.extend_from_slice(&chunk);
