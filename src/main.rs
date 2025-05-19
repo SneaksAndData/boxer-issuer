@@ -3,7 +3,7 @@ mod models;
 mod services;
 
 use crate::http::controllers::{attachment, identity, policy, principal, schema, token::token};
-use crate::services::base::upsert_repository::{EntitiesRepository, IdentityRepository, PolicyAttachmentRepository, PolicyRepository, SchemaRepository};
+use crate::services::base::upsert_repository::{PrincipalsRepository, IdentityRepository, PolicyAttachmentRepository, PolicyRepository, SchemaRepository};
 use crate::services::configuration_manager::ConfigurationManager;
 use crate::services::identity_validator_provider;
 use crate::services::token_service::TokenService;
@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
 
     // Replace hash maps with factory methods here
     let schemas_repository: Arc<SchemaRepository> = Arc::new(RwLock::new(HashMap::new()));
-    let entities_repository: Arc<EntitiesRepository> = Arc::new(RwLock::new(HashMap::new()));
+    let entities_repository: Arc<PrincipalsRepository> = Arc::new(RwLock::new(HashMap::new()));
 
     info!("listening on {}:{}", &addr.0, &addr.1);
     HttpServer::new(move || {

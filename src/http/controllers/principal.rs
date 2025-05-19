@@ -1,5 +1,5 @@
 use crate::http::errors::*;
-use crate::services::base::upsert_repository::{EntitiesRepository, SchemaRepository};
+use crate::services::base::upsert_repository::{PrincipalsRepository, SchemaRepository};
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{BytesMut, Data, Path, Payload};
 use actix_web::{get, post, web, HttpResponse};
@@ -14,7 +14,7 @@ const MAX_PRINCIPAL_SIZE: usize = 262_144; // max payload size is 256k
 async fn post(path: Path<(String, String, String)>,
               mut payload: Payload,
               schemas_repository: Data<Arc<SchemaRepository>>,
-              entities_repository: Data<Arc<EntitiesRepository>>) -> Result<HttpResponse>
+              entities_repository: Data<Arc<PrincipalsRepository>>) -> Result<HttpResponse>
 {
     let mut body = BytesMut::new();
     while let Some(chunk) = payload.next().await {
@@ -36,7 +36,7 @@ async fn post(path: Path<(String, String, String)>,
 
 #[utoipa::path(context_path = "/principal/", responses((status = OK)))]
 #[get("{schema}/{type}/{id}")]
-async fn get(path: Path<(String, String, String)>, data: Data<Arc<EntitiesRepository>>) -> Result<String> {
+async fn get(path: Path<(String, String, String)>, data: Data<Arc<PrincipalsRepository>>) -> Result<String> {
     let (_, type_, id) = path.into_inner();
     let entities = data.get((type_, id)).await?;
     let mut buffer = Vec::new();
@@ -47,7 +47,7 @@ async fn get(path: Path<(String, String, String)>, data: Data<Arc<EntitiesReposi
 
 #[utoipa::path(context_path = "/principal/", responses((status = OK)))]
 #[get("{schema}/{type}/{id}")]
-async fn delete(path: Path<(String, String, String)>, data: Data<Arc<EntitiesRepository>>) -> Result<HttpResponse> {
+async fn delete(path: Path<(String, String, String)>, data: Data<Arc<PrincipalsRepository>>) -> Result<HttpResponse> {
     let (_, type_, id) = path.into_inner();
     data.delete((type_, id)).await?;
     Ok(HttpResponse::Ok().finish())

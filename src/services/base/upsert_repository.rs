@@ -27,4 +27,4 @@ pub type PolicyAttachmentRepository = dyn UpsertRepository<PolicyAttachment, Ext
 
 pub type SchemaRepository = dyn UpsertRepository<SchemaFragment, String, Error = anyhow::Error>;
 
-pub type EntitiesRepository = dyn UpsertRepository<Entities, (String, String), Error = anyhow::Error>;
+pub type PrincipalsRepository = dyn UpsertRepository<Entities, (String, String), Error = anyhow::Error>;
