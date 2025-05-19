@@ -2,8 +2,10 @@ mod http;
 mod models;
 mod services;
 
-use crate::http::controllers::{attachment, identity, policy, token::token};
-use crate::services::base::upsert_repository::{IdentityRepository, PolicyAttachmentRepository, PolicyRepository};
+use crate::http::controllers::{attachment, identity, policy, schema, token::token};
+use crate::services::base::upsert_repository::{
+    IdentityRepository, PolicyAttachmentRepository, PolicyRepository, SchemaRepository,
+};
 use crate::services::configuration_manager::ConfigurationManager;
 use crate::services::identity_validator_provider;
 use crate::services::token_service::TokenService;
@@ -36,6 +38,9 @@ async fn main() -> Result<()> {
     let policy_attachments_repository: Arc<PolicyAttachmentRepository> = Arc::new(RwLock::new(HashMap::new()));
     let identity_repository: Arc<IdentityRepository> = Arc::new(RwLock::new(HashMap::new()));
 
+    // Replace hash maps with factory methods here
+    let schemas_repository: Arc<SchemaRepository> = Arc::new(RwLock::new(HashMap::new()));
+
     info!("listening on {}:{}", &addr.0, &addr.1);
     HttpServer::new(move || {
         let token_provider = Arc::new(TokenService::new(
@@ -49,11 +54,13 @@ async fn main() -> Result<()> {
             .app_data(Data::new(policy_repository.clone()))
             .app_data(Data::new(policy_attachments_repository.clone()))
             .app_data(Data::new(identity_repository.clone()))
+            .app_data(Data::new(schemas_repository.clone()))
             // Token endpoint
             .service(token)
             .service(policy::crud())
             .service(identity::crud())
             .service(attachment::crud())
+            .service(schema::crud())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
     .bind(addr)?
