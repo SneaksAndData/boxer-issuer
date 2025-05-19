@@ -2,10 +2,7 @@ mod http;
 mod models;
 mod services;
 
-use crate::http::urls::{
-    delete_identity, delete_policy, delete_policy_attachment, get_identity, get_policy, get_policy_attachment,
-    post_identity, post_policy, post_policy_attachment, token,
-};
+use crate::http::controllers::{attachment, identity, policy, token::token};
 use crate::services::base::upsert_repository::{IdentityRepository, PolicyAttachmentRepository, PolicyRepository};
 use crate::services::configuration_manager::ConfigurationManager;
 use crate::services::identity_validator_provider;
@@ -20,8 +17,7 @@ use tokio::sync::RwLock;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::http::urls;
-use utoipa_actix_web::AppExt;
+use crate::http::openapi::ApiDoc;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -40,21 +36,6 @@ async fn main() -> Result<()> {
     let policy_attachments_repository: Arc<PolicyAttachmentRepository> = Arc::new(RwLock::new(HashMap::new()));
     let identity_repository: Arc<IdentityRepository> = Arc::new(RwLock::new(HashMap::new()));
 
-    #[derive(OpenApi)]
-    #[openapi(paths(
-        urls::token,
-        urls::post_policy,
-        urls::get_policy,
-        urls::delete_policy,
-        urls::post_identity,
-        urls::get_identity,
-        urls::delete_identity,
-        urls::post_policy_attachment,
-        urls::get_policy_attachment,
-        urls::delete_policy_attachment,
-    ))]
-    struct ApiDoc;
-
     info!("listening on {}:{}", &addr.0, &addr.1);
     HttpServer::new(move || {
         let token_provider = Arc::new(TokenService::new(
@@ -64,28 +45,15 @@ async fn main() -> Result<()> {
             Arc::clone(&secret),
         ));
         App::new()
-            .into_utoipa_app()
-            // Application services
             .app_data(Data::new(token_provider))
             .app_data(Data::new(policy_repository.clone()))
             .app_data(Data::new(policy_attachments_repository.clone()))
             .app_data(Data::new(identity_repository.clone()))
             // Token endpoint
             .service(token)
-            // Policy CRUD
-            .service(post_policy)
-            .service(get_policy)
-            .service(delete_policy)
-            // Identity CRUD
-            .service(post_identity)
-            .service(get_identity)
-            .service(delete_identity)
-            // Policy Attachment CRUD
-            .service(post_policy_attachment)
-            .service(get_policy_attachment)
-            .service(delete_policy_attachment)
-            // Swagger UI
-            .into_app()
+            .service(policy::crud())
+            .service(identity::crud())
+            .service(attachment::crud())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
     .bind(addr)?
