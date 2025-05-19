@@ -30,7 +30,6 @@ impl From<anyhow::Error> for Error {
     }
 }
 
-
 impl From<Error> for actix_web::Error {
     fn from(err: Error) -> Self {
         actix_web::error::ErrorInternalServerError(err)
