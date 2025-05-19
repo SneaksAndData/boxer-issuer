@@ -16,9 +16,11 @@ pub trait UpsertRepository<Entity, Key>: Send + Sync {
 
     /// Deletes policy by id
     async fn delete(&self, key: Key) -> Result<(), Self::Error>;
+
+    /// Checks if an object exists
+    async fn exists(&self, key: Key) -> Result<bool, Self::Error>;
 }
 
-#[allow(dead_code)]
 pub type IdentityRepository = dyn UpsertRepository<ExternalIdentity, (String, String), Error = anyhow::Error>;
 
 pub type PolicyRepository = dyn UpsertRepository<Policy, String, Error = anyhow::Error>;
@@ -28,3 +30,5 @@ pub type PolicyAttachmentRepository = dyn UpsertRepository<PolicyAttachment, Ext
 pub type SchemaRepository = dyn UpsertRepository<SchemaFragment, String, Error = anyhow::Error>;
 
 pub type PrincipalsRepository = dyn UpsertRepository<Entities, (String, String), Error = anyhow::Error>;
+pub type PrincipalAssociationRepository =
+    dyn UpsertRepository<(String, String), ExternalIdentity, Error = anyhow::Error>;

@@ -33,4 +33,9 @@ where
         (*write_guard).remove(&key);
         Ok(())
     }
+
+    async fn exists(&self, key: Key) -> Result<bool, Self::Error> {
+        let read_guard = self.read().await;
+        Ok((*read_guard).get(&key).is_some())
+    }
 }

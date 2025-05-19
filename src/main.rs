@@ -2,9 +2,10 @@ mod http;
 mod models;
 mod services;
 
-use crate::http::controllers::{attachment, identity, policy, principal, schema, token::token};
+use crate::http::controllers::{association, attachment, identity, policy, principal, schema, token::token};
 use crate::services::base::upsert_repository::{
-    IdentityRepository, PolicyAttachmentRepository, PolicyRepository, PrincipalsRepository, SchemaRepository,
+    IdentityRepository, PolicyAttachmentRepository, PolicyRepository, PrincipalAssociationRepository,
+    PrincipalsRepository, SchemaRepository,
 };
 use crate::services::configuration_manager::ConfigurationManager;
 use crate::services::identity_validator_provider;
@@ -20,6 +21,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::http::openapi::ApiDoc;
+use crate::services::principal_service::PrincipalService;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -41,6 +43,7 @@ async fn main() -> Result<()> {
     // Replace hash maps with factory methods here
     let schemas_repository: Arc<SchemaRepository> = Arc::new(RwLock::new(HashMap::new()));
     let entities_repository: Arc<PrincipalsRepository> = Arc::new(RwLock::new(HashMap::new()));
+    let principal_association_repository: Arc<PrincipalAssociationRepository> = Arc::new(RwLock::new(HashMap::new()));
 
     info!("listening on {}:{}", &addr.0, &addr.1);
     HttpServer::new(move || {
@@ -50,13 +53,20 @@ async fn main() -> Result<()> {
             policy_attachments_repository.clone(),
             Arc::clone(&secret),
         ));
+        let principal_service = Arc::new(PrincipalService::new(
+            identity_repository.clone(),
+            entities_repository.clone(),
+            principal_association_repository.clone(),
+        ));
         App::new()
             .app_data(Data::new(token_provider))
+            .app_data(Data::new(principal_service))
             .app_data(Data::new(policy_repository.clone()))
             .app_data(Data::new(policy_attachments_repository.clone()))
             .app_data(Data::new(identity_repository.clone()))
             .app_data(Data::new(schemas_repository.clone()))
             .app_data(Data::new(entities_repository.clone()))
+            .app_data(Data::new(principal_association_repository.clone()))
             // Token endpoint
             .service(token)
             .service(policy::crud())
@@ -64,6 +74,7 @@ async fn main() -> Result<()> {
             .service(attachment::crud())
             .service(schema::crud())
             .service(principal::crud())
+            .service(association::crud())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
     .bind(addr)?
