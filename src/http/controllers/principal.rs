@@ -11,11 +11,12 @@ const MAX_PRINCIPAL_SIZE: usize = 262_144; // max payload size is 256k
 
 #[utoipa::path(context_path = "/principal/", responses((status = OK)))]
 #[post("{schema}/{type}/{id}")]
-async fn post(path: Path<(String, String, String)>,
-              mut payload: Payload,
-              schemas_repository: Data<Arc<SchemaRepository>>,
-              entities_repository: Data<Arc<PrincipalsRepository>>) -> Result<HttpResponse>
-{
+async fn post(
+    path: Path<(String, String, String)>,
+    mut payload: Payload,
+    schemas_repository: Data<Arc<SchemaRepository>>,
+    entities_repository: Data<Arc<PrincipalsRepository>>,
+) -> Result<HttpResponse> {
     let mut body = BytesMut::new();
     while let Some(chunk) = payload.next().await {
         let chunk = chunk?;
@@ -28,7 +29,7 @@ async fn post(path: Path<(String, String, String)>,
     let principal_json = String::from_utf8_lossy(&body);
     let (schema, type_, id) = path.into_inner();
     let schema_fragment = schemas_repository.get(schema).await?;
-    let schema: Schema  = schema_fragment.try_into()?;
+    let schema: Schema = schema_fragment.try_into()?;
     let principal = Entities::from_json_str(&principal_json, Some(&schema))?;
     entities_repository.upsert((type_, id), principal).await?;
     Ok(HttpResponse::Ok().finish())

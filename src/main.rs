@@ -3,7 +3,9 @@ mod models;
 mod services;
 
 use crate::http::controllers::{attachment, identity, policy, principal, schema, token::token};
-use crate::services::base::upsert_repository::{PrincipalsRepository, IdentityRepository, PolicyAttachmentRepository, PolicyRepository, SchemaRepository};
+use crate::services::base::upsert_repository::{
+    IdentityRepository, PolicyAttachmentRepository, PolicyRepository, PrincipalsRepository, SchemaRepository,
+};
 use crate::services::configuration_manager::ConfigurationManager;
 use crate::services::identity_validator_provider;
 use crate::services::token_service::TokenService;
