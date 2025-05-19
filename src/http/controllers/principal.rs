@@ -22,7 +22,7 @@ async fn post(
         let chunk = chunk?;
         // limit max size of in-memory payload
         if (body.len() + chunk.len()) > MAX_PRINCIPAL_SIZE {
-            return Err(Error::new("Submitted schema exceeds max size of 256k"));
+            return Err(Error::new("Submitted principal exceeds max size of 256k"));
         }
         body.extend_from_slice(&chunk);
     }
