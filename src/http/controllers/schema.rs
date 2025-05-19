@@ -3,7 +3,7 @@ use crate::services::base::upsert_repository::SchemaRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{BytesMut, Data, Path, Payload};
 use actix_web::{delete, get, post, web, HttpResponse};
-use cedar_policy::Entities;
+use cedar_policy::SchemaFragment;
 use futures::StreamExt;
 use std::sync::Arc;
 
@@ -21,19 +21,17 @@ async fn post(id: Path<String>, mut payload: Payload, data: Data<Arc<SchemaRepos
         }
         body.extend_from_slice(&chunk);
     }
-    let schema = String::from_utf8_lossy(&body);
-    let entities = Entities::from_json_str(&schema, None)?;
-    data.upsert(id.to_string(), entities).await?;
+    let schema_json = String::from_utf8_lossy(&body);
+    let schema = SchemaFragment::from_json_str(&schema_json)?;
+    data.upsert(id.to_string(), schema).await?;
     Ok(HttpResponse::Ok().finish())
 }
 
 #[utoipa::path(context_path = "/schema/", responses((status = OK)))]
 #[get("{id}")]
 async fn get(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Result<String> {
-    let entities = data.get(id.to_string()).await?;
-    let mut buffer = Vec::new();
-    entities.write_to_json(&mut buffer)?;
-    let result = String::from_utf8_lossy(&buffer).into_owned();
+    let schema = data.get(id.to_string()).await?;
+    let result = schema.to_json_string()?;
     Ok(result)
 }
 
