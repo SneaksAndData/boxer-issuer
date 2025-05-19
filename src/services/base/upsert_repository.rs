@@ -1,6 +1,6 @@
 use crate::models::external::identity::{ExternalIdentity, Policy, PolicyAttachment};
 use async_trait::async_trait;
-use cedar_policy::SchemaFragment;
+use cedar_policy::{Entities, SchemaFragment};
 
 #[async_trait]
 #[allow(dead_code)]
@@ -17,6 +17,7 @@ pub trait UpsertRepository<Entity, Key>: Send + Sync {
     /// Deletes policy by id
     async fn delete(&self, key: Key) -> Result<(), Self::Error>;
 }
+
 #[allow(dead_code)]
 pub type IdentityRepository = dyn UpsertRepository<ExternalIdentity, (String, String), Error = anyhow::Error>;
 
@@ -25,3 +26,5 @@ pub type PolicyRepository = dyn UpsertRepository<Policy, String, Error = anyhow:
 pub type PolicyAttachmentRepository = dyn UpsertRepository<PolicyAttachment, ExternalIdentity, Error = anyhow::Error>;
 
 pub type SchemaRepository = dyn UpsertRepository<SchemaFragment, String, Error = anyhow::Error>;
+
+pub type EntitiesRepository = dyn UpsertRepository<Entities, (String, String), Error = anyhow::Error>;

@@ -3,3 +3,4 @@ pub mod identity;
 pub mod policy;
 pub mod schema;
 pub mod token;
+pub mod principal;
