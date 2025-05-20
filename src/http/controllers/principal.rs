@@ -33,7 +33,9 @@ async fn post(
     let schema_fragment = schemas_repository.get(schema_id.clone()).await?;
     let schema: Schema = schema_fragment.try_into()?;
     let entity = Entity::from_json_str(&principal_json, Some(&schema))?;
-    principals_repository.upsert((type_, id), Principal::new(entity, schema_id)).await?;
+    principals_repository
+        .upsert((type_, id), Principal::new(entity, schema_id))
+        .await?;
     Ok(HttpResponse::Ok().finish())
 }
 
