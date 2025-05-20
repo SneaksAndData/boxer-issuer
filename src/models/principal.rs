@@ -1,13 +1,11 @@
 use cedar_policy::Entity;
 
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Principal {
     entity: Entity,
     schema_id: String,
 }
 
-#[allow(dead_code)]
 impl Principal {
     pub fn new(entity: Entity, schema_id: String) -> Self {
         Self { entity, schema_id }

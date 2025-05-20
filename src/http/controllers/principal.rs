@@ -1,6 +1,6 @@
 use crate::http::errors::*;
 use crate::models::principal::Principal;
-use crate::services::base::upsert_repository::PrincipalsRepository;
+use crate::services::base::upsert_repository::PrincipalRepository;
 use crate::services::base::upsert_repository::SchemaRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{BytesMut, Data, Path, Payload};
@@ -17,7 +17,7 @@ async fn post(
     path: Path<(String, String, String)>,
     mut payload: Payload,
     schemas_repository: Data<Arc<SchemaRepository>>,
-    principals_repository: Data<Arc<PrincipalsRepository>>,
+    principals_repository: Data<Arc<PrincipalRepository>>,
 ) -> Result<HttpResponse> {
     let mut body = BytesMut::new();
     while let Some(chunk) = payload.next().await {
@@ -41,7 +41,7 @@ async fn post(
 
 #[utoipa::path(context_path = "/principal/", responses((status = OK)))]
 #[get("{schema}/{type}/{id}")]
-async fn get(path: Path<(String, String, String)>, data: Data<Arc<PrincipalsRepository>>) -> Result<String> {
+async fn get(path: Path<(String, String, String)>, data: Data<Arc<PrincipalRepository>>) -> Result<String> {
     let (_, type_, id) = path.into_inner();
     let principal = data.get((type_, id)).await?;
     let json = principal.get_entity().to_json_string()?;
@@ -50,7 +50,7 @@ async fn get(path: Path<(String, String, String)>, data: Data<Arc<PrincipalsRepo
 
 #[utoipa::path(context_path = "/principal/", responses((status = OK)))]
 #[get("{schema}/{type}/{id}")]
-async fn delete(path: Path<(String, String, String)>, data: Data<Arc<PrincipalsRepository>>) -> Result<HttpResponse> {
+async fn delete(path: Path<(String, String, String)>, data: Data<Arc<PrincipalRepository>>) -> Result<HttpResponse> {
     let (_, type_, id) = path.into_inner();
     data.delete((type_, id)).await?;
     Ok(HttpResponse::Ok().finish())
