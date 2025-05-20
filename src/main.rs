@@ -4,8 +4,7 @@ mod services;
 
 use crate::http::controllers::{association, identity, principal, schema, token::token};
 use crate::services::base::upsert_repository::{
-    IdentityRepository, PrincipalAssociationRepository,
-    PrincipalRepository, SchemaRepository,
+    IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository,
 };
 use crate::services::configuration_manager::ConfigurationManager;
 use crate::services::identity_validator_provider;

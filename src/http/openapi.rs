@@ -6,17 +6,13 @@ use utoipa::OpenApi;
     controllers::identity::post,
     controllers::identity::get,
     controllers::identity::delete,
-
     controllers::token::token,
-
     controllers::schema::post,
     controllers::schema::get,
     controllers::schema::delete,
-
     controllers::principal::post,
     controllers::principal::get,
     controllers::principal::delete,
-
     controllers::association::post,
     controllers::association::get,
     controllers::association::delete,
