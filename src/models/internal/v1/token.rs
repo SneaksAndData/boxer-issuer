@@ -7,10 +7,12 @@ use flate2::Compression;
 use jwt::Claims;
 use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use cedar_policy::{Entities, SchemaFragment};
 
 /// Represents an internal JWT Token issued by `boxer-issuer`
 pub struct InternalToken {
-    pub policy: Policy,
+    pub principal: Entities,
+    pub schema: SchemaFragment,
     pub metadata: TokenMetadata,
     version: String,
 }
@@ -21,9 +23,10 @@ pub struct TokenMetadata {
 }
 
 impl InternalToken {
-    pub fn new(policy: Policy, user_id: String, external_identity_provider: String) -> Self {
+    pub fn new(principal: Entities, schema: SchemaFragment, user_id: String, external_identity_provider: String) -> Self {
         InternalToken {
-            policy,
+            principal,
+            schema,
             metadata: TokenMetadata {
                 user_id,
                 identity_provider: ExternalIdentityProvider::from(external_identity_provider),
@@ -41,7 +44,8 @@ impl TryInto<Claims> for InternalToken {
         const API_VERSION_KEY: &str = "boxer.sneaksanddata.com/api-version";
 
         // Constants related to a particular API version
-        const POLICY_KEY: &str = "boxer.sneaksanddata.com/policy";
+        const PRINCIPAL_KEY: &str = "boxer.sneaksanddata.com/principal";
+        const SCHEMA_KEY: &str = "boxer.sneaksanddata.com/schema";
         const USER_ID_KEY: &str = "boxer.sneaksanddata.com/user-id";
         const IDENTITY_PROVIDER_KEY: &str = "boxer.sneaksanddata.com/identity-provider";
 
@@ -51,15 +55,20 @@ impl TryInto<Claims> for InternalToken {
 
         let compressed_policy = {
             let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-            encoder.write_all(self.policy.content.as_bytes())?;
+            encoder.write_all(self.principal.content.as_bytes())?;
             encoder.finish()?
         };
+        
+        let schema_json = self.schema.to_json_string()?;
 
         let mut claims: Claims /* Type */ = Default::default();
         claims.private.insert(API_VERSION_KEY.to_string(), self.version.into());
         claims
             .private
-            .insert(POLICY_KEY.to_string(), STANDARD.encode(&compressed_policy).into());
+            .insert(PRINCIPAL_KEY.to_string(), STANDARD.encode(&compressed_policy).into());
+        claims
+            .private
+            .insert(SCHEMA_KEY.to_string(), STANDARD.encode(&schema_json).into());
         claims
             .private
             .insert(USER_ID_KEY.to_string(), self.metadata.user_id.into());

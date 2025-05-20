@@ -1,6 +1,7 @@
 mod http;
 mod models;
 mod services;
+mod extensions;
 
 use crate::http::controllers::{association, attachment, identity, policy, principal, schema, token::token};
 use crate::services::base::upsert_repository::{
@@ -51,6 +52,7 @@ async fn main() -> Result<()> {
             identity_repository.clone(),
             entities_repository.clone(),
             principal_association_repository.clone(),
+            schemas_repository.clone()
         ));
         let token_provider = Arc::new(TokenService::new(
             validator_provider.clone(),

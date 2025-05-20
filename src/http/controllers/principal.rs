@@ -31,7 +31,7 @@ async fn post(
     let schema_fragment = schemas_repository.get(schema).await?;
     let schema: Schema = schema_fragment.try_into()?;
     let principal = Entities::from_json_str(&principal_json, Some(&schema))?;
-    entities_repository.upsert((type_, id), principal).await?;
+    entities_repository.upsert((type_, id), (principal, schema)).await?;
     Ok(HttpResponse::Ok().finish())
 }
 
@@ -39,7 +39,7 @@ async fn post(
 #[get("{schema}/{type}/{id}")]
 async fn get(path: Path<(String, String, String)>, data: Data<Arc<PrincipalsRepository>>) -> Result<String> {
     let (_, type_, id) = path.into_inner();
-    let entities = data.get((type_, id)).await?;
+    let (entities, _) = data.get((type_, id)).await?;
     let mut buffer = Vec::new();
     entities.write_to_json(&mut buffer)?;
     let result = String::from_utf8_lossy(&buffer).into_owned();
