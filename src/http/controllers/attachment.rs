@@ -1,5 +1,5 @@
 use crate::http::errors::*;
-use crate::models::external::identity::{ExternalIdentity, PolicyAttachment};
+use crate::models::api::external::identity::{ExternalIdentity, PolicyAttachment};
 use crate::services::base::upsert_repository::PolicyAttachmentRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Path};

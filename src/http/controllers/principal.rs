@@ -1,9 +1,11 @@
 use crate::http::errors::*;
-use crate::services::base::upsert_repository::{PrincipalsRepository, SchemaRepository};
+use crate::models::principal::Principal;
+use crate::services::base::upsert_repository::PrincipalsRepository;
+use crate::services::base::upsert_repository::SchemaRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{BytesMut, Data, Path, Payload};
 use actix_web::{get, post, web, HttpResponse};
-use cedar_policy::{Entities, Schema};
+use cedar_policy::{Entity, Schema};
 use futures::StreamExt;
 use std::sync::Arc;
 
@@ -15,7 +17,7 @@ async fn post(
     path: Path<(String, String, String)>,
     mut payload: Payload,
     schemas_repository: Data<Arc<SchemaRepository>>,
-    entities_repository: Data<Arc<PrincipalsRepository>>,
+    principals_repository: Data<Arc<PrincipalsRepository>>,
 ) -> Result<HttpResponse> {
     let mut body = BytesMut::new();
     while let Some(chunk) = payload.next().await {
@@ -27,11 +29,13 @@ async fn post(
         body.extend_from_slice(&chunk);
     }
     let principal_json = String::from_utf8_lossy(&body);
-    let (schema, type_, id) = path.into_inner();
-    let schema_fragment = schemas_repository.get(schema).await?;
+    let (schema_id, type_, id) = path.into_inner();
+    let schema_fragment = schemas_repository.get(schema_id.clone()).await?;
     let schema: Schema = schema_fragment.try_into()?;
-    let principal = Entities::from_json_str(&principal_json, Some(&schema))?;
-    entities_repository.upsert((type_, id), (principal, schema)).await?;
+    let entity = Entity::from_json_str(&principal_json, Some(&schema))?;
+    principals_repository
+        .upsert((type_, id), Principal::new(entity, schema_id))
+        .await?;
     Ok(HttpResponse::Ok().finish())
 }
 
@@ -39,11 +43,9 @@ async fn post(
 #[get("{schema}/{type}/{id}")]
 async fn get(path: Path<(String, String, String)>, data: Data<Arc<PrincipalsRepository>>) -> Result<String> {
     let (_, type_, id) = path.into_inner();
-    let (entities, _) = data.get((type_, id)).await?;
-    let mut buffer = Vec::new();
-    entities.write_to_json(&mut buffer)?;
-    let result = String::from_utf8_lossy(&buffer).into_owned();
-    Ok(result)
+    let principal = data.get((type_, id)).await?;
+    let json = principal.get_entity().to_json_string()?;
+    Ok(json)
 }
 
 #[utoipa::path(context_path = "/principal/", responses((status = OK)))]

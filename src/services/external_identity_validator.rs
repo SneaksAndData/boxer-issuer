@@ -1,6 +1,6 @@
-use crate::models::external::identity::ExternalIdentity;
-use crate::models::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
-use crate::models::external::token::ExternalToken;
+use crate::models::api::external::identity::ExternalIdentity;
+use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
+use crate::models::api::external::token::ExternalToken;
 use anyhow::bail;
 use async_trait::async_trait;
 use jwt_authorizer::error::InitError;
