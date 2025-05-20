@@ -1,6 +1,7 @@
-use crate::models::external::identity::{ExternalIdentity, Policy, PolicyAttachment};
+use crate::models::api::external::identity::{ExternalIdentity, Policy, PolicyAttachment};
+use crate::models::principal::Principal;
 use async_trait::async_trait;
-use cedar_policy::{Entities, SchemaFragment};
+use cedar_policy::SchemaFragment;
 
 #[async_trait]
 #[allow(dead_code)]
@@ -29,6 +30,6 @@ pub type PolicyAttachmentRepository = dyn UpsertRepository<PolicyAttachment, Ext
 
 pub type SchemaRepository = dyn UpsertRepository<SchemaFragment, String, Error = anyhow::Error>;
 
-pub type PrincipalsRepository = dyn UpsertRepository<Entities, (String, String), Error = anyhow::Error>;
+pub type PrincipalsRepository = dyn UpsertRepository<Principal, (String, String), Error = anyhow::Error>;
 pub type PrincipalAssociationRepository =
     dyn UpsertRepository<(String, String), ExternalIdentity, Error = anyhow::Error>;

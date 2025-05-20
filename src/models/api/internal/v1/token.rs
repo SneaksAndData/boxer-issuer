@@ -1,5 +1,5 @@
-use crate::models::external::identity::Policy;
-use crate::models::external::identity_provider::ExternalIdentityProvider;
+use crate::models::api::external::identity::Policy;
+use crate::models::api::external::identity_provider::ExternalIdentityProvider;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use flate2::write::ZlibEncoder;

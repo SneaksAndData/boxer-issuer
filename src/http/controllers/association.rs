@@ -1,5 +1,5 @@
 use crate::http::errors::*;
-use crate::models::external::identity::ExternalIdentity;
+use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::base::upsert_repository::PrincipalAssociationRepository;
 use crate::services::principal_service::{IdentityAssociationRequest, PrincipalService};
 use actix_web::dev::HttpServiceFactory;

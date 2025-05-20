@@ -1,6 +1,6 @@
 use crate::http::errors::*;
-use crate::models::external::identity_provider::ExternalIdentityProvider;
-use crate::models::external::token::ExternalToken;
+use crate::models::api::external::identity_provider::ExternalIdentityProvider;
+use crate::models::api::external::token::ExternalToken;
 use crate::services::token_service::{TokenProvider, TokenService};
 use actix_web::web::{Data, Path};
 use actix_web::{get, HttpRequest};

@@ -1,5 +1,5 @@
-use crate::models::external::identity_provider::ExternalIdentityProvider;
-use crate::models::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
+use crate::models::api::external::identity_provider::ExternalIdentityProvider;
+use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
 use crate::services::identity_validator_provider::ExternalIdentityValidatorManager;
 use async_trait::async_trait;
 use log::{error, info};

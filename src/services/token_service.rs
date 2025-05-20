@@ -1,7 +1,7 @@
-use crate::models::external::identity::{ExternalIdentity, Policy};
-use crate::models::external::identity_provider::ExternalIdentityProvider;
-use crate::models::external::token::ExternalToken;
-use crate::models::internal::v1::token::InternalToken;
+use crate::models::api::external::identity::{ExternalIdentity, Policy};
+use crate::models::api::external::identity_provider::ExternalIdentityProvider;
+use crate::models::api::external::token::ExternalToken;
+use crate::models::api::internal::v1::token::InternalToken;
 use crate::services::base::upsert_repository::{PolicyAttachmentRepository, PolicyRepository};
 use crate::services::identity_validator_provider::{
     ExternalIdentityValidationService, ExternalIdentityValidatorProvider,
