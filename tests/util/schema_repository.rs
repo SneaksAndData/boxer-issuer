@@ -6,7 +6,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub fn new() -> Arc<SchemaRepository> {
-     Arc::new(RwLock::new(HashMap::new()))
+    Arc::new(RwLock::new(HashMap::new()))
 }
 
 #[async_trait]
@@ -17,7 +17,9 @@ pub trait SchemaRepositoryExt {
 #[async_trait]
 impl SchemaRepositoryExt for Arc<SchemaRepository> {
     async fn with_default_data(self) -> Arc<SchemaRepository> {
-        self.upsert(schema_name().clone(), schema_fragment().clone()).await.unwrap();
+        self.upsert(schema_name().clone(), schema_fragment().clone())
+            .await
+            .unwrap();
         self
     }
 }

@@ -1,7 +1,7 @@
-use cedar_policy::{Schema, SchemaFragment};
 use boxer_issuer::models::api::external::identity::ExternalIdentity;
 use boxer_issuer::models::api::external::identity_provider::ExternalIdentityProvider;
 use boxer_issuer::models::api::external::token::ExternalToken;
+use cedar_policy::{Schema, SchemaFragment};
 
 pub fn schema() -> Schema {
     schema_fragment().try_into().unwrap()

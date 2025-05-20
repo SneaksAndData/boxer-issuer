@@ -6,7 +6,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub fn new() -> Arc<PrincipalAssociationRepository> {
-     Arc::new(RwLock::new(HashMap::new()))
+    Arc::new(RwLock::new(HashMap::new()))
 }
 
 #[async_trait]
@@ -17,7 +17,9 @@ pub trait PrincipalAssociationRepositoryExt {
 #[async_trait]
 impl PrincipalAssociationRepositoryExt for Arc<PrincipalAssociationRepository> {
     async fn with_default_data(self) -> Arc<PrincipalAssociationRepository> {
-        self.upsert(external_identity(), (principal_type(), user_name())).await.unwrap();
+        self.upsert(external_identity(), (principal_type(), user_name()))
+            .await
+            .unwrap();
         self
     }
 }

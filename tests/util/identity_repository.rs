@@ -6,7 +6,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub fn new() -> Arc<IdentityRepository> {
-     Arc::new(RwLock::new(HashMap::new()))
+    Arc::new(RwLock::new(HashMap::new()))
 }
 
 #[async_trait]

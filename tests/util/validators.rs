@@ -21,7 +21,10 @@ impl ExternalIdentityValidator for AlwaysValid {
 
 #[async_trait]
 impl ExternalIdentityValidatorProvider for AlwaysValid {
-    async fn get(&self, _: ExternalIdentityProvider) -> Result<Arc<dyn ExternalIdentityValidator + Send + Sync>, Error> {
+    async fn get(
+        &self,
+        _: ExternalIdentityProvider,
+    ) -> Result<Arc<dyn ExternalIdentityValidator + Send + Sync>, Error> {
         Ok(Arc::new(self.clone()))
     }
 }
