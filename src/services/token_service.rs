@@ -3,7 +3,7 @@ use crate::models::api::external::identity_provider::ExternalIdentityProvider;
 use crate::models::api::external::token::ExternalToken;
 use crate::models::api::internal::v1::token::InternalToken;
 use crate::services::identity_validator_provider::{
-    ExternalIdentityValidationService, ExternalIdentityValidatorProvider,
+    ExternalIdentityValidatorProvider,
 };
 use crate::services::principal_service::PrincipalService;
 use async_trait::async_trait;
@@ -24,7 +24,7 @@ pub trait TokenProvider {
 }
 
 pub struct TokenService {
-    validators: Arc<ExternalIdentityValidationService>,
+    validators: Arc<dyn ExternalIdentityValidatorProvider + Send + Sync>,
     principal_service: Arc<PrincipalService>,
     sign_secret: Arc<Vec<u8>>,
 }
@@ -49,7 +49,7 @@ impl TokenProvider for TokenService {
 
 impl TokenService {
     pub fn new(
-        validators: Arc<ExternalIdentityValidationService>,
+        validators: Arc<dyn ExternalIdentityValidatorProvider + Send + Sync>,
         principal_service: Arc<PrincipalService>,
         sign_secret: Arc<Vec<u8>>,
     ) -> Self {

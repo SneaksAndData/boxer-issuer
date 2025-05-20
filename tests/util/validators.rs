@@ -1,11 +1,11 @@
 use anyhow::Error;
+use async_trait::async_trait;
 use boxer_issuer::models::api::external::identity::ExternalIdentity;
 use boxer_issuer::models::api::external::identity_provider::ExternalIdentityProvider;
 use boxer_issuer::models::api::external::token::ExternalToken;
 use boxer_issuer::services::external_identity_validator::ExternalIdentityValidator;
-use boxer_issuer::services::identity_validator_provider::{ExternalIdentityValidationService, ExternalIdentityValidatorProvider};
+use boxer_issuer::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use std::sync::Arc;
-use async_trait::async_trait;
 
 #[derive(Clone)]
 pub struct AlwaysValid {
@@ -24,8 +24,4 @@ impl ExternalIdentityValidatorProvider for AlwaysValid {
     async fn get(&self, _: ExternalIdentityProvider) -> Result<Arc<dyn ExternalIdentityValidator + Send + Sync>, Error> {
         Ok(Arc::new(self.clone()))
     }
-}
-
-impl ExternalIdentityValidationService for AlwaysValid {
-    
 }
