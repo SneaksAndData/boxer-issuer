@@ -20,7 +20,7 @@ pub struct PrincipalService {
 }
 
 impl PrincipalService {
-    pub(crate) async fn get_schemas(&self, schema_id: String) -> Result<SchemaFragment, anyhow::Error> {
+    pub async fn get_schemas(&self, schema_id: String) -> Result<SchemaFragment, anyhow::Error> {
         let schema = self.schema_repository.get(schema_id).await?;
         Ok(schema)
     }
