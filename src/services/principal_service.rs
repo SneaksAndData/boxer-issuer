@@ -1,9 +1,9 @@
+use crate::models::api::external::identity::ExternalIdentity;
+use crate::models::principal::Principal;
 use crate::services::base::upsert_repository::{IdentityRepository, PrincipalAssociationRepository, PrincipalsRepository, SchemaRepository};
 use anyhow::bail;
+use cedar_policy::SchemaFragment;
 use std::sync::Arc;
-use cedar_policy::{Entities, SchemaFragment};
-use utoipa::schema;
-use crate::models::external::identity::ExternalIdentity;
 
 pub struct IdentityAssociationRequest {
     pub external_identity_info: (String, String),
@@ -54,11 +54,11 @@ impl PrincipalService {
             .await
     }
     
-    pub async fn get_principal(&self, external_identity: ExternalIdentity) -> Result<(Entities, String), anyhow::Error> {
-        let (principal, schema_id) = self
+    pub async fn get_principal(&self, external_identity: ExternalIdentity) -> Result<Principal, anyhow::Error> {
+        let principal = self
             .principals
             .get((external_identity.user_id.clone(), external_identity.identity_provider.clone()))
             .await?;
-        Ok( (principal, schema_id) )
+        Ok(principal)
     }
 }

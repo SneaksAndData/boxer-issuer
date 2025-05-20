@@ -1,17 +1,13 @@
-use crate::models::api::external::identity::Policy;
 use crate::models::api::external::identity_provider::ExternalIdentityProvider;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
-use flate2::write::ZlibEncoder;
-use flate2::Compression;
+use cedar_policy::{Entity, SchemaFragment};
 use jwt::Claims;
-use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use cedar_policy::{Entities, SchemaFragment};
 
 /// Represents an internal JWT Token issued by `boxer-issuer`
 pub struct InternalToken {
-    pub principal: Entities,
+    pub principal: Entity,
     pub schema: SchemaFragment,
     pub metadata: TokenMetadata,
     version: String,
@@ -23,7 +19,7 @@ pub struct TokenMetadata {
 }
 
 impl InternalToken {
-    pub fn new(principal: Entities, schema: SchemaFragment, user_id: String, external_identity_provider: String) -> Self {
+    pub fn new(principal: Entity, schema: SchemaFragment, user_id: String, external_identity_provider: String) -> Self {
         InternalToken {
             principal,
             schema,
@@ -53,19 +49,14 @@ impl TryInto<Claims> for InternalToken {
         const BOXER_ISSUER: &str = "boxer.sneaksanddata.com";
         const BOXER_AUDIENCE: &str = "boxer.sneaksanddata.com";
 
-        let compressed_policy = {
-            let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-            encoder.write_all(self.principal.content.as_bytes())?;
-            encoder.finish()?
-        };
-        
+        let principal_json = self.principal.to_json_string()?;
         let schema_json = self.schema.to_json_string()?;
 
         let mut claims: Claims /* Type */ = Default::default();
         claims.private.insert(API_VERSION_KEY.to_string(), self.version.into());
         claims
             .private
-            .insert(PRINCIPAL_KEY.to_string(), STANDARD.encode(&compressed_policy).into());
+            .insert(PRINCIPAL_KEY.to_string(), STANDARD.encode(&principal_json).into());
         claims
             .private
             .insert(SCHEMA_KEY.to_string(), STANDARD.encode(&schema_json).into());

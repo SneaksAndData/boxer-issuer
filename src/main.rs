@@ -1,7 +1,6 @@
 mod http;
 mod models;
 mod services;
-mod extensions;
 
 use crate::http::controllers::{association, attachment, identity, policy, principal, schema, token::token};
 use crate::services::base::upsert_repository::{
