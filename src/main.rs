@@ -47,16 +47,15 @@ async fn main() -> Result<()> {
 
     info!("listening on {}:{}", &addr.0, &addr.1);
     HttpServer::new(move || {
-        let token_provider = Arc::new(TokenService::new(
-            validator_provider.clone(),
-            policy_repository.clone(),
-            policy_attachments_repository.clone(),
-            Arc::clone(&secret),
-        ));
         let principal_service = Arc::new(PrincipalService::new(
             identity_repository.clone(),
             entities_repository.clone(),
             principal_association_repository.clone(),
+        ));
+        let token_provider = Arc::new(TokenService::new(
+            validator_provider.clone(),
+            principal_service.clone(),
+            Arc::clone(&secret),
         ));
         App::new()
             .app_data(Data::new(token_provider))
