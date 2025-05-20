@@ -1,6 +1,8 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::models::principal::Principal;
-use crate::services::base::upsert_repository::{IdentityRepository, PrincipalAssociationRepository, PrincipalsRepository, SchemaRepository};
+use crate::services::base::upsert_repository::{
+    IdentityRepository, PrincipalAssociationRepository, PrincipalsRepository, SchemaRepository,
+};
 use anyhow::bail;
 use cedar_policy::SchemaFragment;
 use std::sync::Arc;
@@ -38,7 +40,7 @@ impl PrincipalService {
             schema_repository,
         }
     }
-    
+
     pub async fn associate(&self, request: IdentityAssociationRequest) -> Result<(), anyhow::Error> {
         let external_identity = self.identities.get(request.external_identity_info).await?;
         let exists = self.principals.exists(request.principal_info.clone()).await?;
@@ -53,12 +55,11 @@ impl PrincipalService {
             .upsert(external_identity.clone(), request.principal_info)
             .await
     }
-    
+
     pub async fn get_principal(&self, external_identity: ExternalIdentity) -> Result<Principal, anyhow::Error> {
-        let principal = self
-            .principals
-            .get((external_identity.user_id.clone(), external_identity.identity_provider.clone()))
-            .await?;
+        let (principal_type, principal_id) = self.associations.get(external_identity.clone()).await?;
+
+        let principal = self.principals.get((principal_type, principal_id)).await?;
         Ok(principal)
     }
 }

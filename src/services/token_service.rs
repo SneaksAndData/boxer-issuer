@@ -1,18 +1,18 @@
+use crate::models::api::external::identity::ExternalIdentity;
 use crate::models::api::external::identity_provider::ExternalIdentityProvider;
 use crate::models::api::external::token::ExternalToken;
+use crate::models::api::internal::v1::token::InternalToken;
 use crate::services::identity_validator_provider::{
     ExternalIdentityValidationService, ExternalIdentityValidatorProvider,
 };
 use crate::services::principal_service::PrincipalService;
 use async_trait::async_trait;
 use cedar_policy::{Entity, SchemaFragment};
-use std::sync::Arc;
 use hmac::{Hmac, Mac};
 use jwt::{Claims, SignWithKey};
 use log::error;
 use sha2::Sha256;
-use crate::models::api::external::identity::ExternalIdentity;
-use crate::models::api::internal::v1::token::InternalToken;
+use std::sync::Arc;
 
 #[async_trait]
 pub trait TokenProvider {
@@ -39,7 +39,10 @@ impl TokenProvider for TokenService {
         let validator = self.validators.get(provider.clone()).await?;
         let identity = validator.validate(external_token).await?;
         let principal = self.principal_service.get_principal(identity.clone()).await?;
-        let schemas = self.principal_service.get_schemas(principal.get_schema_id().clone()).await?;
+        let schemas = self
+            .principal_service
+            .get_schemas(principal.get_schema_id().clone())
+            .await?;
         self.generate_token(principal.get_entity(), schemas, identity).await
     }
 }
@@ -57,7 +60,12 @@ impl TokenService {
         }
     }
 
-    async fn generate_token(&self, principal: &Entity, schemas: SchemaFragment, identity: ExternalIdentity) -> Result<String, anyhow::Error> {
+    async fn generate_token(
+        &self,
+        principal: &Entity,
+        schemas: SchemaFragment,
+        identity: ExternalIdentity,
+    ) -> Result<String, anyhow::Error> {
         let token = InternalToken::new(principal.clone(), schemas, identity.user_id, identity.identity_provider);
         let claims: Claims = token.try_into()?;
         let key: Hmac<Sha256> = Hmac::new_from_slice(&self.sign_secret)?;

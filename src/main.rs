@@ -51,7 +51,7 @@ async fn main() -> Result<()> {
             identity_repository.clone(),
             entities_repository.clone(),
             principal_association_repository.clone(),
-            schemas_repository.clone()
+            schemas_repository.clone(),
         ));
         let token_provider = Arc::new(TokenService::new(
             validator_provider.clone(),
