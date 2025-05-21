@@ -1,7 +1,6 @@
 mod util;
 
 use crate::util::identity_repository::IdentityRepositoryExt;
-use crate::util::principal_association_repository::PrincipalAssociationRepositoryExt;
 use crate::util::schema_repository::SchemaRepositoryExt;
 use crate::util::test_data::{
     external_identity, external_identity_provider, external_identity_raw, external_token, principal_type, user_name,
