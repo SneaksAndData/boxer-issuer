@@ -10,7 +10,7 @@ use boxer_issuer::services::principal_service::{IdentityAssociationRequest, Prin
 use boxer_issuer::services::token_service::TokenProvider;
 use boxer_issuer::services::token_service::TokenService;
 use std::sync::Arc;
-use util::principal_repository::PrincipalsRepositoryExt;
+use util::principal_repository::PrincipalRepositoryExt;
 use util::*;
 
 #[tokio::test]
