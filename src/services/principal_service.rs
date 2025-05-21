@@ -1,7 +1,7 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::models::principal::Principal;
 use crate::services::base::upsert_repository::{
-    IdentityRepository, PrincipalAssociationRepository, PrincipalsRepository, SchemaRepository,
+    IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository,
 };
 use anyhow::bail;
 use cedar_policy::SchemaFragment;
@@ -14,7 +14,7 @@ pub struct IdentityAssociationRequest {
 
 pub struct PrincipalService {
     identities: Arc<IdentityRepository>,
-    principals: Arc<PrincipalsRepository>,
+    principals: Arc<PrincipalRepository>,
     associations: Arc<PrincipalAssociationRepository>,
     schema_repository: Arc<SchemaRepository>,
 }
@@ -29,7 +29,7 @@ impl PrincipalService {
 impl PrincipalService {
     pub fn new(
         identities: Arc<IdentityRepository>,
-        principals: Arc<PrincipalsRepository>,
+        principals: Arc<PrincipalRepository>,
         associations: Arc<PrincipalAssociationRepository>,
         schema_repository: Arc<SchemaRepository>,
     ) -> Self {
