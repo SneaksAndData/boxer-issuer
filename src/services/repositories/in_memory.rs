@@ -7,7 +7,7 @@ use std::hash::Hash;
 use tokio::sync::RwLock;
 
 #[async_trait]
-impl<Entity, Key> UpsertRepository<Entity, Key> for RwLock<HashMap<Key, Entity>>
+impl<Entity, Key> UpsertRepository<Key, Entity> for RwLock<HashMap<Key, Entity>>
 where
     Entity: Send + Sync + Clone,
     Key: Send + Sync + Eq + Hash + Debug,

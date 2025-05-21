@@ -5,7 +5,7 @@ use cedar_policy::SchemaFragment;
 
 #[async_trait]
 /// Represents a repository for policies
-pub trait UpsertRepository<Entity, Key>: Send + Sync {
+pub trait UpsertRepository<Key, Entity>: Send + Sync {
     type Error;
 
     /// Retrieves a policy by id
@@ -21,11 +21,11 @@ pub trait UpsertRepository<Entity, Key>: Send + Sync {
     async fn exists(&self, key: Key) -> Result<bool, Self::Error>;
 }
 
-pub type IdentityRepository = dyn UpsertRepository<ExternalIdentity, (String, String), Error = anyhow::Error>;
+pub type IdentityRepository = dyn UpsertRepository<(String, String), ExternalIdentity, Error = anyhow::Error>;
 
-pub type SchemaRepository = dyn UpsertRepository<SchemaFragment, String, Error = anyhow::Error>;
+pub type SchemaRepository = dyn UpsertRepository<String, SchemaFragment, Error = anyhow::Error>;
 
-pub type PrincipalRepository = dyn UpsertRepository<Principal, (String, String), Error = anyhow::Error>;
+pub type PrincipalRepository = dyn UpsertRepository<(String, String), Principal, Error = anyhow::Error>;
 
 pub type PrincipalAssociationRepository =
-    dyn UpsertRepository<(String, String), ExternalIdentity, Error = anyhow::Error>;
+    dyn UpsertRepository<ExternalIdentity, (String, String), Error = anyhow::Error>;
