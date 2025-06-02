@@ -5,7 +5,6 @@ use crate::services::base::upsert_repository::{PrincipalAssociationRepository, S
 use crate::services::configuration_manager::ConfigurationManager;
 use std::sync::Arc;
 
-
 #[allow(dead_code)]
 pub enum BackendType {
     InMemory,

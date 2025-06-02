@@ -1,11 +1,11 @@
 use crate::models::api::external::identity_provider::ExternalIdentityProvider;
 use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
+use crate::services::backends::base::BackendType;
 use crate::services::identity_validator_provider::ExternalIdentityValidatorManager;
 use async_trait::async_trait;
 use log::{error, info};
 use std::sync::Arc;
 use tokio::time::sleep;
-use crate::services::backends::base::BackendType;
 
 #[async_trait]
 /// A trait for managing application configuration updates.
@@ -15,7 +15,7 @@ pub trait ConfigurationManager {
 
     /// Reads the key for signing the issued tokens
     fn get_signing_key(&self) -> Vec<u8>;
-    
+
     /// Returns the type of backend used by the application.
     fn get_backend_type(&self) -> BackendType;
 }
@@ -47,7 +47,7 @@ where
     fn get_signing_key(&self) -> Vec<u8> {
         vec!["dummy-secret".as_bytes()].concat()
     }
-    
+
     fn get_backend_type(&self) -> BackendType {
         BackendType::InMemory
     }

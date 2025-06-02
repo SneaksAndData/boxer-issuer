@@ -18,8 +18,8 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::http::openapi::ApiDoc;
+use crate::services::backends::base::{load_backend, Backend};
 use crate::services::principal_service::PrincipalService;
-use crate::services::backends::base::{Backend, load_backend};
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -33,12 +33,12 @@ async fn main() -> Result<()> {
 
     let _ = tokio::spawn(cm.watch_for_identity_providers());
     info!("Configuration manager started");
-    
 
     // Replace hash maps with factory methods here
     let schemas_repository: Arc<SchemaRepository> = current_backend.get_schemas_repository();
     let entities_repository: Arc<PrincipalRepository> = current_backend.get_entities_repository();
-    let principal_association_repository: Arc<PrincipalAssociationRepository> = current_backend.get_principal_association_repository();
+    let principal_association_repository: Arc<PrincipalAssociationRepository> =
+        current_backend.get_principal_association_repository();
     let identity_repository: Arc<IdentityRepository> = current_backend.get_identity_repository();
 
     info!("listening on {}:{}", &addr.0, &addr.1);

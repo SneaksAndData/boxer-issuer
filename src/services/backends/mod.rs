@@ -1,2 +1,2 @@
-mod in_memory;
 pub mod base;
+mod in_memory;

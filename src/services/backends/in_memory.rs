@@ -1,6 +1,8 @@
-use std::collections::HashMap;
 use crate::services::backends::base::Backend;
-use crate::services::base::upsert_repository::{IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository};
+use crate::services::base::upsert_repository::{
+    IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository,
+};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -11,7 +13,7 @@ pub struct InMemoryBackend {
     pub identity_repository: Arc<IdentityRepository>,
 }
 
-impl InMemoryBackend{
+impl InMemoryBackend {
     pub fn new() -> Self {
         let schemas_repository = Arc::new(RwLock::new(HashMap::new()));
         let entities_repository = Arc::new(RwLock::new(HashMap::new()));
@@ -38,7 +40,7 @@ impl Backend for InMemoryBackend {
     fn get_principal_association_repository(&self) -> Arc<PrincipalAssociationRepository> {
         Arc::clone(&self.principal_association_repository)
     }
-    
+
     fn get_identity_repository(&self) -> Arc<IdentityRepository> {
         Arc::clone(&self.identity_repository)
     }
