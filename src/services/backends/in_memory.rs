@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::services::backends::backend::Backend;
+use crate::services::backends::base::Backend;
 use crate::services::base::upsert_repository::{IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository};
 use std::sync::Arc;
 use tokio::sync::RwLock;

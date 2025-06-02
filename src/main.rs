@@ -19,7 +19,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use crate::http::openapi::ApiDoc;
 use crate::services::principal_service::PrincipalService;
-use crate::services::backends::backend::{Backend, load_backend};
+use crate::services::backends::base::{Backend, load_backend};
 
 #[actix_web::main]
 async fn main() -> Result<()> {

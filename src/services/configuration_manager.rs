@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use log::{error, info};
 use std::sync::Arc;
 use tokio::time::sleep;
-use crate::services::backends::backend::BackendType;
+use crate::services::backends::base::BackendType;
 
 #[async_trait]
 /// A trait for managing application configuration updates.
