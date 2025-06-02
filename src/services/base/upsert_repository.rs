@@ -24,7 +24,6 @@ pub trait UpsertRepository<Key, Entity>: Send + Sync {
 pub type IdentityRepository = dyn UpsertRepository<(String, String), ExternalIdentity, Error = anyhow::Error>;
 
 pub type SchemaRepository = dyn UpsertRepository<String, SchemaFragment, Error = anyhow::Error>;
-
 pub type PrincipalRepository = dyn UpsertRepository<(String, String), Principal, Error = anyhow::Error>;
 
 pub type PrincipalAssociationRepository =

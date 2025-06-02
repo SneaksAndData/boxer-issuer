@@ -12,15 +12,14 @@ use crate::services::token_service::TokenService;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::info;
-use std::collections::HashMap;
 use std::io::Result;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::http::openapi::ApiDoc;
 use crate::services::principal_service::PrincipalService;
+use crate::services::backends::backend::{Backend, load_backend};
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -30,15 +29,17 @@ async fn main() -> Result<()> {
     let validator_provider = Arc::new(identity_validator_provider::new());
     let cm = Arc::clone(&validator_provider);
     let secret = Arc::new(cm.get_signing_key());
+    let current_backend = load_backend(&cm);
 
     let _ = tokio::spawn(cm.watch_for_identity_providers());
     info!("Configuration manager started");
+    
 
     // Replace hash maps with factory methods here
-    let schemas_repository: Arc<SchemaRepository> = Arc::new(RwLock::new(HashMap::new()));
-    let entities_repository: Arc<PrincipalRepository> = Arc::new(RwLock::new(HashMap::new()));
-    let principal_association_repository: Arc<PrincipalAssociationRepository> = Arc::new(RwLock::new(HashMap::new()));
-    let identity_repository: Arc<IdentityRepository> = Arc::new(RwLock::new(HashMap::new()));
+    let schemas_repository: Arc<SchemaRepository> = current_backend.get_schemas_repository();
+    let entities_repository: Arc<PrincipalRepository> = current_backend.get_entities_repository();
+    let principal_association_repository: Arc<PrincipalAssociationRepository> = current_backend.get_principal_association_repository();
+    let identity_repository: Arc<IdentityRepository> = current_backend.get_identity_repository();
 
     info!("listening on {}:{}", &addr.0, &addr.1);
     HttpServer::new(move || {
