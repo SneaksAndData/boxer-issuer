@@ -3,9 +3,11 @@ use crate::models::api::external::identity_provider_settings::OidcExternalIdenti
 use crate::services::external_identity_validator::{ExternalIdentityValidator, ExternalIdentityValidatorFactory};
 use anyhow::bail;
 use async_trait::async_trait;
+use log::{error, info};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tokio::time::sleep;
 
 /// Creates a new external identity validation service.
 pub fn new() -> ExternalIdentityValidationService {
@@ -20,6 +22,11 @@ pub trait ExternalIdentityValidatorManager {
         provider: ExternalIdentityProvider,
         settings: OidcExternalIdentityProviderSettings,
     ) -> Result<(), anyhow::Error>;
+}
+
+#[async_trait]
+pub trait ExternalIdentityWatcher {
+    async fn watch_for_identity_providers(self);
 }
 
 /// Read-only interface for managing external identity validators.
@@ -60,6 +67,30 @@ impl ExternalIdentityValidatorManager for ExternalIdentityValidationService {
         let validator = settings.build_validator(provider.name()).await?;
         let _ = (*write_guard).insert(provider, validator);
         Ok(())
+    }
+}
+
+#[async_trait]
+impl<T> ExternalIdentityWatcher for Arc<T>
+where
+    T: ExternalIdentityValidatorManager + Send + Sync,
+{
+    async fn watch_for_identity_providers(self) {
+        let provider = ExternalIdentityProvider::from("provider".to_string());
+        let settings = OidcExternalIdentityProviderSettings {
+            user_id_claim: "upn".to_string(),
+            discovery_url: "http://localhost:8080/realms/master/".to_string(),
+            issuers: vec!["http://localhost:8080/realms/master".to_string()],
+            audiences: vec!["account".to_string()],
+        };
+        let result = self.put(provider.clone(), settings).await;
+        match result {
+            Ok(_) => info!("Successfully updated identity provider settings"),
+            Err(e) => error!("Failed to initialize provider with name {}: {:?}", provider.name(), e),
+        }
+        loop {
+            sleep(std::time::Duration::from_secs(10)).await;
+        }
     }
 }
 
