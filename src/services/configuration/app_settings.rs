@@ -3,8 +3,8 @@ use crate::services::backends::base::{Backend, BackendType};
 use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
 use crate::services::configuration::models::AppSettings;
 use async_trait::async_trait;
-use std::sync::Arc;
 use config::{Config, ConfigError, Environment};
+use std::sync::Arc;
 
 impl AppSettings {
     /// Creates a new instance of `AppSettings` by loading configuration from predefined sources
