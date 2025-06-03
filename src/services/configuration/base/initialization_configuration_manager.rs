@@ -6,7 +6,6 @@ use std::sync::Arc;
 /// Trait managing the initialization configuration for the application.
 pub trait InitializationConfigurationManager {
     /// Retrieves the signing key used for token generation.
-    #[deprecated(note = "To be removed in future")]
     fn get_signing_key(&self) -> Arc<Vec<u8>>;
 
     /// Retrieves the backend type for the application.
