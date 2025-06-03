@@ -3,10 +3,13 @@ use async_trait::async_trait;
 use std::sync::Arc;
 
 #[async_trait]
-/// A trait for managing application configuration updates.
+/// Trait managing the initialization configuration for the application.
 pub trait InitializationConfigurationManager {
-    /// Reads the key for signing the issued tokens
+    
+    /// Retrieves the signing key used for token generation.
+    #[deprecated(note="To be removed in future")]
     fn get_signing_key(&self) -> Arc<Vec<u8>>;
 
+    /// Retrieves the backend type for the application.
     fn get_backend_type(&self) -> BackendType;
 }

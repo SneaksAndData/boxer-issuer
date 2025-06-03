@@ -1,1 +1,1 @@
-pub mod configuration_manager;
+pub mod initialization_configuration_manager;

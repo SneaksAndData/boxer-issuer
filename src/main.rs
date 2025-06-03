@@ -6,7 +6,7 @@ use crate::http::controllers::{association, identity, principal, schema, token::
 use crate::services::base::upsert_repository::{
     IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository,
 };
-use crate::services::configuration::base::configuration_manager::InitializationConfigurationManager;
+use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
 use crate::services::identity_validator_provider;
 use crate::services::token_service::TokenService;
 use actix_web::web::Data;

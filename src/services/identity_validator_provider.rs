@@ -25,7 +25,10 @@ pub trait ExternalIdentityValidatorManager {
 }
 
 #[async_trait]
+/// Watcher interface for monitoring changes in external identity providers.
 pub trait ExternalIdentityWatcher {
+    
+    /// Starts watching for changes in external identity providers.
     async fn watch_for_identity_providers(self);
 }
 

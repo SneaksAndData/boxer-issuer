@@ -1,11 +1,24 @@
 use crate::services::backends::base::BackendConfigurationManager;
 use crate::services::backends::base::{Backend, BackendType};
-use crate::services::configuration::base::configuration_manager::InitializationConfigurationManager;
+use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
 use crate::services::configuration::models::AppSettings;
 use async_trait::async_trait;
 use std::sync::Arc;
+use config::{Config, ConfigError, Environment};
 
-/// Dummy implementation of the ConfigurationManager trait.
+impl AppSettings {
+    /// Creates a new instance of `AppSettings` by loading configuration from predefined sources
+    pub fn new() -> Result<Self, ConfigError> {
+        let s = Config::builder()
+            .add_source(Environment::with_prefix("BOXER").separator("__"))
+            .build()?;
+
+        // let hmac = s.clone().try_deserialize::<HashMap<String, String>>()?;
+        s.try_deserialize()
+    }
+}
+
+/// Dummy implementation of the InitializationConfigurationManager trait.
 #[async_trait]
 impl InitializationConfigurationManager for AppSettings {
     fn get_signing_key(&self) -> Arc<Vec<u8>> {
