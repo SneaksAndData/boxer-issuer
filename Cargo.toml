@@ -23,6 +23,8 @@ utoipa = { version = "5.3.1", features = ["actix_extras"] }
 cedar-policy = "4.4.0"
 futures = "0.3.31"
 config = "0.15.11"
+kube = { version = "1.1.0", features = ["config", "client"] }
+k8s-openapi = { version = "0.25.0", features = ["latest"] }
 
 [dev-dependencies]
 rstest = "0.22.0"
