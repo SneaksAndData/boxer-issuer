@@ -14,14 +14,19 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-type ExternalIdentities = HashMap<String, HashSet<String>>;
+#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug)]
+struct ExternalIdentitiesSet {
+    active: HashSet<String>,
+    inactive: HashSet<String>,
+}
 
 #[derive(Resource, Serialize, Deserialize, Clone)]
 #[derive(Debug)]
 #[resource(inherit = ConfigMap)]
 struct IdentitiesConfigMap {
     metadata: ObjectMeta,
-    data: ExternalIdentities,
+    data: ExternalIdentitiesSet,
 }
 
 #[async_trait]
@@ -32,8 +37,8 @@ where T: Send + Sync
 }
 
 #[async_trait]
-impl KubernetesWriter<ExternalIdentities> for Api::<IdentitiesConfigMap> {
-    async fn overwrite(&self, ei: ExternalIdentities) -> Result<IdentitiesConfigMap, anyhow::Error> {
+impl KubernetesWriter<ExternalIdentitiesSet> for Api::<IdentitiesConfigMap> {
+    async fn overwrite(&self, ei: ExternalIdentitiesSet) -> Result<IdentitiesConfigMap, anyhow::Error> {
         let object = IdentitiesConfigMap {
             metadata: ObjectMeta {
                 name: Some("external-identities".to_string()),
@@ -49,8 +54,8 @@ impl KubernetesWriter<ExternalIdentities> for Api::<IdentitiesConfigMap> {
 
 struct KubernetesIdentityRepository {
     current_version: String,
-    external_identities: ExternalIdentities,
-    writer: Arc<dyn KubernetesWriter<ExternalIdentities>>,
+    external_identities: ExternalIdentitiesSet,
+    writer: Arc<dyn KubernetesWriter<ExternalIdentitiesSet>>,
 }
 
 #[async_trait]
@@ -59,48 +64,19 @@ impl UpsertRepository<(String, String), ExternalIdentity> for RwLock<KubernetesI
     type Error = anyhow::Error;
 
     async fn get(&self, key: (String, String)) -> Result<ExternalIdentity, Self::Error> {
-        let (identity_provider, identity) = key;
-        let read_guard = self.read().await;
-        match (*read_guard).external_identities.get(&identity_provider) {
-            Some(entity) => Ok(
-                if entity.contains(&identity_provider) {
-                    ExternalIdentity::new(identity_provider, identity)
-                } 
-                else {
-                    bail!("Identity {:?} not found for provider {:?}", identity, identity_provider)
-                }
-            ),
-            None => bail!("Identity provider not found: {:?}", identity_provider),
-        }
+        todo!()
     }
 
     async fn upsert(&self, key: (String, String), entity: ExternalIdentity) -> Result<(), Self::Error> {
-        let (identity_provider, identity) = key;
-        let mut write_guard = self.write().await;
-        let identtities = (*write_guard).external_identities.entry(identity_provider.clone()).or_insert_with(HashSet::new);
-        identtities.insert(identity.clone());
-        (*write_guard).writer.overwrite((*write_guard).external_identities.clone()).await?;
-        Ok(())
+        todo!()
     }
 
     async fn delete(&self, key: (String, String)) -> Result<(), Self::Error> {
-        let (identity_provider, identity) = key;
-        let mut write_guard = self.write().await;
-        let identtities = (*write_guard).external_identities.entry(identity_provider.clone()).or_insert_with(HashSet::new);
-        identtities.insert(identity.clone());
-        (*write_guard).writer.overwrite((*write_guard).external_identities.clone()).await?;
-        Ok(())
+        todo!()
     }
 
     async fn exists(&self, key: (String, String)) -> Result<bool, Self::Error> {
-        let (identity_provider, identity) = key;
-        let read_guard = self.read().await;
-        match (*read_guard).external_identities.get(&identity_provider) {
-            Some(entity) => Ok(
-                return Ok(entity.contains(&identity_provider))
-            ),
-            None => bail!("Identity provider not found: {:?}", identity_provider),
-        }
+        todo!()
     }
 }
 
@@ -111,46 +87,58 @@ mod tests {
     use std::collections::BTreeMap;
     use super::*;
     use std::sync::Arc;
-    use maplit::btreemap;
+    use jwt::ToBase64;
+    use maplit::{btreemap, hashset};
     use test_context::{test_context, AsyncTestContext};
 
     struct KubernetesIdentityRepositoryTest {
-        api: Arc<Api<ConfigMap>>
+        api: Arc<Api<ConfigMap>>,
+        to_delete: Vec<String>
     }
 
     impl AsyncTestContext for KubernetesIdentityRepositoryTest {
         async fn setup() -> KubernetesIdentityRepositoryTest {
             let client = Client::try_default().await.expect("Failed to create Kubernetes client");
             let api: Api<ConfigMap> = Api::default_namespaced(client.clone());
-            
-            let identities = btreemap! {
-                "identity_provider_1" => r#"["user1", "user2"]"#,
-                "identity_provider_2" => r#"["user1"]"#,
-                "identity_provider_3" => r#"["user4"]"#,
-                "identity_provider_4" => r#"[]"#,
-                "identity_provider_5" => "",
-            }.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect();
 
-            let config_map = ConfigMap{
-                data: Some(identities),
-                metadata: ObjectMeta {
-                    name: Some("external-identities".to_string()),
-                    namespace: Some("default".to_string()),
+            let providers = [
+                ( "identity-provider-1", vec!["user1", "user2"], vec![]),
+                ( "identity-provider-2", vec!["user1"], vec![]),
+                ( "identity-provider-3", vec!["user3"], vec!["user4", "user5"]),
+                ( "identity-provider-4", vec![], vec![]),
+            ];
+
+            let mut created = Vec::new();
+            for (provider, active, inactive) in &providers {
+                let data = btreemap! {
+                    "active".to_string() => serde_json::to_string(&active).unwrap(),
+                    "inactive".to_string() => serde_json::to_string(&inactive).unwrap(),
+                };
+                let p = provider.to_string();
+                let config_map = ConfigMap{
+                    data: Some(data),
+                    metadata: ObjectMeta {
+                        name: Some(p.clone()),
+                        namespace: Some("default".to_string()),
+                        ..Default::default()
+                    },
                     ..Default::default()
-                },
-                ..Default::default()
+                };
+                api.create(&PostParams::default(), &config_map).await.expect("Failed to create ConfigMap");
+                created.push(p);
             };
 
-            api.create(&PostParams::default(), &config_map).await.expect("Failed to create ConfigMap");
             KubernetesIdentityRepositoryTest {
                 api: Arc::new(api),
+                to_delete: created,
             }
         }
 
         async fn teardown(self) {
-            self.api.delete("external-identities", &Default::default())
-                .await
-                .expect("Failed to delete ConfigMap");
+            for p in self.to_delete {
+                let name = p.clone();
+                self.api.delete(&name, &Default::default()).await.expect("Failed to delete ConfigMap");
+            }
         }
     }
 
