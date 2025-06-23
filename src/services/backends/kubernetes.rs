@@ -1,5 +1,6 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::backends::kubernetes::reflector::Store;
+use crate::services::backends::kubernetes::watcher::Config;
 use crate::services::base::upsert_repository::UpsertRepository;
 use anyhow::{anyhow, bail, Error, Result};
 use async_trait::async_trait;
@@ -7,12 +8,19 @@ use futures::{future, StreamExt};
 use k8s_openapi::api::core::v1::ConfigMap;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::api::PostParams;
+use kube::runtime::reflector::ObjectRef;
 use kube::runtime::{reflector, watcher, WatchStreamExt};
 use kube::Resource;
 use kube::{Api, Client};
-use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use std::sync::Arc;
+
+#[cfg(not(test))]
+use log::{debug, warn}; // Use log crate when building application
+
+#[cfg(test)]
+use std::{println as warn, println as debug}; // Workaround to use prinltn! for logs.
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct ExternalIdentitiesSet {
@@ -28,18 +36,26 @@ struct IdentitiesConfigMap {
 }
 
 struct KubernetesIdentityRepository {
-    external_identities: ExternalIdentitiesSet,
     reader: Store<IdentitiesConfigMap>,
     handle: tokio::task::JoinHandle<()>,
     api: Api<IdentitiesConfigMap>,
+    namespace: String,
 }
 
 impl KubernetesIdentityRepository {
-    async fn start() -> Result<Self> {
+    #[allow(dead_code)] // Dead code is allowed here because this function is used in tests
+    async fn start(namespace: &str) -> Result<Self> {
         let client = Client::try_default().await?;
-        let api: Api<IdentitiesConfigMap> = Api::default_namespaced(client.clone());
-        let stream = watcher(api.clone(), Default::default());
+        let api: Api<IdentitiesConfigMap> = Api::namespaced(client.clone(), namespace);
+        let config = Config {
+            label_selector: Some("app=identity-provider".to_string()),
+            ..Default::default()
+        };
+        let stream = watcher(api.clone(), config);
         let (reader, writer) = reflector::store();
+
+        // reader.wait_until_ready().await?;
+
         let rf = reflector(writer, stream)
             .default_backoff()
             .touched_objects()
@@ -51,14 +67,12 @@ impl KubernetesIdentityRepository {
             });
 
         let handle = tokio::spawn(rf); // poll forever
+        reader.wait_until_ready().await?;
         Ok(KubernetesIdentityRepository {
-            external_identities: ExternalIdentitiesSet {
-                active: "".to_string(),
-                inactive: "".to_string(),
-            },
             reader,
             handle,
             api,
+            namespace: namespace.to_string(),
         })
     }
 
@@ -68,11 +82,13 @@ impl KubernetesIdentityRepository {
         Ok(())
     }
 
-    async fn get_identities(&self, provider: &str) -> Result<IdentitiesConfigMap> {
-        self.api
-            .get(provider)
-            .await
-            .map_err(|e| anyhow!("Failed to get ConfigMap for provider {}: {}", provider, e))
+    async fn get_identities(&self, provider: &str) -> Result<Arc<IdentitiesConfigMap>> {
+        let or = ObjectRef::new(provider).within(self.namespace.as_str());
+        self.reader.get(&or).ok_or(anyhow!(
+            "Identity provider \"{}\" not found in namespace: {:?}",
+            provider,
+            or.namespace
+        ))
     }
 
     async fn get_active_identities(&self, ids: &ExternalIdentitiesSet) -> Result<HashSet<String>> {
@@ -83,7 +99,7 @@ impl KubernetesIdentityRepository {
 
     async fn get_inactive_identities(&self, ids: &ExternalIdentitiesSet) -> Result<HashSet<String>> {
         let active_set: HashSet<String> =
-            serde_json::from_str(&ids.active).map_err(|e| anyhow!("Failed to parse active identities: {}", e))?;
+            serde_json::from_str(&ids.inactive).map_err(|e| anyhow!("Failed to parse active identities: {}", e))?;
         Ok(active_set)
     }
 
@@ -146,7 +162,7 @@ impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentity
             inactive: serde_json::to_string(&inactive_set)?,
         };
 
-        self.overwrite(provider.as_str(), configmap.metadata, updated_data)
+        self.overwrite(provider.as_str(), configmap.metadata.clone(), updated_data)
             .await
     }
 
@@ -163,7 +179,7 @@ impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentity
                 active: serde_json::to_string(&active_set)?,
                 inactive: serde_json::to_string(&inactive_set)?,
             };
-            self.overwrite(provider.as_str(), configmap.metadata, updated_data)
+            self.overwrite(provider.as_str(), configmap.metadata.clone(), updated_data)
                 .await
         } else {
             Ok(())
@@ -183,20 +199,35 @@ impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentity
 /// Tests for KubernetesIdentityRepository
 mod tests {
     use super::*;
+    use k8s_openapi::api::core::v1::Namespace;
     use maplit::btreemap;
+    use serde_json::json;
+    use std::println as info;
     use std::sync::Arc;
     use test_context::{test_context, AsyncTestContext};
+    use uuid::Uuid;
 
+    #[allow(dead_code)] // Dead code is allowed here because this struct is used in tests
     struct KubernetesIdentityRepositoryTest {
         api: Arc<Api<ConfigMap>>,
-        to_delete: Vec<String>,
         repository: Arc<KubernetesIdentityRepository>,
     }
 
     impl AsyncTestContext for KubernetesIdentityRepositoryTest {
         async fn setup() -> KubernetesIdentityRepositoryTest {
             let client = Client::try_default().await.expect("Failed to create Kubernetes client");
-            let api: Api<ConfigMap> = Api::default_namespaced(client.clone());
+
+            let namespace = Uuid::new_v4().to_string();
+            info!("Using namespace: {}", namespace);
+            let namespaces: Api<Namespace> = Api::all(client.clone());
+            let ns = serde_json::from_value(json!({ "metadata": { "name": namespace.clone() } }))
+                .expect("Failed to deserialize namespace");
+            namespaces
+                .create(&PostParams::default(), &ns)
+                .await
+                .expect("Create Namespace failed");
+
+            let api: Api<ConfigMap> = Api::namespaced(client.clone(), namespace.as_str());
 
             let providers = [
                 ("identity-provider-1", vec!["user1", "user2"], vec![]),
@@ -209,7 +240,6 @@ mod tests {
                 ("identity-provider-4", vec![], vec![]),
             ];
 
-            let mut created = Vec::new();
             for (provider, active, inactive) in &providers {
                 let data = btreemap! {
                     "active".to_string() => serde_json::to_string(&active).unwrap(),
@@ -220,7 +250,11 @@ mod tests {
                     data: Some(data),
                     metadata: ObjectMeta {
                         name: Some(p.clone()),
-                        namespace: Some("default".to_string()),
+                        namespace: Some(namespace.clone()),
+                        labels: Some(btreemap! {
+                            "app".to_string() => "identity-provider".to_string(),
+                            "provider".to_string() => provider.to_string(),
+                        }),
                         ..Default::default()
                     },
                     ..Default::default()
@@ -228,27 +262,20 @@ mod tests {
                 api.create(&PostParams::default(), &config_map)
                     .await
                     .expect("Failed to create ConfigMap");
-                created.push(p);
             }
 
-            let repository = KubernetesIdentityRepository::start()
+            let repository = KubernetesIdentityRepository::start(namespace.clone().as_str())
                 .await
-                .expect("Failed to start ctx.repository");
+                .expect("Failed to start repository");
+
             KubernetesIdentityRepositoryTest {
                 api: Arc::new(api),
-                to_delete: created,
                 repository: Arc::new(repository),
             }
         }
 
         async fn teardown(self) {
-            for p in self.to_delete {
-                let name = p.clone();
-                self.api
-                    .delete(&name, &Default::default())
-                    .await
-                    .expect("Failed to delete ConfigMap");
-            }
+            // do nothing
         }
     }
 
@@ -385,11 +412,12 @@ mod tests {
             .await;
 
         // Assert
-        assert!(result
-            .err()
-            .unwrap()
-            .to_string()
-            .contains("ApiError: configmaps \"identity-provider-5\" not found"));
+        let message = result.err().unwrap().to_string();
+        assert!(
+            message.contains("Identity provider \"identity-provider-5\" not found"),
+            "Unexpected error message: {}",
+            message
+        );
     }
 
     #[test_context(KubernetesIdentityRepositoryTest)]
@@ -433,6 +461,7 @@ mod tests {
         let external_identity = ExternalIdentity::new(provider.clone(), user.clone());
 
         let old_state = ctx.repository.get((provider.clone(), user.clone())).await;
+
         // Assert that the user does not exist before upsert
         assert_eq!(old_state.ok(), None);
 
@@ -442,12 +471,13 @@ mod tests {
             .upsert((provider.clone(), user.clone()), external_identity)
             .await;
 
+        let message = result.err().unwrap().to_string();
         // Assert
-        assert!(result
-            .err()
-            .unwrap()
-            .to_string()
-            .contains("User \"deleted_user\" is inactive in provider \"identity-provider-3\""));
+        assert!(
+            message.contains("User \"deleted_user\" is inactive in provider \"identity-provider-3\""),
+            "Unexpected error message: {}",
+            message
+        );
     }
 
     #[test_context(KubernetesIdentityRepositoryTest)]
@@ -525,10 +555,11 @@ mod tests {
         let result = ctx.repository.delete((provider.clone(), user.clone())).await;
 
         // Assert
-        assert!(result
-            .err()
-            .unwrap()
-            .to_string()
-            .contains("ApiError: configmaps \"identity-provider-5\" not found"));
+        let message = result.err().unwrap().to_string();
+        assert!(
+            message.contains("Identity provider \"identity-provider-5\" not found"),
+            "Unexpected error message: {}",
+            message
+        );
     }
 }
