@@ -29,3 +29,4 @@ uuid = {  version = "1.17.0", features = ["v4"] }
 [dev-dependencies]
 test-context = "0.4.1"
 maplit = "1.0.2"
+rstest = "0.25.0"
