@@ -1,10 +1,9 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::backends::kubernetes::reflector::Store;
 use crate::services::base::upsert_repository::UpsertRepository;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Error, Result};
 use async_trait::async_trait;
-use config::Config;
-use futures::{future, FutureExt, Stream, StreamExt};
+use futures::{future, StreamExt};
 use k8s_openapi::api::core::v1::ConfigMap;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::api::PostParams;
@@ -14,8 +13,6 @@ use kube::{Api, Client};
 use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct ExternalIdentitiesSet {
@@ -57,12 +54,63 @@ impl KubernetesIdentityRepository {
         Ok(KubernetesIdentityRepository {
             external_identities: ExternalIdentitiesSet {
                 active: "".to_string(),
-                inactive: "".to_string()
+                inactive: "".to_string(),
             },
             reader,
             handle,
             api,
         })
+    }
+
+    fn stop(&self) -> Result<()> {
+        self.handle.abort();
+        debug!("KubernetesIdentityRepository stopped");
+        Ok(())
+    }
+
+    async fn get_identities(&self, provider: &str) -> Result<IdentitiesConfigMap> {
+        self.api
+            .get(provider)
+            .await
+            .map_err(|e| anyhow!("Failed to get ConfigMap for provider {}: {}", provider, e))
+    }
+
+    async fn get_active_identities(&self, ids: &ExternalIdentitiesSet) -> Result<HashSet<String>> {
+        let active_set: HashSet<String> =
+            serde_json::from_str(&ids.active).map_err(|e| anyhow!("Failed to parse active identities: {}", e))?;
+        Ok(active_set)
+    }
+
+    async fn get_inactive_identities(&self, ids: &ExternalIdentitiesSet) -> Result<HashSet<String>> {
+        let active_set: HashSet<String> =
+            serde_json::from_str(&ids.active).map_err(|e| anyhow!("Failed to parse active identities: {}", e))?;
+        Ok(active_set)
+    }
+
+    async fn overwrite(
+        &self,
+        provider: &str,
+        object_meta: ObjectMeta,
+        updated_data: ExternalIdentitiesSet,
+    ) -> Result<(), Error> {
+        let updated_configmap = IdentitiesConfigMap {
+            metadata: object_meta.clone(),
+            data: updated_data,
+        };
+
+        self.api
+            .replace(&provider, &PostParams::default(), &updated_configmap)
+            .await
+            .map(|_| ())
+            .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
+    }
+}
+
+impl Drop for KubernetesIdentityRepository {
+    fn drop(&mut self) {
+        if let Err(e) = self.stop() {
+            warn!("Failed to stop KubernetesIdentityRepository: {}", e);
+        }
     }
 }
 
@@ -72,14 +120,10 @@ impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentity
 
     async fn get(&self, key: (String, String)) -> Result<ExternalIdentity, Self::Error> {
         let (provider, user) = key;
-        let username_extracted = self
-            .api
-            .get(provider.as_str())
-            .await
-            .map(|cm| {
-                let set: HashSet<String> = serde_json::from_str(&cm.data.active).ok()?;
-                set.get(user.as_str()).cloned()
-            })?;
+        let username_extracted = self.api.get(provider.as_str()).await.map(|cm| {
+            let set: HashSet<String> = serde_json::from_str(&cm.data.active).ok()?;
+            set.get(user.as_str()).cloned()
+        })?;
 
         username_extracted
             .ok_or(anyhow!("External identity not found: {:?}/{:?}", provider, user))
@@ -87,15 +131,50 @@ impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentity
     }
 
     async fn upsert(&self, key: (String, String), entity: ExternalIdentity) -> Result<(), Self::Error> {
-        todo!()
+        let (provider, user) = key;
+        let configmap = self.get_identities(provider.as_str()).await?;
+        let inactive_set = self.get_inactive_identities(&configmap.data).await?;
+        if inactive_set.contains(&user) {
+            bail!("User {:?} is inactive in provider {:?}", user, provider)
+        }
+
+        let mut active_set = self.get_inactive_identities(&configmap.data).await?;
+
+        active_set.insert(entity.user_id);
+        let updated_data = ExternalIdentitiesSet {
+            active: serde_json::to_string(&active_set)?,
+            inactive: serde_json::to_string(&inactive_set)?,
+        };
+
+        self.overwrite(provider.as_str(), configmap.metadata, updated_data)
+            .await
     }
 
     async fn delete(&self, key: (String, String)) -> Result<(), Self::Error> {
-        todo!()
+        let (provider, user) = key;
+        let configmap = self.get_identities(provider.as_str()).await?;
+        let mut active_set = self.get_active_identities(&configmap.data).await?;
+
+        let was_present = active_set.remove(&user);
+        if was_present {
+            let mut inactive_set = self.get_inactive_identities(&configmap.data).await?;
+            inactive_set.insert(user.clone());
+            let updated_data = ExternalIdentitiesSet {
+                active: serde_json::to_string(&active_set)?,
+                inactive: serde_json::to_string(&inactive_set)?,
+            };
+            self.overwrite(provider.as_str(), configmap.metadata, updated_data)
+                .await
+        } else {
+            Ok(())
+        }
     }
 
     async fn exists(&self, key: (String, String)) -> Result<bool, Self::Error> {
-        todo!()
+        let (provider, user) = key;
+        let configmap = self.get_identities(provider.as_str()).await?;
+        let active_set = self.get_active_identities(&configmap.data).await?;
+        Ok(active_set.contains(&user))
     }
 }
 
@@ -111,6 +190,7 @@ mod tests {
     struct KubernetesIdentityRepositoryTest {
         api: Arc<Api<ConfigMap>>,
         to_delete: Vec<String>,
+        repository: Arc<KubernetesIdentityRepository>,
     }
 
     impl AsyncTestContext for KubernetesIdentityRepositoryTest {
@@ -121,7 +201,11 @@ mod tests {
             let providers = [
                 ("identity-provider-1", vec!["user1", "user2"], vec![]),
                 ("identity-provider-2", vec!["user1"], vec![]),
-                ("identity-provider-3", vec!["user3"], vec!["user4", "user5"]),
+                (
+                    "identity-provider-3",
+                    vec!["user3"],
+                    vec!["user4", "user5", "deleted_user"],
+                ),
                 ("identity-provider-4", vec![], vec![]),
             ];
 
@@ -147,9 +231,13 @@ mod tests {
                 created.push(p);
             }
 
+            let repository = KubernetesIdentityRepository::start()
+                .await
+                .expect("Failed to start ctx.repository");
             KubernetesIdentityRepositoryTest {
                 api: Arc::new(api),
                 to_delete: created,
+                repository: Arc::new(repository),
             }
         }
 
@@ -167,24 +255,280 @@ mod tests {
     #[test_context(KubernetesIdentityRepositoryTest)]
     #[tokio::test]
     async fn test_get_existing_user(ctx: &mut KubernetesIdentityRepositoryTest) {
-        let repository = KubernetesIdentityRepository::start().await.expect("Failed to start repository");
+        // Arrange
         let provider = "identity-provider-1".to_string();
         let user = "user1".to_string();
-        let external_identity = repository
+
+        // Act
+        let external_identity = ctx
+            .repository
             .get((provider.clone(), user.clone()))
-            .await;
-        assert_eq!(external_identity.unwrap().user_id, "user1");
+            .await
+            .expect("Failed to get external identity");
+
+        // Assert
+        assert_eq!(external_identity.clone().user_id, "user1");
+        assert_eq!(external_identity.clone().identity_provider, "identity-provider-1");
     }
-    
+
     #[test_context(KubernetesIdentityRepositoryTest)]
     #[tokio::test]
     async fn test_get_not_existing_user(ctx: &mut KubernetesIdentityRepositoryTest) {
-        let repository = KubernetesIdentityRepository::start().await.expect("Failed to start repository");
+        // Arrange
         let provider = "identity-provider-1".to_string();
         let user = "user3".to_string();
-        let external_identity = repository
-            .get((provider.clone(), user.clone()))
-            .await;
+
+        // Act
+        let external_identity = ctx.repository.get((provider.clone(), user.clone())).await;
+
+        // Assert
         assert_eq!(external_identity.ok(), None);
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_get_unexisted_user(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-2".to_string();
+        let user = "i_do_not_exist".to_string();
+
+        // Act
+        let external_identity = ctx.repository.get((provider.clone(), user.clone())).await;
+
+        // Assert
+        assert_eq!(external_identity.ok(), None);
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_get_deleted_user(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-3".to_string();
+        let user = "deleted_user".to_string();
+
+        // Act
+        let external_identity = ctx.repository.get((provider.clone(), user.clone())).await;
+
+        // Assert
+        assert_eq!(external_identity.ok(), None);
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_get_from_empty_provider(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-4".to_string();
+        let user = "user1".to_string();
+
+        // Act
+        let external_identity = ctx.repository.get((provider.clone(), user.clone())).await;
+
+        // Assert
+        assert_eq!(external_identity.ok(), None);
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_get_from_not_existed_provider(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-5".to_string();
+        let user = "user1".to_string();
+
+        // Act
+        let external_identity = ctx.repository.get((provider.clone(), user.clone())).await;
+
+        // Assert
+        assert_eq!(external_identity.ok(), None);
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_add_user(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-1".to_string();
+        let user = "new_user".to_string();
+        let external_identity = ExternalIdentity::new(provider.clone(), user.clone());
+
+        let old_state = ctx.repository.get((provider.clone(), user.clone())).await;
+        // Assert that the user does not exist before upsert
+        assert_eq!(old_state.ok(), None);
+
+        // Act
+        ctx.repository
+            .upsert((provider.clone(), user.clone()), external_identity)
+            .await
+            .expect("Failed to upsert external identity");
+
+        // Assert
+        let external_identity = ctx
+            .repository
+            .get((provider.clone(), user.clone()))
+            .await
+            .expect("Failed to get external identity");
+
+        assert_eq!(external_identity.clone().user_id, "new_user");
+        assert_eq!(external_identity.clone().identity_provider, "identity-provider-1");
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_add_to_unexisted_provider(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-5".to_string();
+        let user = "new_user".to_string();
+        let external_identity = ExternalIdentity::new(provider.clone(), user.clone());
+
+        // Act
+        let result = ctx
+            .repository
+            .upsert((provider.clone(), user.clone()), external_identity)
+            .await;
+
+        // Assert
+        assert!(result
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("ApiError: configmaps \"identity-provider-5\" not found"));
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_add_duplicate(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-1".to_string();
+        let user = "user1".to_string();
+        let external_identity = ExternalIdentity::new(provider.clone(), user.clone());
+
+        let old_state = ctx.repository.get((provider.clone(), user.clone())).await;
+        // Assert that the user does not exist before upsert
+        assert_eq!(
+            old_state.ok(),
+            Some(ExternalIdentity::new(provider.clone(), user.clone()))
+        );
+
+        // Act
+        ctx.repository
+            .upsert((provider.clone(), user.clone()), external_identity)
+            .await
+            .expect("Failed to upsert external identity");
+
+        // Assert
+        let external_identity = ctx
+            .repository
+            .get((provider.clone(), user.clone()))
+            .await
+            .expect("Failed to get external identity");
+
+        assert_eq!(external_identity.clone().user_id, "user1");
+        assert_eq!(external_identity.clone().identity_provider, "identity-provider-1");
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_add_deleted_user(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-3".to_string();
+        let user = "deleted_user".to_string();
+        let external_identity = ExternalIdentity::new(provider.clone(), user.clone());
+
+        let old_state = ctx.repository.get((provider.clone(), user.clone())).await;
+        // Assert that the user does not exist before upsert
+        assert_eq!(old_state.ok(), None);
+
+        // Act
+        let result = ctx
+            .repository
+            .upsert((provider.clone(), user.clone()), external_identity)
+            .await;
+
+        // Assert
+        assert!(result
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("User \"deleted_user\" is inactive in provider \"identity-provider-3\""));
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_delete_user(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-1".to_string();
+        let user = "user1".to_string();
+
+        let old_state = ctx.repository.get((provider.clone(), user.clone())).await;
+        // Assert that the user exists before delete
+        assert_eq!(
+            old_state.ok(),
+            Some(ExternalIdentity::new(provider.clone(), user.clone()))
+        );
+
+        // Act
+        ctx.repository
+            .delete((provider.clone(), user.clone()))
+            .await
+            .expect("Failed to delete external identity");
+
+        let new_state = ctx.repository.get((provider.clone(), user.clone())).await;
+
+        // Assert
+        assert_eq!(new_state.ok(), None);
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_delete_deleted_user(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-3".to_string();
+        let user = "deleted_user".to_string();
+
+        // Act
+        ctx.repository
+            .delete((provider.clone(), user.clone()))
+            .await
+            .expect("Failed to delete external identity");
+
+        let new_state = ctx.repository.get((provider.clone(), user.clone())).await;
+
+        // Assert
+        assert_eq!(new_state.ok(), None);
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_delete_unexisted_user(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-4".to_string();
+        let user = "i_do_not_exist".to_string();
+
+        // Act
+        ctx.repository
+            .delete((provider.clone(), user.clone()))
+            .await
+            .expect("Failed to delete external identity");
+
+        let new_state = ctx.repository.get((provider.clone(), user.clone())).await;
+
+        // Assert
+        assert_eq!(new_state.ok(), None);
+    }
+
+    #[test_context(KubernetesIdentityRepositoryTest)]
+    #[tokio::test]
+    async fn test_delete_from_unexisted_provider(ctx: &mut KubernetesIdentityRepositoryTest) {
+        // Arrange
+        let provider = "identity-provider-5".to_string();
+        let user = "user1".to_string();
+
+        // Act
+        let result = ctx.repository.delete((provider.clone(), user.clone())).await;
+
+        // Assert
+        assert!(result
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("ApiError: configmaps \"identity-provider-5\" not found"));
     }
 }
