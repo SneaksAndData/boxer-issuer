@@ -16,16 +16,19 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
 
+// tests module is used to test the KubernetesIdentityRepository
 #[cfg(test)]
 mod tests;
 
+// Use log crate when building application
 #[cfg(not(test))]
-use log::{debug, warn}; // Use log crate when building application
+use log::{debug, warn};
 
 use futures::future::Ready;
+
+// Workaround to use prinltn! for logs.
 #[cfg(test)]
 use std::{println as warn, println as debug};
-// Workaround to use prinltn! for logs.
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct ExternalIdentitiesSet {
@@ -89,7 +92,7 @@ impl KubernetesIdentityRepository {
                         namespace: Some(namespace),
                         ..
                     },
-                data,
+                data: _,
             }) => debug!("Saw [{}] in [{}]", name, namespace),
             Ok(_) => warn!("Saw an object without name or namespace"),
             Err(e) => warn!("watcher error: {}", e),
