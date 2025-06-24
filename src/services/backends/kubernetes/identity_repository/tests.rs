@@ -20,6 +20,7 @@ struct KubernetesIdentityRepositoryTest {
 static LABEL_SELECTOR_KEY: &str = "repository.boxer.io/type";
 const LABEL_SELECTOR_VALUE: &str = "identity-provider";
 
+
 impl AsyncTestContext for KubernetesIdentityRepositoryTest {
     async fn setup() -> KubernetesIdentityRepositoryTest {
         let client = Client::try_default().await.expect("Failed to create Kubernetes client");
