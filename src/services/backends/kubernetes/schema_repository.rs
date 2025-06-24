@@ -1,1 +1,159 @@
+use anyhow::anyhow;
+use cedar_policy::SchemaFragment;
+use k8s_openapi::api::core::v1::ConfigMap;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use kube::Resource;
+use serde::{Deserialize, Serialize};
 
+// tests module is used to test the repository
+#[cfg(test)]
+mod tests;
+
+// Use log crate when building application
+#[cfg(not(test))]
+use log::{debug, warn};
+
+use futures::future::Ready;
+
+// Workaround to use prinltn! for logs.
+use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
+use crate::services::base::upsert_repository::UpsertRepository;
+use async_trait::async_trait;
+use futures::future;
+use kube::runtime::reflector::ObjectRef;
+use kube::runtime::watcher;
+use maplit::btreemap;
+use std::sync::Arc;
+#[cfg(test)]
+use std::{println as warn, println as debug};
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct SchemaData {
+    active: String,
+    content: String,
+}
+
+impl TryInto<SchemaFragment> for SchemaData {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> Result<SchemaFragment, Self::Error> {
+        SchemaFragment::from_json_str(self.content.as_str()).map_err(|err| anyhow!("{}", err))
+    }
+}
+
+impl TryFrom<SchemaFragment> for SchemaData {
+    type Error = anyhow::Error;
+
+    fn try_from(schema: SchemaFragment) -> Result<Self, Self::Error> {
+        let serialized = schema
+            .to_json_string()
+            .map_err(|err| anyhow!("Failed to convert schema to JSON string: {}", err))?;
+        Ok(SchemaData {
+            active: "true".to_string(),
+            content: serialized,
+        })
+    }
+}
+
+#[derive(Resource, Serialize, Deserialize, Clone, Debug)]
+#[resource(inherit = ConfigMap)]
+struct SchemaConfigMap {
+    metadata: ObjectMeta,
+    data: SchemaData,
+}
+
+pub struct KubernetesSchemaRepository {
+    repository: KubernetesRepository<SchemaConfigMap>,
+    label_selector_key: String,
+    label_selector_value: String,
+}
+
+impl KubernetesSchemaRepository {
+    #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
+    pub async fn start(config: RepositoryConfig) -> anyhow::Result<Self> {
+        let label_selector_key = config.label_selector_key.clone();
+        let label_selector_value = config.label_selector_value.clone();
+        let repository = KubernetesRepository::start(config, Arc::new(UpdateHandler)).await?;
+        Ok(KubernetesSchemaRepository {
+            repository,
+            label_selector_key,
+            label_selector_value,
+        })
+    }
+}
+
+impl Drop for KubernetesSchemaRepository {
+    fn drop(&mut self) {
+        if let Err(e) = self.repository.stop() {
+            warn!("Failed to stop KubernetesSchemaRepository: {}", e);
+        }
+    }
+}
+
+struct UpdateHandler;
+impl ResourceUpdateHandler<SchemaConfigMap> for UpdateHandler {
+    fn handle_update(&self, event: Result<SchemaConfigMap, watcher::Error>) -> Ready<()> {
+        match event {
+            Ok(SchemaConfigMap {
+                metadata:
+                    ObjectMeta {
+                        name: Some(name),
+                        namespace: Some(namespace),
+                        ..
+                    },
+                data: _,
+            }) => debug!("Saw [{}] in [{}]", name, namespace),
+            Ok(_) => warn!("Saw an object without name or namespace"),
+            Err(e) => warn!("watcher error: {}", e),
+        }
+        future::ready(())
+    }
+}
+
+#[async_trait]
+impl UpsertRepository<String, SchemaFragment> for KubernetesSchemaRepository {
+    type Error = anyhow::Error;
+
+    async fn get(&self, key: String) -> Result<SchemaFragment, Self::Error> {
+        let or = ObjectRef::new(key.as_str()).within(self.repository.namespace().as_str());
+        let resource_object = self.repository.get(or).map_err(|e| anyhow!(e))?;
+        if resource_object.data.active.contains("false") {
+            return Err(anyhow!("Schema is not active"));
+        }
+        let result: SchemaFragment = resource_object.data.clone().try_into()?;
+        Ok(result)
+    }
+
+    async fn upsert(&self, key: String, entity: SchemaFragment) -> Result<(), Self::Error> {
+        let updated_configmap = SchemaConfigMap {
+            metadata: ObjectMeta {
+                name: Some(key.clone()),
+                namespace: Some(self.repository.namespace().clone()),
+                labels: Some(btreemap! {
+                    self.label_selector_key.clone() => self.label_selector_value.clone()
+                }),
+                ..Default::default()
+            },
+            data: entity.try_into()?,
+        };
+        self.repository
+            .replace(&key, updated_configmap)
+            .await
+            .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
+    }
+
+    async fn delete(&self, key: String) -> Result<(), Self::Error> {
+        self.repository.delete(&key).await
+    }
+
+    async fn exists(&self, key: String) -> Result<bool, Self::Error> {
+        let or: ObjectRef<SchemaConfigMap> = ObjectRef::new(key.as_str()).within(self.repository.namespace().as_str());
+        self.repository.get(or).map(|_| true).or_else(|e| {
+            if e.to_string().contains("not found") {
+                Ok(false)
+            } else {
+                Err(anyhow!(e))
+            }
+        })
+    }
+}

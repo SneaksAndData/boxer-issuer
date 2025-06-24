@@ -1,15 +1,13 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::base::upsert_repository::UpsertRepository;
-use anyhow::{anyhow, bail, Error, Result};
+use anyhow::{anyhow, bail, Result};
 use async_trait::async_trait;
-use futures::{future, StreamExt};
+use futures::future;
 use k8s_openapi::api::core::v1::ConfigMap;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-use kube::api::PostParams;
-use kube::runtime::reflector::{ObjectRef, Store};
-use kube::runtime::{reflector, watcher, WatchStreamExt};
+use kube::runtime::reflector::ObjectRef;
+use kube::runtime::watcher;
 use kube::Resource;
-use kube::{Api, Client};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -25,16 +23,9 @@ use log::{debug, warn};
 use futures::future::Ready;
 
 // Workaround to use prinltn! for logs.
-use kube::runtime::watcher::Config;
+use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
 #[cfg(test)]
 use std::{println as warn, println as debug};
-
-/// Configuration for the Kubernetes identity repository.
-pub struct RepositoryConfig {
-    pub namespace: String,
-    pub label_selector_key: String,
-    pub label_selector_value: String,
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct ExternalIdentitiesSet {
@@ -49,70 +40,27 @@ struct IdentitiesConfigMap {
     data: ExternalIdentitiesSet,
 }
 
-struct KubernetesIdentityRepository {
-    reader: Store<IdentitiesConfigMap>,
-    handle: tokio::task::JoinHandle<()>,
-    api: Api<IdentitiesConfigMap>,
-    namespace: String,
+pub struct KubernetesIdentityRepository {
+    repository: KubernetesRepository<IdentitiesConfigMap>,
 }
 
 impl KubernetesIdentityRepository {
     #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
-    async fn start(config: RepositoryConfig) -> Result<Self> {
-        let client = Client::try_default().await?;
-        let api: Api<IdentitiesConfigMap> = Api::namespaced(client.clone(), config.namespace.as_str());
-        let watcher_config = Config {
-            label_selector: Some(format!("{}={}", config.label_selector_key, config.label_selector_value)),
-            ..Default::default()
-        };
-        let stream = watcher(api.clone(), watcher_config);
-        let (reader, writer) = reflector::store();
-
-        let reflector = reflector(writer, stream)
-            .default_backoff()
-            .touched_objects()
-            .for_each(|r| Self::handle_event(r));
-
-        let handle = tokio::spawn(reflector);
-        reader.wait_until_ready().await?;
-        Ok(KubernetesIdentityRepository {
-            reader,
-            handle,
-            api,
-            namespace: config.namespace,
-        })
-    }
-
-    fn handle_event(event: core::result::Result<IdentitiesConfigMap, watcher::Error>) -> Ready<()> {
-        match event {
-            Ok(IdentitiesConfigMap {
-                metadata:
-                    ObjectMeta {
-                        name: Some(name),
-                        namespace: Some(namespace),
-                        ..
-                    },
-                data: _,
-            }) => debug!("Saw [{}] in [{}]", name, namespace),
-            Ok(_) => warn!("Saw an object without name or namespace"),
-            Err(e) => warn!("watcher error: {}", e),
-        }
-        future::ready(())
-    }
-
-    fn stop(&self) -> Result<()> {
-        self.handle.abort();
-        debug!("KubernetesIdentityRepository stopped");
-        Ok(())
+    pub async fn start(config: RepositoryConfig) -> Result<Self> {
+        let repository = KubernetesRepository::start(config, Arc::new(UpdateHandler)).await?;
+        Ok(KubernetesIdentityRepository { repository })
     }
 
     async fn get_identities(&self, provider: &str) -> Result<Arc<IdentitiesConfigMap>> {
-        let or = ObjectRef::new(provider).within(self.namespace.as_str());
-        self.reader.get(&or).ok_or(anyhow!(
-            "Identity provider \"{}\" not found in namespace: {:?}",
-            provider,
-            or.namespace
-        ))
+        let or = ObjectRef::new(provider).within(self.repository.namespace().as_str());
+        self.repository.get(or).map_err(|e| {
+            anyhow!(
+                "Identity provider \"{}\" not found in namespace: {:?}",
+                provider,
+                self.repository.namespace()
+            )
+            .context(e)
+        })
     }
 
     async fn get_active_identities(&self, ids: &ExternalIdentitiesSet) -> Result<HashSet<String>> {
@@ -132,23 +80,38 @@ impl KubernetesIdentityRepository {
         provider: &str,
         object_meta: ObjectMeta,
         updated_data: ExternalIdentitiesSet,
-    ) -> Result<(), Error> {
+    ) -> Result<(), anyhow::Error> {
         let updated_configmap = IdentitiesConfigMap {
             metadata: object_meta.clone(),
             data: updated_data,
         };
+        self.repository.replace(provider, updated_configmap).await
+    }
+}
 
-        self.api
-            .replace(&provider, &PostParams::default(), &updated_configmap)
-            .await
-            .map(|_| ())
-            .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
+struct UpdateHandler;
+impl ResourceUpdateHandler<IdentitiesConfigMap> for UpdateHandler {
+    fn handle_update(&self, event: core::result::Result<IdentitiesConfigMap, watcher::Error>) -> Ready<()> {
+        match event {
+            Ok(IdentitiesConfigMap {
+                metadata:
+                    ObjectMeta {
+                        name: Some(name),
+                        namespace: Some(namespace),
+                        ..
+                    },
+                data: _,
+            }) => debug!("Saw [{}] in [{}]", name, namespace),
+            Ok(_) => warn!("Saw an object without name or namespace"),
+            Err(e) => warn!("watcher error: {}", e),
+        }
+        future::ready(())
     }
 }
 
 impl Drop for KubernetesIdentityRepository {
     fn drop(&mut self) {
-        if let Err(e) = self.stop() {
+        if let Err(e) = self.repository.stop() {
             warn!("Failed to stop KubernetesIdentityRepository: {}", e);
         }
     }
