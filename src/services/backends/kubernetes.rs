@@ -22,9 +22,9 @@ mod tests;
 #[cfg(not(test))]
 use log::{debug, warn}; // Use log crate when building application
 
+use futures::future::Ready;
 #[cfg(test)]
 use std::{println as warn, println as debug};
-use futures::future::Ready;
 // Workaround to use prinltn! for logs.
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -82,7 +82,15 @@ impl KubernetesIdentityRepository {
 
     fn handle_event(event: core::result::Result<IdentitiesConfigMap, watcher::Error>) -> Ready<()> {
         match event {
-            Ok(IdentitiesConfigMap { metadata: ObjectMeta { name: Some(name), namespace: Some(namespace), .. }, data }) => debug!("Saw [{}] in [{}]", name, namespace),
+            Ok(IdentitiesConfigMap {
+                metadata:
+                    ObjectMeta {
+                        name: Some(name),
+                        namespace: Some(namespace),
+                        ..
+                    },
+                data,
+            }) => debug!("Saw [{}] in [{}]", name, namespace),
             Ok(_) => warn!("Saw an object without name or namespace"),
             Err(e) => warn!("watcher error: {}", e),
         }
