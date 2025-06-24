@@ -25,9 +25,9 @@ use log::{debug, warn};
 use futures::future::Ready;
 
 // Workaround to use prinltn! for logs.
+use kube::runtime::watcher::Config;
 #[cfg(test)]
 use std::{println as warn, println as debug};
-use kube::runtime::watcher::Config;
 
 /// Configuration for the Kubernetes identity repository.
 pub struct RepositoryConfig {
