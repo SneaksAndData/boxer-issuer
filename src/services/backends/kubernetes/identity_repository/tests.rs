@@ -17,6 +17,10 @@ struct KubernetesIdentityRepositoryTest {
     repository: Arc<KubernetesIdentityRepository>,
 }
 
+static LABEL_SELECTOR_KEY: &str = "repository.boxer.io/type";
+const LABEL_SELECTOR_VALUE: &str = "identity-provider";
+
+
 impl AsyncTestContext for KubernetesIdentityRepositoryTest {
     async fn setup() -> KubernetesIdentityRepositoryTest {
         let client = Client::try_default().await.expect("Failed to create Kubernetes client");
@@ -64,7 +68,12 @@ impl AsyncTestContext for KubernetesIdentityRepositoryTest {
                 .expect("Failed to create ConfigMap");
         }
 
-        let repository = KubernetesIdentityRepository::start(namespace.clone().as_str())
+        let config = RepositoryConfig {
+            namespace: namespace.clone(),
+            label_selector_key: LABEL_SELECTOR_KEY.to_string(),
+            label_selector_value: LABEL_SELECTOR_VALUE.to_string(),
+        };
+        let repository = KubernetesIdentityRepository::start(config)
             .await
             .expect("Failed to start repository");
 
