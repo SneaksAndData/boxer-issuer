@@ -65,7 +65,7 @@ where
             .create(&PostParams::default(), &object)
             .await
             .map(|_| ())
-            .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
+            .map_err(|e| anyhow!("Failed to update resource: {}", e))
     }
 
     pub async fn delete(&self, name: &str) -> Result<(), Error> {
@@ -73,7 +73,7 @@ where
             .delete(&name, &DeleteParams::default())
             .await
             .map(|_| ())
-            .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
+            .map_err(|e| anyhow!("Failed to update resource: {}", e))
     }
 
     pub fn get(&self, object_ref: ObjectRef<S>) -> Result<Arc<S>, Error> {
