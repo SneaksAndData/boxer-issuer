@@ -39,6 +39,8 @@ jobs:
 
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1
+        with:
+          cluster_name: 'kind'
         
       - name: Check kind cluster
         run: |
