@@ -26,9 +26,9 @@ const LABEL_SELECTOR_VALUE: &str = "identity-provider";
 async fn get_kubeconfig() -> Result<Config> {
     let output = Command::new("kind").args(&["get", "kubeconfig", "--name", "kind"]).output()?;
     let kubeconfig_string = String::from_utf8(output.stdout)?;
-    let kubeconfig: Kubeconfig = serde_yaml::from_str(&kubeconfig_string)?;
+    let kubeconfig: Kubeconfig = serde_yml::from_str(&kubeconfig_string)?;
     let config = Config::from_custom_kubeconfig(kubeconfig, &Default::default()).await?;
-    println!("{}", kubeconfig_string);
+    info!("Kubeconfig used by the tests:\n{}", kubeconfig_string);
     Ok(config)
 }
 
