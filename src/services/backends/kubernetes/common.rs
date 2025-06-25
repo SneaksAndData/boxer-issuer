@@ -5,7 +5,7 @@ use anyhow::{anyhow, Error};
 use futures::future::Ready;
 use futures::StreamExt;
 use k8s_openapi::NamespaceResourceScope;
-use kube::api::{DeleteParams, PostParams};
+use kube::api::PostParams;
 use kube::runtime::reflector::{ObjectRef, Store};
 use kube::runtime::watcher::Config;
 use kube::runtime::{reflector, watcher, WatchStreamExt};
