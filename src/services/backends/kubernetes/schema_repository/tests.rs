@@ -120,6 +120,8 @@ async fn test_delete_schema(ctx: &mut KubernetesSchemaRepositoryTest) {
         .await
         .expect("Failed to delete schema");
 
+    sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
+
     // Assert
     let schema_result = ctx.repository.get(name.to_string()).await;
     let data = ctx
@@ -163,7 +165,8 @@ async fn test_update_schema(ctx: &mut KubernetesSchemaRepositoryTest) {
         .expect("Failed to update schema");
 
     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
-                                         // Assert
+
+    // Assert
     let schema_result: Schema = ctx
         .repository
         .get(name.to_string())

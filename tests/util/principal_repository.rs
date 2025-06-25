@@ -1,7 +1,7 @@
 use super::test_data::{principal_type, schema, schema_name, user_name, USER};
 use async_trait::async_trait;
 use boxer_issuer::models::principal::Principal;
-use boxer_issuer::services::base::upsert_repository::PrincipalRepository;
+use boxer_issuer::services::base::upsert_repository::{PrincipalIdentity, PrincipalRepository};
 use cedar_policy::Entity;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -23,7 +23,7 @@ impl PrincipalRepositoryExt for Arc<PrincipalRepository> {
         let schema_name = schema_name();
         let entity = Entity::from_json_str(USER, Some(&schema)).unwrap();
         let principal = Principal::new(entity, schema_name.clone());
-        let key = (principal_type(), user_name());
+        let key = PrincipalIdentity::from((principal_type(), user_name()));
         self.upsert(key.clone(), principal.clone()).await.unwrap();
         self
     }

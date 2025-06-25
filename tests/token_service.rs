@@ -6,6 +6,7 @@ use crate::util::test_data::{
     external_identity, external_identity_provider, external_identity_raw, external_token, principal_type, user_name,
 };
 use crate::util::validators::AlwaysValid;
+use boxer_issuer::services::base::upsert_repository::PrincipalIdentity;
 use boxer_issuer::services::principal_service::{IdentityAssociationRequest, PrincipalService};
 use boxer_issuer::services::token_service::TokenProvider;
 use boxer_issuer::services::token_service::TokenService;
@@ -33,7 +34,7 @@ async fn it_can_issue_token() {
 
     let request = IdentityAssociationRequest {
         external_identity_info: external_identity_raw(),
-        principal_info: (principal_type(), user_name()),
+        principal_id: PrincipalIdentity::from((principal_type(), user_name())),
     };
 
     principal_service.associate(request).await.unwrap();

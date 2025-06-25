@@ -1,6 +1,6 @@
 use crate::http::errors::*;
 use crate::models::api::external::identity::ExternalIdentity;
-use crate::services::base::upsert_repository::PrincipalAssociationRepository;
+use crate::services::base::upsert_repository::{PrincipalAssociationRepository, PrincipalIdentity};
 use crate::services::principal_service::{IdentityAssociationRequest, PrincipalService};
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
@@ -13,7 +13,7 @@ use utoipa::ToSchema;
 struct IdentityAssociation {
     identity_provider: String,
     identity: String,
-    principal_type: String,
+    principal_schema: String,
     principal_id: String,
 }
 
@@ -25,7 +25,7 @@ async fn post(
 ) -> Result<HttpResponse> {
     let request = IdentityAssociationRequest {
         external_identity_info: (request.identity_provider.clone(), request.identity.clone()),
-        principal_info: (request.principal_type.clone(), request.principal_id.clone()),
+        principal_id: PrincipalIdentity::from((request.principal_schema.clone(), request.principal_id.clone())),
     };
     principal_service.associate(request).await?;
     Ok(HttpResponse::Ok().finish())
@@ -40,12 +40,12 @@ async fn post(
 #[get("/identities/{identity_provider}/{id}")]
 async fn get(path: Path<(String, String)>, data: Data<Arc<PrincipalAssociationRepository>>) -> Result<impl Responder> {
     let external_identity = ExternalIdentity::from(path.into_inner());
-    let (principal_type, principal_id) = data.get(external_identity.clone()).await?;
+    let principal_id = data.get(external_identity.clone()).await?;
     Ok(Json(IdentityAssociation {
         identity_provider: external_identity.identity_provider,
         identity: external_identity.user_id,
-        principal_type,
-        principal_id,
+        principal_schema: principal_id.schema_id().clone(),
+        principal_id: principal_id.principal_id().clone(),
     }))
 }
 
