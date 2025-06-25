@@ -27,7 +27,7 @@ impl AsyncTestContext for KubernetesIdentityRepositoryTest {
         let config = super::super::common::fixtures::get_kubeconfig()
             .await
             .expect("Failed to get kubeconfig");
-        
+
         let client = Client::try_from(config.clone()).expect("Failed to create Kubernetes client");
 
         let namespace = Uuid::new_v4().to_string();

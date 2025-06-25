@@ -11,20 +11,20 @@ use log::{debug, warn};
 use std::{println as warn, println as debug};
 
 // Other imports
-use anyhow::anyhow;
-use cedar_policy::SchemaFragment;
-use k8s_openapi::api::core::v1::ConfigMap;
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-use kube::Resource;
-use serde::{Deserialize, Serialize};
-use futures::future::Ready;
 use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
 use crate::services::base::upsert_repository::UpsertRepository;
+use anyhow::anyhow;
 use async_trait::async_trait;
+use cedar_policy::SchemaFragment;
 use futures::future;
+use futures::future::Ready;
+use k8s_openapi::api::core::v1::ConfigMap;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::runtime::reflector::ObjectRef;
 use kube::runtime::watcher;
+use kube::Resource;
 use maplit::btreemap;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

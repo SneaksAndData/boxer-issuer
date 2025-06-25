@@ -1,4 +1,5 @@
 use crate::models::api::external::identity::ExternalIdentity;
+use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
 use crate::services::base::upsert_repository::UpsertRepository;
 use anyhow::{anyhow, bail, Result};
 use async_trait::async_trait;
@@ -11,7 +12,6 @@ use kube::Resource;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
-use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
 
 // tests module is used to test the KubernetesIdentityRepository
 #[cfg(test)]

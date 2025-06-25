@@ -1,7 +1,7 @@
-use std::process::Command;
-use kube::Config;
 use kube::config::Kubeconfig;
+use kube::Config;
 use log::info;
+use std::process::Command;
 
 pub async fn get_kubeconfig() -> anyhow::Result<Config> {
     let output = Command::new("kind")
