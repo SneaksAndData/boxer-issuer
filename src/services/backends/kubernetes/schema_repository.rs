@@ -1,10 +1,3 @@
-use anyhow::anyhow;
-use cedar_policy::SchemaFragment;
-use k8s_openapi::api::core::v1::ConfigMap;
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-use kube::Resource;
-use serde::{Deserialize, Serialize};
-
 // tests module is used to test the repository
 #[cfg(test)]
 mod tests;
@@ -13,9 +6,18 @@ mod tests;
 #[cfg(not(test))]
 use log::{debug, warn};
 
-use futures::future::Ready;
-
 // Workaround to use prinltn! for logs.
+#[cfg(test)]
+use std::{println as warn, println as debug};
+
+// Other imports
+use anyhow::anyhow;
+use cedar_policy::SchemaFragment;
+use k8s_openapi::api::core::v1::ConfigMap;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use kube::Resource;
+use serde::{Deserialize, Serialize};
+use futures::future::Ready;
 use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
 use crate::services::base::upsert_repository::UpsertRepository;
 use async_trait::async_trait;
@@ -24,8 +26,6 @@ use kube::runtime::reflector::ObjectRef;
 use kube::runtime::watcher;
 use maplit::btreemap;
 use std::sync::Arc;
-#[cfg(test)]
-use std::{println as warn, println as debug};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct SchemaData {

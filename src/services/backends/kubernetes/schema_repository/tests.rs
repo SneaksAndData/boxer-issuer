@@ -25,7 +25,11 @@ const LABEL_SELECTOR_VALUE: &str = "schema";
 
 impl AsyncTestContext for KubernetesSchemaRepositoryTest {
     async fn setup() -> KubernetesSchemaRepositoryTest {
-        let client = Client::try_default().await.expect("Failed to create Kubernetes client");
+        let config = super::super::common::fixtures::get_kubeconfig()
+            .await
+            .expect("Failed to get kubeconfig");
+        
+        let client = Client::try_from(config.clone()).expect("Failed to create Kubernetes client");
         let namespace = Uuid::new_v4().to_string();
         info!("Using namespace: {}", namespace);
 
@@ -44,6 +48,7 @@ impl AsyncTestContext for KubernetesSchemaRepositoryTest {
             namespace: namespace.clone(),
             label_selector_key: LABEL_SELECTOR_KEY.to_string(),
             label_selector_value: LABEL_SELECTOR_VALUE.to_string(),
+            kubeconfig: config,
         };
 
         let repository = KubernetesSchemaRepository::start(config)

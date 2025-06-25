@@ -1,3 +1,5 @@
+pub mod fixtures;
+
 use anyhow::{anyhow, Error};
 use futures::future::Ready;
 use futures::StreamExt;
@@ -19,6 +21,7 @@ pub struct RepositoryConfig {
     pub namespace: String,
     pub label_selector_key: String,
     pub label_selector_value: String,
+    pub kubeconfig: kube::Config 
 }
 
 pub struct KubernetesRepository<StoredObject>
@@ -93,7 +96,7 @@ where
         config: RepositoryConfig,
         update_handler: Arc<dyn ResourceUpdateHandler<S>>,
     ) -> anyhow::Result<Self> {
-        let client = Client::try_default().await?;
+        let client = Client::try_from(config.kubeconfig)?;
         let api: Api<S> = Api::namespaced(client.clone(), config.namespace.as_str());
         let watcher_config = Config {
             label_selector: Some(format!("{}={}", config.label_selector_key, config.label_selector_value)),

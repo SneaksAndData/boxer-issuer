@@ -11,6 +11,7 @@ use kube::Resource;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
+use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
 
 // tests module is used to test the KubernetesIdentityRepository
 #[cfg(test)]
@@ -23,7 +24,6 @@ use log::{debug, warn};
 use futures::future::Ready;
 
 // Workaround to use prinltn! for logs.
-use kube::runtime::watcher::Config;
 #[cfg(test)]
 use std::{println as warn, println as debug};
 
