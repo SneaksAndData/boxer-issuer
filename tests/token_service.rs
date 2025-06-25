@@ -10,6 +10,7 @@ use boxer_issuer::services::principal_service::{IdentityAssociationRequest, Prin
 use boxer_issuer::services::token_service::TokenProvider;
 use boxer_issuer::services::token_service::TokenService;
 use std::sync::Arc;
+use boxer_issuer::services::base::upsert_repository::PrincipalIdentity;
 use util::principal_repository::PrincipalRepositoryExt;
 use util::*;
 
@@ -33,7 +34,7 @@ async fn it_can_issue_token() {
 
     let request = IdentityAssociationRequest {
         external_identity_info: external_identity_raw(),
-        principal_info: (principal_type(), user_name()),
+        principal_id: PrincipalIdentity::from((principal_type(), user_name())),
     };
 
     principal_service.associate(request).await.unwrap();
