@@ -152,7 +152,7 @@ impl UpsertRepository<String, SchemaFragment> for KubernetesSchemaRepository {
         let or = ObjectRef::new(key.as_str()).within(self.repository.namespace().as_str());
         let mut resource_ref = self.repository.get(or).map_err(|e| anyhow!(e))?;
         if resource_ref.data.active.contains("false") {
-            return Ok(())
+            return Ok(());
         }
         let resource_object = Arc::make_mut(&mut resource_ref);
         resource_object.data.active = "false".to_string();

@@ -62,7 +62,6 @@ impl AsyncTestContext for KubernetesSchemaRepositoryTest {
             .await
             .expect("Failed to start repository");
 
-
         KubernetesSchemaRepositoryTest {
             raw_api: Arc::new(raw_api),
             data_api: Arc::new(data_api),
@@ -143,7 +142,7 @@ async fn test_update_schema(ctx: &mut KubernetesSchemaRepositoryTest) {
         .upsert(name.to_string(), schema_fragment.clone())
         .await
         .expect("Failed to upsert schema");
-    
+
     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
     let retrieved_schema: Schema = ctx
         .repository
@@ -155,7 +154,7 @@ async fn test_update_schema(ctx: &mut KubernetesSchemaRepositoryTest) {
 
     let new_schema_str = serde_json::to_string(&reduced_schema()).expect("Failed to serialize reduced schema to JSON");
     let new_schema_fragment = SchemaFragment::from_json_str(&new_schema_str).expect("Failed to create schema fragment");
-   assert_eq!(retrieved_schema.actions().count(), 1);
+    assert_eq!(retrieved_schema.actions().count(), 1);
 
     // Act
     ctx.repository
@@ -164,13 +163,15 @@ async fn test_update_schema(ctx: &mut KubernetesSchemaRepositoryTest) {
         .expect("Failed to update schema");
 
     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
-    // Assert
-    let schema_result : Schema = ctx.repository.get(name.to_string())
+                                         // Assert
+    let schema_result: Schema = ctx
+        .repository
+        .get(name.to_string())
         .await
         .expect("Failed to get schema after deletion")
         .try_into()
         .expect("Failed to convert schema to Schema type");
-    
+
     let data = ctx
         .data_api
         .get(&name)
