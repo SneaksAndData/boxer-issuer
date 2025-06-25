@@ -62,11 +62,31 @@ where
     }
 
     pub async fn replace(&self, _: &str, object: S) -> Result<(), Error> {
-        self.api
-            .create(&PostParams::default(), &object)
+        let object_name = object.meta().name.as_ref()
+            .ok_or_else(|| anyhow!("Object name is required for replacement"))?;
+        
+        let exists = self
+            .api
+            .get(&object_name)
             .await
-            .map(|_| ())
-            .map_err(|e| anyhow!("Failed to update resource: {}", e))
+            .map(|_| true)
+            .or_else(| _| Ok::<bool, Error>(false))?;
+        
+        if exists {
+            debug!("Replacing existing resource: {}", object_name);
+            self.api
+                .replace(&object_name, &PostParams::default(), &object)
+                .await
+                .map(|_| ())
+                .map_err(|e| anyhow!("Failed to update resource: {}", e))
+        } else {
+            debug!("Creating new resource: {}", object_name);
+            self.api
+                .create(&PostParams::default(), &object)
+                .await
+                .map(|_| ())
+                .map_err(|e| anyhow!("Failed to create resource: {}", e))
+        }
     }
 
     pub async fn delete(&self, name: &str) -> Result<(), Error> {

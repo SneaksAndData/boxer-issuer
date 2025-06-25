@@ -81,10 +81,11 @@ impl KubernetesIdentityRepository {
         object_meta: ObjectMeta,
         updated_data: ExternalIdentitiesSet,
     ) -> Result<(), anyhow::Error> {
-        let updated_configmap = IdentitiesConfigMap {
+        let mut updated_configmap = IdentitiesConfigMap {
             metadata: object_meta.clone(),
             data: updated_data,
         };
+        updated_configmap.metadata.resource_version = None;
         self.repository.replace(provider, updated_configmap).await
     }
 }
