@@ -1,10 +1,13 @@
 use super::*;
 use k8s_openapi::api::core::v1::Namespace;
+use kube::config::Kubeconfig;
+use kube::Config;
 use kube::api::PostParams;
 use kube::{Api, Client};
 use maplit::btreemap;
 use serde_json::json;
 use std::println as info;
+use std::process::Command;
 use std::sync::Arc;
 use std::time::Duration;
 use test_context::{test_context, AsyncTestContext};
@@ -22,9 +25,28 @@ struct KubernetesIdentityRepositoryTest {
 static LABEL_SELECTOR_KEY: &str = "repository.boxer.io/type";
 const LABEL_SELECTOR_VALUE: &str = "identity-provider";
 
+async fn get_kubeconfig() -> Result<Config> {
+    let output = Command::new("kind")
+        .args(&["get", "kubeconfig", "--name", "kind"])
+        .output()?;
+    if !output.status.success() {
+        return Err(anyhow::anyhow!(
+            "Failed to get kubeconfig: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+    let kubeconfig_string = String::from_utf8(output.stdout)?;
+    info!("Kubeconfig used by the tests:\n{}", kubeconfig_string);
+    let kubeconfig: Kubeconfig = serde_yml::from_str(&kubeconfig_string)?;
+    let config = Config::from_custom_kubeconfig(kubeconfig, &Default::default()).await?;
+    Ok(config)
+}
+
 impl AsyncTestContext for KubernetesIdentityRepositoryTest {
     async fn setup() -> KubernetesIdentityRepositoryTest {
-        let client = Client::try_default().await.expect("Failed to create Kubernetes client");
+        let config = get_kubeconfig().await.expect("Failed to get kubeconfig");
+
+        let client = Client::try_from(config.clone()).expect("Failed to create Kubernetes client");
 
         let namespace = Uuid::new_v4().to_string();
         info!("Using namespace: {}", namespace);
@@ -73,6 +95,7 @@ impl AsyncTestContext for KubernetesIdentityRepositoryTest {
             namespace: namespace.clone(),
             label_selector_key: LABEL_SELECTOR_KEY.to_string(),
             label_selector_value: LABEL_SELECTOR_VALUE.to_string(),
+            kubeconfig: config,
         };
         let repository = KubernetesIdentityRepository::start(config)
             .await

@@ -23,7 +23,7 @@ use log::{debug, warn};
 use futures::future::Ready;
 
 // Workaround to use prinltn! for logs.
-use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
+use kube::runtime::watcher::Config;
 #[cfg(test)]
 use std::{println as warn, println as debug};
 
