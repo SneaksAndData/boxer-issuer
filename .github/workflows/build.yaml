@@ -40,6 +40,12 @@ jobs:
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1
         
+      - name: Check kind cluster
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+          kind get kubeconfig --name kind
+        
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 
