@@ -34,6 +34,7 @@ pub struct RepositoryConfig {
     pub namespace: String,
     pub label_selector_key: String,
     pub label_selector_value: String,
+    pub kubeconfig: kube::Config
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -59,7 +60,7 @@ struct KubernetesIdentityRepository {
 impl KubernetesIdentityRepository {
     #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
     async fn start(config: RepositoryConfig) -> Result<Self> {
-        let client = Client::try_default().await?;
+        let client = Client::try_from(config.kubeconfig)?;
         let api: Api<IdentitiesConfigMap> = Api::namespaced(client.clone(), config.namespace.as_str());
         let watcher_config = Config {
             label_selector: Some(format!("{}={}", config.label_selector_key, config.label_selector_value)),

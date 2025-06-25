@@ -564,6 +564,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
+ "serde_yaml",
  "sha2",
  "test-context",
  "tokio",
