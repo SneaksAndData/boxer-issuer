@@ -46,11 +46,11 @@ impl TryFrom<SchemaFragment> for SchemaData {
 
     fn try_from(schema: SchemaFragment) -> Result<Self, Self::Error> {
         let serialized = schema
-            .to_json_string()
+            .to_json_value()
             .map_err(|err| anyhow!("Failed to convert schema to JSON string: {}", err))?;
         Ok(SchemaData {
             active: "true".to_string(),
-            content: serialized,
+            content: serde_json::to_string_pretty(&serialized)?,
         })
     }
 }
