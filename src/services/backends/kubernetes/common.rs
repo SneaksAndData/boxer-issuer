@@ -62,16 +62,19 @@ where
     }
 
     pub async fn replace(&self, _: &str, object: S) -> Result<(), Error> {
-        let object_name = object.meta().name.as_ref()
+        let object_name = object
+            .meta()
+            .name
+            .as_ref()
             .ok_or_else(|| anyhow!("Object name is required for replacement"))?;
-        
+
         let exists = self
             .api
             .get(&object_name)
             .await
             .map(|_| true)
-            .or_else(| _| Ok::<bool, Error>(false))?;
-        
+            .or_else(|_| Ok::<bool, Error>(false))?;
+
         if exists {
             debug!("Replacing existing resource: {}", object_name);
             self.api
