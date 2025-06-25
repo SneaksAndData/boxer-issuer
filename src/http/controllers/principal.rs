@@ -4,7 +4,7 @@ use crate::services::base::upsert_repository::SchemaRepository;
 use crate::services::base::upsert_repository::{PrincipalIdentity, PrincipalRepository};
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{BytesMut, Data, Path, Payload};
-use actix_web::{get, post, web, HttpResponse};
+use actix_web::{delete, get, post, web, HttpResponse};
 use cedar_policy::{Entity, Schema};
 use futures::StreamExt;
 use std::sync::Arc;
@@ -51,7 +51,7 @@ async fn get(path: Path<(String, String)>, data: Data<Arc<PrincipalRepository>>)
 }
 
 #[utoipa::path(context_path = "/principal/", responses((status = OK)))]
-#[get("{schema}/{id}")]
+#[delete("{schema}/{id}")]
 async fn delete(path: Path<(String, String)>, data: Data<Arc<PrincipalRepository>>) -> Result<HttpResponse> {
     let (schema, id) = path.into_inner();
     data.delete(PrincipalIdentity::from((schema, id))).await?;
