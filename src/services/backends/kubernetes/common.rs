@@ -92,14 +92,6 @@ where
         }
     }
 
-    pub async fn delete(&self, name: &str) -> Result<(), Error> {
-        self.api
-            .delete(&name, &DeleteParams::default())
-            .await
-            .map(|_| ())
-            .map_err(|e| anyhow!("Failed to update resource: {}", e))
-    }
-
     pub fn get(&self, object_ref: ObjectRef<S>) -> Result<Arc<S>, Error> {
         self.reader.get(&object_ref).ok_or_else(|| {
             anyhow!(

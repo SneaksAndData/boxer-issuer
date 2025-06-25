@@ -2,6 +2,12 @@
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod test_schema;
+
+#[cfg(test)]
+mod test_reduced_schema;
+
 // Use log crate when building application
 #[cfg(not(test))]
 use log::{debug, warn};
@@ -143,7 +149,14 @@ impl UpsertRepository<String, SchemaFragment> for KubernetesSchemaRepository {
     }
 
     async fn delete(&self, key: String) -> Result<(), Self::Error> {
-        self.repository.delete(&key).await
+        let or = ObjectRef::new(key.as_str()).within(self.repository.namespace().as_str());
+        let mut resource_ref = self.repository.get(or).map_err(|e| anyhow!(e))?;
+        if resource_ref.data.active.contains("false") {
+            return Ok(())
+        }
+        let resource_object = Arc::make_mut(&mut resource_ref);
+        resource_object.data.active = "false".to_string();
+        self.repository.replace(&key, resource_object.clone()).await
     }
 
     async fn exists(&self, key: String) -> Result<bool, Self::Error> {
