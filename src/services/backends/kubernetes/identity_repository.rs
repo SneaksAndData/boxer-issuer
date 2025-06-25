@@ -34,7 +34,7 @@ pub struct RepositoryConfig {
     pub namespace: String,
     pub label_selector_key: String,
     pub label_selector_value: String,
-    pub kubeconfig: kube::Config
+    pub kubeconfig: kube::Config,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

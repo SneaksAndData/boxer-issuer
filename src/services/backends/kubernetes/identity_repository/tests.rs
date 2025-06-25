@@ -1,13 +1,13 @@
 use super::*;
 use k8s_openapi::api::core::v1::Namespace;
+use kube::config::Kubeconfig;
+use kube::Config;
 use maplit::btreemap;
 use serde_json::json;
 use std::println as info;
 use std::process::Command;
 use std::sync::Arc;
 use std::time::Duration;
-use kube::config::Kubeconfig;
-use kube::Config;
 use test_context::{test_context, AsyncTestContext};
 use tokio::time::{sleep, timeout};
 use uuid::Uuid;
@@ -24,7 +24,9 @@ static LABEL_SELECTOR_KEY: &str = "repository.boxer.io/type";
 const LABEL_SELECTOR_VALUE: &str = "identity-provider";
 
 async fn get_kubeconfig() -> Result<Config> {
-    let output = Command::new("kind").args(&["get", "kubeconfig", "--name", "kind"]).output()?;
+    let output = Command::new("kind")
+        .args(&["get", "kubeconfig", "--name", "kind"])
+        .output()?;
     let kubeconfig_string = String::from_utf8(output.stdout)?;
     let kubeconfig: Kubeconfig = serde_yml::from_str(&kubeconfig_string)?;
     let config = Config::from_custom_kubeconfig(kubeconfig, &Default::default()).await?;
