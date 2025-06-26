@@ -7,10 +7,10 @@ mod tests;
 use log::{debug, warn};
 
 // Workaround to use prinltn! for logs.
-#[cfg(test)]
-use std::{println as warn, println as debug};
 use std::collections::HashSet;
 use std::str::FromStr;
+#[cfg(test)]
+use std::{println as warn, println as debug};
 // Other imports
 use crate::models::principal::Principal;
 use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
@@ -43,6 +43,24 @@ struct PrincipalConfigMap {
     data: PrincipalData,
 }
 
+fn serialize_entities(entities: &Entities) -> anyhow::Result<String> {
+    let mut vec = Vec::new(); // Placeholder for JSON serialization, replace with actual schema if needed
+    entities.write_to_json(&mut vec)?;
+    String::from_utf8(vec).map_err(|e| anyhow!("Failed to serialize entities: {}", e))
+}
+
+impl PrincipalConfigMap {
+    fn get_active_entities(&self) -> anyhow::Result<Entities> {
+        let active_set = Entities::from_json_str(&self.data.active, None)?; // TODO: schema?
+        Ok(active_set)
+    }
+
+    fn get_inactive_entities(&self) -> anyhow::Result<Entities> {
+        let inactive_set = Entities::from_json_str(&self.data.inactive, None)?; // TODO: schema?
+        Ok(inactive_set)
+    }
+}
+
 pub struct KubernetesPrincipalRepository {
     repository: KubernetesRepository<PrincipalConfigMap>,
     label_selector_key: String,
@@ -67,16 +85,6 @@ impl KubernetesPrincipalRepository {
         self.repository.get(or)
     }
 
-    async fn get_active_entities(&self, data: &PrincipalData) -> anyhow::Result<Entities> {
-        let active_set = Entities::from_json_str(&data.active, None)?; // TODO: schema?
-        Ok(active_set)
-    }
-
-    async fn get_inactive_entities(&self, data: &PrincipalData) -> anyhow::Result<Entities> {
-        let inactive_set = Entities::from_json_str(&data.inactive, None)?; // TODO: schema?
-        Ok(inactive_set)
-    }
-
     async fn overwrite(&self, key: PrincipalIdentity, updated_data: PrincipalData) -> Result<(), anyhow::Error> {
         let updated_configmap = PrincipalConfigMap {
             metadata: ObjectMeta {
@@ -89,7 +97,9 @@ impl KubernetesPrincipalRepository {
             },
             data: updated_data,
         };
-        self.repository.replace(&key.schema_id(), updated_configmap).await
+        self.repository
+            .replace(&key.schema_id(), updated_configmap)
+            .await
             .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
     }
 }
@@ -99,6 +109,15 @@ impl Drop for KubernetesPrincipalRepository {
         if let Err(e) = self.repository.stop() {
             warn!("Failed to stop KubernetesPrincipalRepository: {}", e);
         }
+    }
+}
+
+impl TryInto<EntityUid> for &PrincipalIdentity {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> Result<EntityUid, Self::Error> {
+        EntityUid::from_str(self.principal_id())
+            .map_err(|_| anyhow!("Failed to parse principal ID: {}", self.principal_id()))
     }
 }
 
@@ -127,70 +146,72 @@ impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepos
     type Error = anyhow::Error;
 
     async fn get(&self, key: PrincipalIdentity) -> Result<Principal, Self::Error> {
-        let entity_uid = EntityUid::from_str(key.principal_id()).map_err(|_| {
-            anyhow!("Failed to parse principal ID: {}", key.principal_id())
-        })?;
+        let entity_uid: EntityUid = (&key).try_into()?;
         let configmap = self.get_entities(key.schema_id()).await?;
-        let active_entities = self.get_active_entities(&configmap.data).await?;
-        let entity = active_entities.get(&entity_uid)
+        let active_entities = configmap.get_active_entities()?;
+        let entity = active_entities
+            .get(&entity_uid)
             .ok_or_else(|| anyhow!("Entity with UID {} not found in active entities", entity_uid))?;
 
         Ok(Principal::new(entity.clone(), key.schema_id().clone()))
     }
 
     async fn upsert(&self, key: PrincipalIdentity, principal: Principal) -> Result<(), Self::Error> {
-        let entity_uid = EntityUid::from_str(key.principal_id()).map_err(|_| {
-            anyhow!("Failed to parse principal ID: {}", key.principal_id())
-        })?;
+        let entity_uid: EntityUid = (&key).try_into()?;
         let configmap = self.get_entities(key.schema_id()).await?;
 
-        let inactive_set = self.get_inactive_entities(&configmap.data).await?;
-        if inactive_set.get(&entity_uid).is_some() {
-            bail!("Principal {:?} is inactive in schema {:?}", principal.get_entity().uid(), principal.get_schema_id())
+        let inactive = configmap.get_inactive_entities()?;
+        if inactive.get(&entity_uid).is_some() {
+            bail!(
+                "Principal {:?} is inactive in schema {:?}",
+                principal.get_entity().uid(),
+                principal.get_schema_id()
+            )
         }
 
-        let active_entities = self.get_active_entities(&configmap.data).await?;
-        let mut updated_active = active_entities.iter().filter(|e| e.uid() != entity_uid).map(|c| c.clone()).collect::<Vec<_>>();
-        updated_active.push(principal.get_entity().clone());
-        let updated_collection = Entities::from_entities(updated_active, None)?;
-        let mut vec = Vec::new(); // Placeholder for JSON serialization, replace with actual schema if needed
-        updated_collection.write_to_json(&mut vec)?;
+        let active = configmap
+            .get_active_entities()?
+            .remove_entities(Some(entity_uid))?
+            .add_entities(Some(principal.get_entity().clone()), None)?; // TODO: schema?
+
         let updated_data = PrincipalData {
-            active: String::from_utf8(vec)?,
-            inactive: configmap.data.inactive.clone(), // Keep inactive entities unchanged
+            active: serialize_entities(&active)?,
+            inactive: serialize_entities(&inactive)?, // Keep inactive entities unchanged
         };
         self.overwrite(key, updated_data).await?;
         Ok(())
     }
 
     async fn delete(&self, key: PrincipalIdentity) -> Result<(), Self::Error> {
-        let entity_uid = EntityUid::from_str(key.principal_id()).map_err(|_| {
-            anyhow!("Failed to parse principal ID: {}", key.principal_id())
-        })?;
+        let entity_uid: EntityUid = (&key).try_into()?;
         let configmap = self.get_entities(key.schema_id()).await?;
-        let mut inactive_set = self.get_inactive_entities(&configmap.data).await?;
-        let mut active_entities = self.get_active_entities(&configmap.data).await?;
 
-        let to_delete = active_entities.get(&entity_uid).ok_or(
-            anyhow!("Entity with UID {} not found in active entities", entity_uid)
-        )?;
-        inactive_set = inactive_set.add_entities(vec![to_delete.clone()], None)?; // TODO: schema?
-        active_entities = active_entities.remove_entities(vec![entity_uid])?;
+        let active_entities = configmap.get_active_entities()?;
 
-        let mut active_vec = Vec::new(); // Placeholder for JSON serialization, replace with actual schema if needed
-        active_entities.write_to_json(&mut active_vec)?;
-        let mut inactive_vec = Vec::new(); // Placeholder for JSON serialization, replace with actual schema if needed
-        active_entities.write_to_json(&mut inactive_vec)?;
+        let to_delete = active_entities
+            .get(&entity_uid)
+            .ok_or(anyhow!("Entity with UID {} not found in active entities", entity_uid))?;
+
+        let active_entities = active_entities.clone().remove_entities(Some(entity_uid))?;
+        let inactive_entities = configmap
+            .get_inactive_entities()?
+            .add_entities(Some(to_delete.clone()), None)?; // TODO: schema?
 
         let updated_data = PrincipalData {
-            active: String::from_utf8(active_vec)?,
-            inactive: String::from_utf8(inactive_vec)?, // Keep inactive entities unchanged
+            active: serialize_entities(&active_entities)?,
+            inactive: serialize_entities(&inactive_entities)?, // Keep inactive entities unchanged
         };
         self.overwrite(key, updated_data).await?;
         Ok(())
     }
 
     async fn exists(&self, key: PrincipalIdentity) -> Result<bool, Self::Error> {
-        todo!()
+        let entity_uid: EntityUid = (&key).try_into()?;
+        let active = self
+            .get_entities(key.schema_id())
+            .await
+            .unwrap()
+            .get_active_entities()?;
+        Ok(active.get(&entity_uid).is_some())
     }
 }
