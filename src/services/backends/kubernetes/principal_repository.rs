@@ -2,22 +2,25 @@
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod test_principal;
+
 // Use log crate when building application
 #[cfg(not(test))]
 use log::{debug, warn};
 
 // Workaround to use prinltn! for logs.
-use std::collections::HashSet;
 use std::str::FromStr;
 #[cfg(test)]
 use std::{println as warn, println as debug};
+
 // Other imports
 use crate::models::principal::Principal;
 use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
 use crate::services::base::upsert_repository::{PrincipalIdentity, UpsertRepository};
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
-use cedar_policy::{Entities, EntityUid, SchemaFragment};
+use cedar_policy::{Entities, EntityUid};
 use futures::future;
 use futures::future::Ready;
 use k8s_openapi::api::core::v1::ConfigMap;
@@ -28,7 +31,6 @@ use kube::Resource;
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use utoipa::schema;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct PrincipalData {
@@ -51,12 +53,12 @@ fn serialize_entities(entities: &Entities) -> anyhow::Result<String> {
 
 impl PrincipalConfigMap {
     fn get_active_entities(&self) -> anyhow::Result<Entities> {
-        let active_set = Entities::from_json_str(&self.data.active, None)?; // TODO: schema?
+        let active_set = Entities::from_json_str(&self.data.active, None)?;
         Ok(active_set)
     }
 
     fn get_inactive_entities(&self) -> anyhow::Result<Entities> {
-        let inactive_set = Entities::from_json_str(&self.data.inactive, None)?; // TODO: schema?
+        let inactive_set = Entities::from_json_str(&self.data.inactive, None)?;
         Ok(inactive_set)
     }
 }
@@ -172,7 +174,7 @@ impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepos
         let active = configmap
             .get_active_entities()?
             .remove_entities(Some(entity_uid))?
-            .add_entities(Some(principal.get_entity().clone()), None)?; // TODO: schema?
+            .add_entities(Some(principal.get_entity().clone()), None)?;
 
         let updated_data = PrincipalData {
             active: serialize_entities(&active)?,
@@ -195,7 +197,7 @@ impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepos
         let active_entities = active_entities.clone().remove_entities(Some(entity_uid))?;
         let inactive_entities = configmap
             .get_inactive_entities()?
-            .add_entities(Some(to_delete.clone()), None)?; // TODO: schema?
+            .add_entities(Some(to_delete.clone()), None)?;
 
         let updated_data = PrincipalData {
             active: serialize_entities(&active_entities)?,
