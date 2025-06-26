@@ -2,25 +2,20 @@
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
-mod test_principal;
-
 // Use log crate when building application
 #[cfg(not(test))]
 use log::{debug, warn};
 
 // Workaround to use prinltn! for logs.
-use std::str::FromStr;
 #[cfg(test)]
 use std::{println as warn, println as debug};
-use std::collections::HashMap;
+
 // Other imports
-use crate::models::principal::Principal;
+use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
 use crate::services::base::upsert_repository::{PrincipalIdentity, UpsertRepository};
-use anyhow::{anyhow, bail};
+use anyhow::anyhow;
 use async_trait::async_trait;
-use cedar_policy::{Entities, EntityUid};
 use futures::future;
 use futures::future::Ready;
 use k8s_openapi::api::core::v1::ConfigMap;
@@ -30,13 +25,13 @@ use kube::runtime::watcher;
 use kube::Resource;
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::Arc;
-use crate::models::api::external::identity::ExternalIdentity;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct PrincipalAssociationData {
-    active: HashMap<ExternalIdentity, PrincipalIdentity>,
-    inactive: HashMap<ExternalIdentity, PrincipalIdentity>,
+    active: String,
+    inactive: String,
 }
 
 #[derive(Resource, Serialize, Deserialize, Clone, Debug)]
@@ -47,12 +42,14 @@ struct PrincipalAssociationConfigMap {
 }
 
 impl PrincipalAssociationConfigMap {
-    fn get_active_associations(&self) -> anyhow::Result<HashMap<ExternalIdentity, PrincipalIdentity>> {
-        Ok(self.data.active.clone())
+    fn get_active_associations(&self) -> anyhow::Result<HashMap<String, PrincipalIdentity>> {
+        serde_json::from_str(self.data.active.as_str())
+            .map_err(|e| anyhow!("Failed to deserialize active associations: {}", e))
     }
 
-    fn get_inactive_associations(&self) -> anyhow::Result<HashMap<ExternalIdentity, PrincipalIdentity>> {
-        Ok(self.data.inactive.clone())
+    fn get_inactive_associations(&self) -> anyhow::Result<HashMap<String, PrincipalIdentity>> {
+        serde_json::from_str(self.data.inactive.as_str())
+            .map_err(|e| anyhow!("Failed to deserialize active associations: {}", e))
     }
 }
 
@@ -81,10 +78,15 @@ impl KubernetesPrincipalAssociationRepository {
         self.repository.get(or)
     }
 
-    async fn overwrite(&self, key: PrincipalIdentity, updated_data: PrincipalAssociationData) -> Result<(), anyhow::Error> {
+    async fn overwrite(
+        &self,
+        key: ExternalIdentity,
+        updated_data: PrincipalAssociationData,
+    ) -> Result<(), anyhow::Error> {
+        let name = format!("principals-{}", key.identity_provider);
         let updated_configmap = PrincipalAssociationConfigMap {
             metadata: ObjectMeta {
-                name: Some(key.schema_id().clone()),
+                name: Some(name.clone()),
                 namespace: Some(self.repository.namespace().clone()),
                 labels: Some(btreemap! {
                     self.label_selector_key.clone() => self.label_selector_value.clone()
@@ -94,7 +96,7 @@ impl KubernetesPrincipalAssociationRepository {
             data: updated_data,
         };
         self.repository
-            .replace(&key.schema_id(), updated_configmap)
+            .replace(&name, updated_configmap)
             .await
             .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
     }
@@ -128,75 +130,57 @@ impl ResourceUpdateHandler<PrincipalAssociationConfigMap> for UpdateHandler {
     }
 }
 
+fn to_key(external_identity: &ExternalIdentity) -> String {
+    format!("{}/{}", external_identity.identity_provider, external_identity.user_id)
+}
+
 #[async_trait]
 impl UpsertRepository<ExternalIdentity, PrincipalIdentity> for KubernetesPrincipalAssociationRepository {
     type Error = anyhow::Error;
 
     async fn get(&self, key: ExternalIdentity) -> Result<PrincipalIdentity, Self::Error> {
-        let configmap = self.get_entities(key).await?;
-        let active_entities = configmap.get_active_associations()?;
-        let principal_identity = active_entities
-            .get(&key)
+        let configmap = self.get_entities(key.clone()).await?;
+        let active = configmap.get_active_associations()?;
+        let principal_identity = active
+            .get(&to_key(&key))
             .ok_or_else(|| anyhow!("Principal with identity {:?} not found in active associations", key))?;
         Ok(principal_identity.clone())
     }
 
-    async fn upsert(&self, key: PrincipalIdentity, principal: Principal) -> Result<(), Self::Error> {
-        let entity_uid: EntityUid = (&key).try_into()?;
-        let configmap = self.get_entities(key.schema_id()).await?;
+    async fn upsert(&self, key: ExternalIdentity, principal: PrincipalIdentity) -> Result<(), Self::Error> {
+        let configmap = self.get_entities(key.clone()).await?;
+        let mut active = configmap.get_active_associations()?;
+        active.insert(to_key(&key), principal.clone());
 
-        let inactive = configmap.get_inactive_entities()?;
-        if inactive.get(&entity_uid).is_some() {
-            bail!(
-                "Principal {:?} is inactive in schema {:?}",
-                principal.get_entity().uid(),
-                principal.get_schema_id()
-            )
-        }
-
-        let active = configmap
-            .get_active_entities()?
-            .remove_entities(Some(entity_uid))?
-            .add_entities(Some(principal.get_entity().clone()), None)?;
-
-        let updated_data = PrincipalData {
-            active: serialize_entities(&active)?,
-            inactive: serialize_entities(&inactive)?, // Keep inactive entities unchanged
+        let updated_data = PrincipalAssociationData {
+            active: serde_json::to_string(&active)?,
+            inactive: configmap.data.inactive.clone(),
         };
         self.overwrite(key, updated_data).await?;
         Ok(())
     }
 
-    async fn delete(&self, key: PrincipalIdentity) -> Result<(), Self::Error> {
-        let entity_uid: EntityUid = (&key).try_into()?;
-        let configmap = self.get_entities(key.schema_id()).await?;
+    async fn delete(&self, key: ExternalIdentity) -> Result<(), Self::Error> {
+        let configmap = self.get_entities(key.clone()).await?;
+        let mut active = configmap.get_active_associations()?;
+        let mut inactive = configmap.get_inactive_associations()?;
 
-        let active_entities = configmap.get_active_entities()?;
+        let to_delete = active
+            .remove(&to_key(&key))
+            .ok_or_else(|| anyhow!("Association not found for external identity: {:?}", key))?;
 
-        let to_delete = active_entities
-            .get(&entity_uid)
-            .ok_or(anyhow!("Entity with UID {} not found in active entities", entity_uid))?;
-
-        let active_entities = active_entities.clone().remove_entities(Some(entity_uid))?;
-        let inactive_entities = configmap
-            .get_inactive_entities()?
-            .add_entities(Some(to_delete.clone()), None)?;
-
-        let updated_data = PrincipalData {
-            active: serialize_entities(&active_entities)?,
-            inactive: serialize_entities(&inactive_entities)?, // Keep inactive entities unchanged
+        inactive.insert(to_key(&key), to_delete);
+        let updated_data = PrincipalAssociationData {
+            active: serde_json::to_string(&active)?,
+            inactive: serde_json::to_string(&inactive)?,
         };
         self.overwrite(key, updated_data).await?;
         Ok(())
     }
 
-    async fn exists(&self, key: PrincipalIdentity) -> Result<bool, Self::Error> {
-        let entity_uid: EntityUid = (&key).try_into()?;
-        let active = self
-            .get_entities(key.schema_id())
-            .await
-            .unwrap()
-            .get_active_entities()?;
-        Ok(active.get(&entity_uid).is_some())
+    async fn exists(&self, key: ExternalIdentity) -> Result<bool, Self::Error> {
+        let configmap = self.get_entities(key.clone()).await?;
+        let active = configmap.get_active_associations()?;
+        Ok(active.get(&to_key(&key)).is_some())
     }
 }
