@@ -17,7 +17,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::http::openapi::ApiDoc;
-use crate::services::backends::base::{load_backend, Backend};
+use crate::services::backends::base::load_backend;
 use crate::services::configuration::models::AppSettings;
 use crate::services::identity_validator_provider::ExternalIdentityWatcher;
 use crate::services::principal_service::PrincipalService;
