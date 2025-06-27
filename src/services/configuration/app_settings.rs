@@ -10,8 +10,6 @@ impl AppSettings {
     pub fn new() -> Result<Self, ConfigError> {
         let s = Config::builder()
             .add_source(Environment::with_prefix("BOXER").separator("__"))
-            .set_default("backend.kubernetes.label_selector_key", "owner")?
-            .set_default("backend.kubernetes.label_selector_value", "boxer")?
             .build()?;
 
         // let hmac = s.clone().try_deserialize::<HashMap<String, String>>()?;
