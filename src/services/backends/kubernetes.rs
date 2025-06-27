@@ -1,3 +1,9 @@
+mod principal_repository;
+mod identity_repository;
+mod principal_association_repository;
+mod schema_repository;
+mod common;
+
 use crate::services::backends::base::Backend;
 use crate::services::base::upsert_repository::{
     IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository,
