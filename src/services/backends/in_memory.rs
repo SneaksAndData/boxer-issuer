@@ -2,11 +2,11 @@ use crate::services::backends::base::{Backend, BackendConfiguration};
 use crate::services::base::upsert_repository::{
     IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository,
 };
+use crate::services::configuration::models::BackendSettings;
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
-use async_trait::async_trait;
 use tokio::sync::RwLock;
-use crate::services::configuration::models::BackendSettings;
 
 pub struct InMemoryBackend {
     pub schemas_repository: Arc<SchemaRepository>,

@@ -23,5 +23,5 @@ pub struct BackendSettings {
 #[derive(Debug, Deserialize)]
 pub struct AppSettings {
     pub init: InitializationSettings,
-    pub backend: BackendSettings
+    pub backend: BackendSettings,
 }

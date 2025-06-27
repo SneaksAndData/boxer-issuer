@@ -28,4 +28,3 @@ impl InitializationConfigurationManager for AppSettings {
         self.init.backend_type.clone()
     }
 }
-

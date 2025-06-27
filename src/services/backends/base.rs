@@ -28,7 +28,7 @@ pub trait BackendConfiguration: Send + Sync + Sized {
 }
 
 pub async fn load_backend(backend_type: BackendType, cm: &AppSettings) -> Result<Arc<dyn Backend>> {
-    let backend : Arc<dyn Backend> = match backend_type {
+    let backend: Arc<dyn Backend> = match backend_type {
         BackendType::InMemory => Arc::new(InMemoryBackend::new().configure(&cm.backend).await?),
         BackendType::Kubernetes => Arc::new(KubernetesBackend::new().configure(&cm.backend).await?),
     };
