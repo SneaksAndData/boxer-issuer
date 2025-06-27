@@ -1,4 +1,5 @@
 use crate::services::backends::in_memory::InMemoryBackend;
+use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::base::upsert_repository::IdentityRepository;
 use crate::services::base::upsert_repository::PrincipalRepository;
 use crate::services::base::upsert_repository::{PrincipalAssociationRepository, SchemaRepository};
@@ -13,7 +14,7 @@ pub enum BackendType {
     Kubernetes,
 }
 
-pub trait Backend {
+pub trait Backend: Send + Sync {
     fn get_schemas_repository(&self) -> Arc<SchemaRepository>;
     fn get_entities_repository(&self) -> Arc<PrincipalRepository>;
     fn get_principal_association_repository(&self) -> Arc<PrincipalAssociationRepository>;
@@ -24,17 +25,13 @@ pub trait Backend {
 /// A trait for managing application configuration updates.
 pub trait BackendConfigurationManager {
     /// Returns the type of backend used by the application.
-    async fn configure(&self, backend: &mut dyn Backend) -> Result<()>;
+    async fn configure(&self, backend: Arc<dyn Backend>) -> Result<Arc<dyn Backend>>;
 }
 
-pub async fn load_backend(backend_type: BackendType, cm: &dyn BackendConfigurationManager) -> Result<impl Backend> {
-    let mut backend = match backend_type {
-        BackendType::InMemory => InMemoryBackend::new(),
-        BackendType::Kubernetes => {
-            // Implement Kubernetes backend creation logic here
-            unimplemented!()
-        }
+pub async fn load_backend(backend_type: BackendType, cm: &dyn BackendConfigurationManager) -> Result<Arc<dyn Backend>> {
+    let backend: Arc<dyn Backend> = match backend_type {
+        BackendType::InMemory => Arc::new(InMemoryBackend::new()),
+        BackendType::Kubernetes => Arc::new(KubernetesBackend::new()),
     };
-    cm.configure(&mut backend).await?;
-    Ok(backend)
+    Ok(cm.configure(backend).await?)
 }

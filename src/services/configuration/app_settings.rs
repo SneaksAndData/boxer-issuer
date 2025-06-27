@@ -33,9 +33,9 @@ impl InitializationConfigurationManager for AppSettings {
 /// Dummy implementation of the BackendConfigurationManager trait.
 #[async_trait]
 impl BackendConfigurationManager for AppSettings {
-    async fn configure(&self, _: &mut dyn Backend) -> anyhow::Result<()> {
+    async fn configure(&self, backend: Arc<dyn Backend>) -> anyhow::Result<Arc<dyn Backend>> {
         // Here you would implement the logic to configure the backend.
         // For this dummy implementation, we will just return Ok.
-        Ok(())
+        Ok(backend)
     }
 }
