@@ -1,5 +1,4 @@
-use crate::services::backends::base::BackendConfigurationManager;
-use crate::services::backends::base::{Backend, BackendType};
+use crate::services::backends::base::BackendType;
 use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
 use crate::services::configuration::models::AppSettings;
 use async_trait::async_trait;
@@ -30,12 +29,3 @@ impl InitializationConfigurationManager for AppSettings {
     }
 }
 
-/// Dummy implementation of the BackendConfigurationManager trait.
-#[async_trait]
-impl BackendConfigurationManager for AppSettings {
-    async fn configure(&self, backend: Arc<dyn Backend>) -> anyhow::Result<Arc<dyn Backend>> {
-        // Here you would implement the logic to configure the backend.
-        // For this dummy implementation, we will just return Ok.
-        Ok(backend)
-    }
-}

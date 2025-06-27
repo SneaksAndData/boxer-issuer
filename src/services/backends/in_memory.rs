@@ -1,10 +1,12 @@
-use crate::services::backends::base::Backend;
+use crate::services::backends::base::{Backend, BackendConfiguration};
 use crate::services::base::upsert_repository::{
     IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
+use async_trait::async_trait;
 use tokio::sync::RwLock;
+use crate::services::configuration::models::BackendSettings;
 
 pub struct InMemoryBackend {
     pub schemas_repository: Arc<SchemaRepository>,
@@ -43,5 +45,13 @@ impl Backend for InMemoryBackend {
 
     fn get_identity_repository(&self) -> Arc<IdentityRepository> {
         Arc::clone(&self.identity_repository)
+    }
+}
+
+#[async_trait]
+impl BackendConfiguration for InMemoryBackend {
+    async fn configure(mut self, _: &BackendSettings) -> anyhow::Result<Self> {
+        // No additional configuration needed for InMemoryBackend
+        Ok(self)
     }
 }

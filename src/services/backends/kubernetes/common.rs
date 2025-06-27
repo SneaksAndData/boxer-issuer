@@ -18,6 +18,7 @@ use std::hash::Hash;
 use std::sync::Arc;
 
 /// Configuration for the Kubernetes repository.
+#[derive(Clone)]
 pub struct RepositoryConfig {
     pub namespace: String,
     pub label_selector_key: String,
