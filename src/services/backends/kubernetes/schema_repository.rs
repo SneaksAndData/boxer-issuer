@@ -69,30 +69,22 @@ struct SchemaConfigMap {
 }
 
 pub struct KubernetesSchemaRepository {
-    repository: Option<KubernetesRepository<SchemaConfigMap>>,
-    label_selector_key: Option<String>,
-    label_selector_value: Option<String>,
+    repository: KubernetesRepository<SchemaConfigMap>,
+    label_selector_key: String,
+    label_selector_value: String,
 }
 
 impl KubernetesSchemaRepository {
     #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
-    pub async fn new() -> Self {
-        KubernetesSchemaRepository {
-            None,
-            None,
-            None,
-        }
-    }
-    
-    #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
-    pub async fn start(mut self, config: RepositoryConfig) -> anyhow::Result<Self> {
+    pub async fn start(config: RepositoryConfig) -> anyhow::Result<Self> {
         let label_selector_key = config.label_selector_key.clone();
         let label_selector_value = config.label_selector_value.clone();
         let repository = KubernetesRepository::start(config, Arc::new(UpdateHandler)).await?;
-        self.repository = Some(repository);
-        self.label_selector_value = Some(label_selector_value);
-        self.label_selector_key = Some(label_selector_key);
-        Ok(self)
+        Ok(KubernetesSchemaRepository {
+            repository,
+            label_selector_key,
+            label_selector_value,
+        })
     }
 }
 
