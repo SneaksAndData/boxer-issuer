@@ -1,4 +1,4 @@
-FROM rust:1.87.0-bookworm AS build-env
+FROM rust:1.88.0-bookworm AS build-env
 
 WORKDIR /app/src
 
