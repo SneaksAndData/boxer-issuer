@@ -59,7 +59,6 @@ impl AsyncTestContext for KubernetesSchemaRepositoryTest {
             lease_duration: Duration::from_secs(5),
             renew_deadline: Duration::from_secs(3),
             claimant: "boxer".to_string(),
-
         };
 
         let repository = KubernetesSchemaRepository::start(config)

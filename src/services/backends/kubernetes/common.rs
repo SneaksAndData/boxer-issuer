@@ -26,7 +26,7 @@ pub struct KubernetesResourceManagerConfig {
     pub label_selector_key: String,
     pub label_selector_value: String,
     pub kubeconfig: kube::Config,
-    
+
     pub lease_name: String,
     pub claimant: String,
     pub lease_duration: Duration,
@@ -65,6 +65,7 @@ where
         }
     }
 
+    #[allow(dead_code)]
     pub fn namespace(&self) -> String {
         self.namespace.clone()
     }

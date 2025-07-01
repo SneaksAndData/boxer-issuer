@@ -12,8 +12,9 @@ use std::{println as warn, println as debug};
 
 // Other imports
 use crate::models::api::external::identity::ExternalIdentity;
+use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
 use crate::services::backends::kubernetes::common::{
-    KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler,
+    KubernetesResourceManagerConfig, ResourceUpdateHandler,
 };
 use crate::services::base::upsert_repository::{PrincipalIdentity, UpsertRepository};
 use anyhow::anyhow;
@@ -29,7 +30,6 @@ use maplit::btreemap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct PrincipalAssociationData {

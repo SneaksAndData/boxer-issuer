@@ -1,18 +1,20 @@
+use crate::services::backends::kubernetes::common::{
+    KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler,
+};
+use anyhow::Error;
+use k8s_openapi::api::coordination::v1::Lease;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use k8s_openapi::NamespaceResourceScope;
+use kube::core::params::PostParams;
+use kube::runtime::reflector::ObjectRef;
+use kube::{Api, Client};
+use kubert::lease::{ClaimParams, LeaseManager};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::Arc;
 use std::time::Duration;
-use anyhow::Error;
-use k8s_openapi::NamespaceResourceScope;
-use kube::runtime::reflector::ObjectRef;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use crate::services::backends::kubernetes::common::{KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler};
-use k8s_openapi::api::coordination::v1::Lease;
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-use kube::core::params::PostParams;
-use kube::{Api, Client};
-use kubert::lease::{ClaimParams, LeaseManager};
 
 pub struct LeaseSettings {
     pub claimant: String,
@@ -28,23 +30,30 @@ where
 {
     resource_manager: KubernetesResourceManager<Resource>,
     api: Api<Lease>,
-    lease_settings: LeaseSettings
+    lease_settings: LeaseSettings,
 }
 
 impl<Resource> SynchronizedKubernetesResourceManager<Resource>
 where
-    Resource: kube::Resource<Scope=NamespaceResourceScope> + Clone + Debug + Serialize + DeserializeOwned + Send + Sync,
+    Resource:
+        kube::Resource<Scope = NamespaceResourceScope> + Clone + Debug + Serialize + DeserializeOwned + Send + Sync,
     Resource::DynamicType: Hash + Eq + Clone + Default,
 {
-    pub fn new(resource_manager: KubernetesResourceManager<Resource>, api: Api<Lease>, lease_settings: LeaseSettings) -> Self {
-        SynchronizedKubernetesResourceManager { resource_manager, api, lease_settings }
+    pub fn new(
+        resource_manager: KubernetesResourceManager<Resource>,
+        api: Api<Lease>,
+        lease_settings: LeaseSettings,
+    ) -> Self {
+        SynchronizedKubernetesResourceManager {
+            resource_manager,
+            api,
+            lease_settings,
+        }
     }
-    
+
     pub async fn replace(&self, name: &str, object: Resource) -> Result<(), Error> {
-        let lm = LeaseManager::init(
-            self.api.clone(),
-            self.lease_settings.lease_name.clone()).await?;
-        
+        let lm = LeaseManager::init(self.api.clone(), self.lease_settings.lease_name.clone()).await?;
+
         let claims_params = ClaimParams {
             lease_duration: self.lease_settings.lease_duration,
             renew_grace_period: self.lease_settings.renew_deadline,
@@ -54,23 +63,26 @@ where
         lm.vacate("boxer").await?;
         Ok(())
     }
-    
+
     pub fn get(&self, object_ref: ObjectRef<Resource>) -> Result<Arc<Resource>, Error> {
         self.resource_manager.get(object_ref)
     }
-    
-    pub async fn start(config: KubernetesResourceManagerConfig, update_handler: Arc<dyn ResourceUpdateHandler<Resource>>) -> Result<Self, Error> {
+
+    pub async fn start(
+        config: KubernetesResourceManagerConfig,
+        update_handler: Arc<dyn ResourceUpdateHandler<Resource>>,
+    ) -> Result<Self, Error> {
         let resource_manager = KubernetesResourceManager::start(config.clone(), update_handler).await?;
         let client = Client::try_from(config.kubeconfig)?;
         let api = Api::<Lease>::namespaced(client, &config.namespace);
         let lease = Lease {
-                metadata: ObjectMeta {
-                    name: Some(config.lease_name.clone()),
-                    namespace: Some(config.namespace.clone()),
-                    ..Default::default()
-                },
+            metadata: ObjectMeta {
+                name: Some(config.lease_name.clone()),
+                namespace: Some(config.namespace.clone()),
                 ..Default::default()
-            };
+            },
+            ..Default::default()
+        };
         api.create(&PostParams::default(), &lease).await?;
         let ls = LeaseSettings {
             claimant: config.claimant.clone(),
@@ -92,12 +104,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use crate::services::backends::kubernetes::schema_repository::KubernetesSchemaRepository;
     use k8s_openapi::api::core::v1::ConfigMap;
     use kube_client::Api;
-    use crate::services::backends::kubernetes::schema_repository::KubernetesSchemaRepository;
+    use std::sync::Arc;
 
-    struct Kubernetes{
+    #[allow(dead_code)]
+    struct Kubernetes {
         raw_api: Arc<Api<ConfigMap>>,
         repository: Arc<KubernetesSchemaRepository>,
         schema_str: String,
