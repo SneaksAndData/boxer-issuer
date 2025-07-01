@@ -559,6 +559,7 @@ dependencies = [
  "jwt-authorizer",
  "k8s-openapi",
  "kube",
+ "kubert",
  "log",
  "maplit",
  "rstest",
@@ -2081,6 +2082,15 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
+]
+
+[[package]]
+name = "kubert"
+version = "0.24.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a92cbeb0adfdf2706c4f85f0d63e01b6535d44e150f5963289cd4b8bc0115fe5"
+dependencies = [
+ "tokio",
 ]
 
 [[package]]

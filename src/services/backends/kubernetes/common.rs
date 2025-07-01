@@ -1,5 +1,6 @@
 #[cfg(test)]
 pub mod fixtures;
+mod multithread_resource_manager;
 
 use anyhow::{anyhow, Error};
 use futures::future::Ready;
@@ -26,7 +27,7 @@ pub struct RepositoryConfig {
     pub kubeconfig: kube::Config,
 }
 
-pub struct KubernetesRepository<StoredObject>
+pub struct KubernetesRepository<StoredObject> // TODO: rename to ResourceManager and make it private
 where
     StoredObject: Resource + 'static,
     StoredObject::DynamicType: Hash + Eq,
