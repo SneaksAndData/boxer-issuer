@@ -29,6 +29,7 @@ use maplit::btreemap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
+use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct PrincipalAssociationData {
@@ -56,7 +57,7 @@ impl PrincipalAssociationConfigMap {
 }
 
 pub struct KubernetesPrincipalAssociationRepository {
-    resource_manger: KubernetesResourceManager<PrincipalAssociationConfigMap>,
+    resource_manager: SynchronizedKubernetesResourceManager<PrincipalAssociationConfigMap>,
     label_selector_key: String,
     label_selector_value: String,
 }
@@ -66,9 +67,9 @@ impl KubernetesPrincipalAssociationRepository {
     pub async fn start(config: KubernetesResourceManagerConfig) -> anyhow::Result<Self> {
         let label_selector_key = config.label_selector_key.clone();
         let label_selector_value = config.label_selector_value.clone();
-        let resource_manager = KubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
+        let resource_manager = SynchronizedKubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
         Ok(KubernetesPrincipalAssociationRepository {
-            resource_manger: resource_manager,
+            resource_manager,
             label_selector_key,
             label_selector_value,
         })
@@ -76,8 +77,8 @@ impl KubernetesPrincipalAssociationRepository {
 
     async fn get_entities(&self, key: ExternalIdentity) -> anyhow::Result<Arc<PrincipalAssociationConfigMap>> {
         let name = format!("principals-{}", key.identity_provider);
-        let or = ObjectRef::new(&name).within(self.resource_manger.namespace().as_str());
-        self.resource_manger.get(or)
+        let or = ObjectRef::new(&name).within(self.resource_manager.namespace().as_str());
+        self.resource_manager.get(or)
     }
 
     async fn overwrite(
@@ -89,7 +90,7 @@ impl KubernetesPrincipalAssociationRepository {
         let updated_configmap = PrincipalAssociationConfigMap {
             metadata: ObjectMeta {
                 name: Some(name.clone()),
-                namespace: Some(self.resource_manger.namespace().clone()),
+                namespace: Some(self.resource_manager.namespace().clone()),
                 labels: Some(btreemap! {
                     self.label_selector_key.clone() => self.label_selector_value.clone()
                 }),
@@ -97,7 +98,7 @@ impl KubernetesPrincipalAssociationRepository {
             },
             data: updated_data,
         };
-        self.resource_manger
+        self.resource_manager
             .replace(&name, updated_configmap)
             .await
             .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
@@ -106,7 +107,7 @@ impl KubernetesPrincipalAssociationRepository {
 
 impl Drop for KubernetesPrincipalAssociationRepository {
     fn drop(&mut self) {
-        if let Err(e) = self.resource_manger.stop() {
+        if let Err(e) = self.resource_manager.stop() {
             warn!("Failed to stop KubernetesPrincipalAssociationRepository: {}", e);
         }
     }

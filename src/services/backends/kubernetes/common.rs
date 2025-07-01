@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub mod fixtures;
-mod multithread_resource_manager;
+pub mod synchronized_kubernetes_resource_manager;
 
 use anyhow::{anyhow, Error};
 use futures::future::Ready;
@@ -17,6 +17,7 @@ use serde::Serialize;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::Arc;
+use std::time::Duration;
 
 /// Configuration for the Kubernetes repository.
 #[derive(Clone)]
@@ -25,6 +26,11 @@ pub struct KubernetesResourceManagerConfig {
     pub label_selector_key: String,
     pub label_selector_value: String,
     pub kubeconfig: kube::Config,
+    
+    pub lease_name: String,
+    pub claimant: String,
+    pub lease_duration: Duration,
+    pub renew_deadline: Duration,
 }
 
 pub struct KubernetesResourceManager<StoredObject>
@@ -106,7 +112,7 @@ where
 
     pub fn stop(&self) -> anyhow::Result<()> {
         self.handle.abort();
-        debug!("KubernetesIdentityRepository stopped");
+        debug!("KubernetesResourceManager stopped");
         Ok(())
     }
 

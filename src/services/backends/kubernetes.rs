@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 mod identity_repository;
 mod principal_association_repository;
 mod principal_repository;
@@ -21,6 +21,7 @@ use kube::Config;
 use log::{debug, info};
 use std::process::Command;
 use std::sync::Arc;
+use std::time::Duration;
 
 pub struct KubernetesBackend {
     pub schemas_repository: Option<Arc<SchemaRepository>>,
@@ -98,6 +99,10 @@ impl BackendConfiguration for KubernetesBackend {
             namespace: settings.namespace.clone(),
             label_selector_key: settings.label_selector_key.clone(),
             label_selector_value: settings.label_selector_value.clone(),
+            lease_name: "".to_string(), // TODO: Implement lease management
+            lease_duration: Duration::from_secs(60),
+            renew_deadline: Duration::from_secs(30),
+            claimant: "".to_string(), // TODO: Implement lease management
             kubeconfig,
         };
 

@@ -33,6 +33,7 @@ use kube::Resource;
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct PrincipalData {
@@ -66,7 +67,7 @@ impl PrincipalConfigMap {
 }
 
 pub struct KubernetesPrincipalRepository {
-    resource_manager: KubernetesResourceManager<PrincipalConfigMap>,
+    resource_manager: SynchronizedKubernetesResourceManager<PrincipalConfigMap>,
     label_selector_key: String,
     label_selector_value: String,
 }
@@ -76,7 +77,7 @@ impl KubernetesPrincipalRepository {
     pub async fn start(config: KubernetesResourceManagerConfig) -> anyhow::Result<Self> {
         let label_selector_key = config.label_selector_key.clone();
         let label_selector_value = config.label_selector_value.clone();
-        let resource_manager = KubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
+        let resource_manager = SynchronizedKubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
         Ok(KubernetesPrincipalRepository {
             resource_manager,
             label_selector_key,

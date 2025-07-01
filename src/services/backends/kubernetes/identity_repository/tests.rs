@@ -77,7 +77,11 @@ impl AsyncTestContext for KubernetesIdentityRepositoryTest {
             namespace: namespace.clone(),
             label_selector_key: LABEL_SELECTOR_KEY.to_string(),
             label_selector_value: LABEL_SELECTOR_VALUE.to_string(),
+            lease_name: "identities".to_string(),
             kubeconfig: config,
+            lease_duration: Duration::from_secs(5),
+            renew_deadline: Duration::from_secs(3),
+            claimant: "boxer".to_string(),
         };
         let repository = KubernetesIdentityRepository::start(config)
             .await
