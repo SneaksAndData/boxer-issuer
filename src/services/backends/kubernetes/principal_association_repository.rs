@@ -12,7 +12,9 @@ use std::{println as warn, println as debug};
 
 // Other imports
 use crate::models::api::external::identity::ExternalIdentity;
-use crate::services::backends::kubernetes::common::{KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler};
+use crate::services::backends::kubernetes::common::{
+    KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler,
+};
 use crate::services::base::upsert_repository::{PrincipalIdentity, UpsertRepository};
 use anyhow::anyhow;
 use async_trait::async_trait;

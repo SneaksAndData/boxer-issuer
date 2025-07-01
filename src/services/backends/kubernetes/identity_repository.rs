@@ -1,5 +1,7 @@
 use crate::models::api::external::identity::ExternalIdentity;
-use crate::services::backends::kubernetes::common::{KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler};
+use crate::services::backends::kubernetes::common::{
+    KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler,
+};
 use crate::services::base::upsert_repository::UpsertRepository;
 use anyhow::{anyhow, bail, Result};
 use async_trait::async_trait;
