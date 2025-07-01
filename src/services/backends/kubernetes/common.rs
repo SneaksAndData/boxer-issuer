@@ -20,14 +20,14 @@ use std::sync::Arc;
 
 /// Configuration for the Kubernetes repository.
 #[derive(Clone)]
-pub struct RepositoryConfig {
+pub struct KubernetesResourceManagerConfig {
     pub namespace: String,
     pub label_selector_key: String,
     pub label_selector_value: String,
     pub kubeconfig: kube::Config,
 }
 
-pub struct KubernetesRepository<StoredObject> // TODO: rename to ResourceManager and make it private
+pub struct KubernetesResourceManager<StoredObject>
 where
     StoredObject: Resource + 'static,
     StoredObject::DynamicType: Hash + Eq,
@@ -45,13 +45,13 @@ where
     fn handle_update(&self, result: Result<S, watcher::Error>) -> Ready<()>;
 }
 
-impl<S> KubernetesRepository<S>
+impl<S> KubernetesResourceManager<S>
 where
     S: Resource<Scope = NamespaceResourceScope> + Clone + Debug + Serialize + DeserializeOwned + Send + Sync,
     S::DynamicType: Hash + Eq + Clone + Default,
 {
     pub fn new(reader: Store<S>, handle: tokio::task::JoinHandle<()>, api: Api<S>, namespace: String) -> Self {
-        KubernetesRepository {
+        KubernetesResourceManager {
             reader,
             handle,
             api,
@@ -111,7 +111,7 @@ where
     }
 
     pub async fn start(
-        config: RepositoryConfig,
+        config: KubernetesResourceManagerConfig,
         update_handler: Arc<dyn ResourceUpdateHandler<S>>,
     ) -> anyhow::Result<Self> {
         let client = Client::try_from(config.kubeconfig)?;
@@ -131,6 +131,6 @@ where
         let handle = tokio::spawn(reflector);
         reader.wait_until_ready().await?;
 
-        Ok(KubernetesRepository::new(reader, handle, api, config.namespace))
+        Ok(KubernetesResourceManager::new(reader, handle, api, config.namespace))
     }
 }

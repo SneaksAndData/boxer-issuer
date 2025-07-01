@@ -73,7 +73,7 @@ impl AsyncTestContext for KubernetesIdentityRepositoryTest {
                 .expect("Failed to create ConfigMap");
         }
 
-        let config = RepositoryConfig {
+        let config = KubernetesResourceManagerConfig {
             namespace: namespace.clone(),
             label_selector_key: LABEL_SELECTOR_KEY.to_string(),
             label_selector_value: LABEL_SELECTOR_VALUE.to_string(),

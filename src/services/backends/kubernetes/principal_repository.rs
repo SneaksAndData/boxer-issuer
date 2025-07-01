@@ -16,7 +16,9 @@ use std::{println as warn, println as debug};
 
 // Other imports
 use crate::models::principal::Principal;
-use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
+use crate::services::backends::kubernetes::common::{
+    KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler,
+};
 use crate::services::base::upsert_repository::{PrincipalIdentity, UpsertRepository};
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
@@ -64,34 +66,34 @@ impl PrincipalConfigMap {
 }
 
 pub struct KubernetesPrincipalRepository {
-    repository: KubernetesRepository<PrincipalConfigMap>,
+    resource_manager: KubernetesResourceManager<PrincipalConfigMap>,
     label_selector_key: String,
     label_selector_value: String,
 }
 
 impl KubernetesPrincipalRepository {
     #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
-    pub async fn start(config: RepositoryConfig) -> anyhow::Result<Self> {
+    pub async fn start(config: KubernetesResourceManagerConfig) -> anyhow::Result<Self> {
         let label_selector_key = config.label_selector_key.clone();
         let label_selector_value = config.label_selector_value.clone();
-        let repository = KubernetesRepository::start(config, Arc::new(UpdateHandler)).await?;
+        let resource_manager = KubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
         Ok(KubernetesPrincipalRepository {
-            repository,
+            resource_manager,
             label_selector_key,
             label_selector_value,
         })
     }
 
     async fn get_entities(&self, schema: &str) -> anyhow::Result<Arc<PrincipalConfigMap>> {
-        let or = ObjectRef::new(schema).within(self.repository.namespace().as_str());
-        self.repository.get(or)
+        let or = ObjectRef::new(schema).within(self.resource_manager.namespace().as_str());
+        self.resource_manager.get(or)
     }
 
     async fn overwrite(&self, key: PrincipalIdentity, updated_data: PrincipalData) -> Result<(), anyhow::Error> {
         let updated_configmap = PrincipalConfigMap {
             metadata: ObjectMeta {
                 name: Some(key.schema_id().clone()),
-                namespace: Some(self.repository.namespace().clone()),
+                namespace: Some(self.resource_manager.namespace().clone()),
                 labels: Some(btreemap! {
                     self.label_selector_key.clone() => self.label_selector_value.clone()
                 }),
@@ -99,7 +101,7 @@ impl KubernetesPrincipalRepository {
             },
             data: updated_data,
         };
-        self.repository
+        self.resource_manager
             .replace(&key.schema_id(), updated_configmap)
             .await
             .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
@@ -108,7 +110,7 @@ impl KubernetesPrincipalRepository {
 
 impl Drop for KubernetesPrincipalRepository {
     fn drop(&mut self) {
-        if let Err(e) = self.repository.stop() {
+        if let Err(e) = self.resource_manager.stop() {
             warn!("Failed to stop KubernetesPrincipalRepository: {}", e);
         }
     }

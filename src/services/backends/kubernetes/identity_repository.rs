@@ -1,5 +1,7 @@
 use crate::models::api::external::identity::ExternalIdentity;
-use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
+use crate::services::backends::kubernetes::common::{
+    KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler,
+};
 use crate::services::base::upsert_repository::UpsertRepository;
 use anyhow::{anyhow, bail, Result};
 use async_trait::async_trait;
@@ -41,23 +43,23 @@ struct IdentitiesConfigMap {
 }
 
 pub struct KubernetesIdentityRepository {
-    repository: KubernetesRepository<IdentitiesConfigMap>,
+    resource_manager: KubernetesResourceManager<IdentitiesConfigMap>,
 }
 
 impl KubernetesIdentityRepository {
     #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
-    pub async fn start(config: RepositoryConfig) -> Result<Self> {
-        let repository = KubernetesRepository::start(config, Arc::new(UpdateHandler)).await?;
-        Ok(KubernetesIdentityRepository { repository })
+    pub async fn start(config: KubernetesResourceManagerConfig) -> Result<Self> {
+        let resource_manager = KubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
+        Ok(KubernetesIdentityRepository { resource_manager })
     }
 
     async fn get_identities(&self, provider: &str) -> Result<Arc<IdentitiesConfigMap>> {
-        let or = ObjectRef::new(provider).within(self.repository.namespace().as_str());
-        self.repository.get(or).map_err(|e| {
+        let or = ObjectRef::new(provider).within(self.resource_manager.namespace().as_str());
+        self.resource_manager.get(or).map_err(|e| {
             anyhow!(
                 "Identity provider \"{}\" not found in namespace: {:?}",
                 provider,
-                self.repository.namespace()
+                self.resource_manager.namespace()
             )
             .context(e)
         })
@@ -86,7 +88,7 @@ impl KubernetesIdentityRepository {
             data: updated_data,
         };
         updated_configmap.metadata.resource_version = None;
-        self.repository.replace(provider, updated_configmap).await
+        self.resource_manager.replace(provider, updated_configmap).await
     }
 }
 
@@ -112,7 +114,7 @@ impl ResourceUpdateHandler<IdentitiesConfigMap> for UpdateHandler {
 
 impl Drop for KubernetesIdentityRepository {
     fn drop(&mut self) {
-        if let Err(e) = self.repository.stop() {
+        if let Err(e) = self.resource_manager.stop() {
             warn!("Failed to stop KubernetesIdentityRepository: {}", e);
         }
     }

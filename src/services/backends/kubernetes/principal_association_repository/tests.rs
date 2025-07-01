@@ -1,5 +1,5 @@
 use super::*;
-use crate::services::backends::kubernetes::common::RepositoryConfig;
+use crate::services::backends::kubernetes::common::KubernetesResourceManagerConfig;
 use crate::services::base::upsert_repository::UpsertRepository;
 use k8s_openapi::api::core::v1::{ConfigMap, Namespace};
 use kube::api::PostParams;
@@ -47,7 +47,7 @@ impl AsyncTestContext for KubernetesPrincipalAssociationRepositoryTest {
         let raw_api: Api<ConfigMap> = Api::namespaced(client.clone(), namespace.as_str());
         let data_api: Api<PrincipalAssociationConfigMap> = Api::namespaced(client.clone(), namespace.as_str());
 
-        let config = RepositoryConfig {
+        let config = KubernetesResourceManagerConfig {
             namespace: namespace.clone(),
             label_selector_key: LABEL_SELECTOR_KEY.to_string(),
             label_selector_value: LABEL_SELECTOR_VALUE.to_string(),

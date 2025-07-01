@@ -17,7 +17,9 @@ use log::{debug, warn};
 use std::{println as warn, println as debug};
 
 // Other imports
-use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
+use crate::services::backends::kubernetes::common::{
+    KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler,
+};
 use crate::services::base::upsert_repository::UpsertRepository;
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -69,19 +71,19 @@ struct SchemaConfigMap {
 }
 
 pub struct KubernetesSchemaRepository {
-    repository: KubernetesRepository<SchemaConfigMap>,
+    resource_manger: KubernetesResourceManager<SchemaConfigMap>,
     label_selector_key: String,
     label_selector_value: String,
 }
 
 impl KubernetesSchemaRepository {
     #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
-    pub async fn start(config: RepositoryConfig) -> anyhow::Result<Self> {
+    pub async fn start(config: KubernetesResourceManagerConfig) -> anyhow::Result<Self> {
         let label_selector_key = config.label_selector_key.clone();
         let label_selector_value = config.label_selector_value.clone();
-        let repository = KubernetesRepository::start(config, Arc::new(UpdateHandler)).await?;
+        let resource_manger = KubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
         Ok(KubernetesSchemaRepository {
-            repository,
+            resource_manger,
             label_selector_key,
             label_selector_value,
         })
@@ -90,7 +92,7 @@ impl KubernetesSchemaRepository {
 
 impl Drop for KubernetesSchemaRepository {
     fn drop(&mut self) {
-        if let Err(e) = self.repository.stop() {
+        if let Err(e) = self.resource_manger.stop() {
             warn!("Failed to stop KubernetesSchemaRepository: {}", e);
         }
     }
@@ -121,8 +123,8 @@ impl UpsertRepository<String, SchemaFragment> for KubernetesSchemaRepository {
     type Error = anyhow::Error;
 
     async fn get(&self, key: String) -> Result<SchemaFragment, Self::Error> {
-        let or = ObjectRef::new(key.as_str()).within(self.repository.namespace().as_str());
-        let resource_object = self.repository.get(or).map_err(|e| anyhow!(e))?;
+        let or = ObjectRef::new(key.as_str()).within(self.resource_manger.namespace().as_str());
+        let resource_object = self.resource_manger.get(or).map_err(|e| anyhow!(e))?;
         if resource_object.data.active.contains("false") {
             return Err(anyhow!("Schema is not active"));
         }
@@ -134,7 +136,7 @@ impl UpsertRepository<String, SchemaFragment> for KubernetesSchemaRepository {
         let updated_configmap = SchemaConfigMap {
             metadata: ObjectMeta {
                 name: Some(key.clone()),
-                namespace: Some(self.repository.namespace().clone()),
+                namespace: Some(self.resource_manger.namespace().clone()),
                 labels: Some(btreemap! {
                     self.label_selector_key.clone() => self.label_selector_value.clone()
                 }),
@@ -142,26 +144,27 @@ impl UpsertRepository<String, SchemaFragment> for KubernetesSchemaRepository {
             },
             data: entity.try_into()?,
         };
-        self.repository
+        self.resource_manger
             .replace(&key, updated_configmap)
             .await
             .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
     }
 
     async fn delete(&self, key: String) -> Result<(), Self::Error> {
-        let or = ObjectRef::new(key.as_str()).within(self.repository.namespace().as_str());
-        let mut resource_ref = self.repository.get(or).map_err(|e| anyhow!(e))?;
+        let or = ObjectRef::new(key.as_str()).within(self.resource_manger.namespace().as_str());
+        let mut resource_ref = self.resource_manger.get(or).map_err(|e| anyhow!(e))?;
         if resource_ref.data.active.contains("false") {
             return Ok(());
         }
         let resource_object = Arc::make_mut(&mut resource_ref);
         resource_object.data.active = "false".to_string();
-        self.repository.replace(&key, resource_object.clone()).await
+        self.resource_manger.replace(&key, resource_object.clone()).await
     }
 
     async fn exists(&self, key: String) -> Result<bool, Self::Error> {
-        let or: ObjectRef<SchemaConfigMap> = ObjectRef::new(key.as_str()).within(self.repository.namespace().as_str());
-        self.repository.get(or).map(|_| true).or_else(|e| {
+        let or: ObjectRef<SchemaConfigMap> =
+            ObjectRef::new(key.as_str()).within(self.resource_manger.namespace().as_str());
+        self.resource_manger.get(or).map(|_| true).or_else(|e| {
             if e.to_string().contains("not found") {
                 Ok(false)
             } else {

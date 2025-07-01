@@ -12,7 +12,9 @@ use std::{println as warn, println as debug};
 
 // Other imports
 use crate::models::api::external::identity::ExternalIdentity;
-use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
+use crate::services::backends::kubernetes::common::{
+    KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler,
+};
 use crate::services::base::upsert_repository::{PrincipalIdentity, UpsertRepository};
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -54,19 +56,19 @@ impl PrincipalAssociationConfigMap {
 }
 
 pub struct KubernetesPrincipalAssociationRepository {
-    repository: KubernetesRepository<PrincipalAssociationConfigMap>,
+    resource_manger: KubernetesResourceManager<PrincipalAssociationConfigMap>,
     label_selector_key: String,
     label_selector_value: String,
 }
 
 impl KubernetesPrincipalAssociationRepository {
     #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
-    pub async fn start(config: RepositoryConfig) -> anyhow::Result<Self> {
+    pub async fn start(config: KubernetesResourceManagerConfig) -> anyhow::Result<Self> {
         let label_selector_key = config.label_selector_key.clone();
         let label_selector_value = config.label_selector_value.clone();
-        let repository = KubernetesRepository::start(config, Arc::new(UpdateHandler)).await?;
+        let resource_manager = KubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
         Ok(KubernetesPrincipalAssociationRepository {
-            repository,
+            resource_manger: resource_manager,
             label_selector_key,
             label_selector_value,
         })
@@ -74,8 +76,8 @@ impl KubernetesPrincipalAssociationRepository {
 
     async fn get_entities(&self, key: ExternalIdentity) -> anyhow::Result<Arc<PrincipalAssociationConfigMap>> {
         let name = format!("principals-{}", key.identity_provider);
-        let or = ObjectRef::new(&name).within(self.repository.namespace().as_str());
-        self.repository.get(or)
+        let or = ObjectRef::new(&name).within(self.resource_manger.namespace().as_str());
+        self.resource_manger.get(or)
     }
 
     async fn overwrite(
@@ -87,7 +89,7 @@ impl KubernetesPrincipalAssociationRepository {
         let updated_configmap = PrincipalAssociationConfigMap {
             metadata: ObjectMeta {
                 name: Some(name.clone()),
-                namespace: Some(self.repository.namespace().clone()),
+                namespace: Some(self.resource_manger.namespace().clone()),
                 labels: Some(btreemap! {
                     self.label_selector_key.clone() => self.label_selector_value.clone()
                 }),
@@ -95,7 +97,7 @@ impl KubernetesPrincipalAssociationRepository {
             },
             data: updated_data,
         };
-        self.repository
+        self.resource_manger
             .replace(&name, updated_configmap)
             .await
             .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
@@ -104,7 +106,7 @@ impl KubernetesPrincipalAssociationRepository {
 
 impl Drop for KubernetesPrincipalAssociationRepository {
     fn drop(&mut self) {
-        if let Err(e) = self.repository.stop() {
+        if let Err(e) = self.resource_manger.stop() {
             warn!("Failed to stop KubernetesPrincipalAssociationRepository: {}", e);
         }
     }

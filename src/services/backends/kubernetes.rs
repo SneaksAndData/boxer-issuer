@@ -5,7 +5,7 @@ mod principal_repository;
 mod schema_repository;
 
 use crate::services::backends::base::{Backend, BackendConfiguration};
-use crate::services::backends::kubernetes::common::RepositoryConfig;
+use crate::services::backends::kubernetes::common::KubernetesResourceManagerConfig;
 use crate::services::backends::kubernetes::identity_repository::KubernetesIdentityRepository;
 use crate::services::backends::kubernetes::principal_association_repository::KubernetesPrincipalAssociationRepository;
 use crate::services::backends::kubernetes::principal_repository::KubernetesPrincipalRepository;
@@ -94,7 +94,7 @@ impl BackendConfiguration for KubernetesBackend {
             }
         };
 
-        let repository_config = RepositoryConfig {
+        let repository_config = KubernetesResourceManagerConfig {
             namespace: settings.namespace.clone(),
             label_selector_key: settings.label_selector_key.clone(),
             label_selector_value: settings.label_selector_value.clone(),
