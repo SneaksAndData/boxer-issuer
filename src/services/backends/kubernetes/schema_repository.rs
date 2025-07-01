@@ -160,7 +160,8 @@ impl UpsertRepository<String, SchemaFragment> for KubernetesSchemaRepository {
     }
 
     async fn exists(&self, key: String) -> Result<bool, Self::Error> {
-        let or: ObjectRef<SchemaConfigMap> = ObjectRef::new(key.as_str()).within(self.resource_manger.namespace().as_str());
+        let or: ObjectRef<SchemaConfigMap> =
+            ObjectRef::new(key.as_str()).within(self.resource_manger.namespace().as_str());
         self.resource_manger.get(or).map(|_| true).or_else(|e| {
             if e.to_string().contains("not found") {
                 Ok(false)
