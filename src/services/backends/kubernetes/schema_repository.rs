@@ -18,9 +18,7 @@ use std::{println as warn, println as debug};
 
 // Other imports
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
-use crate::services::backends::kubernetes::common::{
-    KubernetesResourceManagerConfig, ResourceUpdateHandler,
-};
+use crate::services::backends::kubernetes::common::{KubernetesResourceManagerConfig, ResourceUpdateHandler};
 use crate::services::base::upsert_repository::UpsertRepository;
 use anyhow::anyhow;
 use async_trait::async_trait;
