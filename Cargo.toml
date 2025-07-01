@@ -28,6 +28,7 @@ uuid = {  version = "1.17.0", features = ["v4"] }
 serde_yml = "0.0.12"
 maplit = "1.0.2"
 kubert = "0.24.0"
+kube-client = "1.1.0"
 
 [dev-dependencies]
 test-context = "0.4.1"
