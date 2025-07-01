@@ -6,7 +6,7 @@ use k8s_openapi::NamespaceResourceScope;
 use kube::runtime::reflector::ObjectRef;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use crate::services::backends::kubernetes::common::KubernetesRepository;
+use crate::services::backends::kubernetes::common::{KubernetesRepository, RepositoryConfig, ResourceUpdateHandler};
 
 pub struct MultithreadResourceManager<Resource>
 where
@@ -31,5 +31,10 @@ where
     
     pub fn get(&self, object_ref: ObjectRef<Resource>) -> Result<Arc<Resource>, Error> {
         self.resource_manager.get(object_ref)
+    }
+    
+    pub async fn start(config: RepositoryConfig, update_handler: Arc<dyn ResourceUpdateHandler<Resource>>) -> Result<Self, Error> {
+        let resource_manager = KubernetesRepository::start(config, update_handler).await?;
+        Ok(MultithreadResourceManager::new(resource_manager))
     }
 }
