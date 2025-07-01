@@ -17,7 +17,7 @@ use log::{debug, warn};
 use std::{println as warn, println as debug};
 
 // Other imports
-use crate::services::backends::kubernetes::common::{ResourceManager, ResourceManagerConfig, ResourceUpdateHandler};
+use crate::services::backends::kubernetes::common::{KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler};
 use crate::services::base::upsert_repository::UpsertRepository;
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -69,17 +69,17 @@ struct SchemaConfigMap {
 }
 
 pub struct KubernetesSchemaRepository {
-    resource_manger: ResourceManager<SchemaConfigMap>,
+    resource_manger: KubernetesResourceManager<SchemaConfigMap>,
     label_selector_key: String,
     label_selector_value: String,
 }
 
 impl KubernetesSchemaRepository {
     #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
-    pub async fn start(config: ResourceManagerConfig) -> anyhow::Result<Self> {
+    pub async fn start(config: KubernetesResourceManagerConfig) -> anyhow::Result<Self> {
         let label_selector_key = config.label_selector_key.clone();
         let label_selector_value = config.label_selector_value.clone();
-        let resource_manger = ResourceManager::start(config, Arc::new(UpdateHandler)).await?;
+        let resource_manger = KubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
         Ok(KubernetesSchemaRepository {
             resource_manger,
             label_selector_key,

@@ -1,5 +1,5 @@
 use crate::models::api::external::identity::ExternalIdentity;
-use crate::services::backends::kubernetes::common::{ResourceManager, ResourceManagerConfig, ResourceUpdateHandler};
+use crate::services::backends::kubernetes::common::{KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler};
 use crate::services::base::upsert_repository::UpsertRepository;
 use anyhow::{anyhow, bail, Result};
 use async_trait::async_trait;
@@ -41,13 +41,13 @@ struct IdentitiesConfigMap {
 }
 
 pub struct KubernetesIdentityRepository {
-    resource_manager: ResourceManager<IdentitiesConfigMap>,
+    resource_manager: KubernetesResourceManager<IdentitiesConfigMap>,
 }
 
 impl KubernetesIdentityRepository {
     #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
-    pub async fn start(config: ResourceManagerConfig) -> Result<Self> {
-        let resource_manager = ResourceManager::start(config, Arc::new(UpdateHandler)).await?;
+    pub async fn start(config: KubernetesResourceManagerConfig) -> Result<Self> {
+        let resource_manager = KubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
         Ok(KubernetesIdentityRepository { resource_manager })
     }
 
