@@ -10,7 +10,7 @@ use kube::core::ErrorResponse;
 use kube::runtime::reflector::ObjectRef;
 use kube::{Api, Client};
 use kubert::lease::{ClaimParams, LeaseManager};
-use log::{info};
+use log::info;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt::Debug;
