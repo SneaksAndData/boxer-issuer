@@ -50,7 +50,7 @@ impl Backend for InMemoryBackend {
 
 #[async_trait]
 impl BackendConfiguration for InMemoryBackend {
-    async fn configure(mut self, _: &BackendSettings) -> anyhow::Result<Self> {
+    async fn configure(mut self, _: &BackendSettings, _: String) -> anyhow::Result<Self> {
         // No additional configuration needed for InMemoryBackend
         Ok(self)
     }

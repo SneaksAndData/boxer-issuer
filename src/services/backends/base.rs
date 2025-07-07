@@ -24,13 +24,21 @@ pub trait Backend: Send + Sync {
 
 #[async_trait]
 pub trait BackendConfiguration: Send + Sync + Sized {
-    async fn configure(mut self, cm: &BackendSettings) -> Result<Self>;
+    async fn configure(mut self, cm: &BackendSettings, instance_name: String) -> Result<Self>;
 }
 
 pub async fn load_backend(backend_type: BackendType, cm: &AppSettings) -> Result<Arc<dyn Backend>> {
     let backend: Arc<dyn Backend> = match backend_type {
-        BackendType::InMemory => Arc::new(InMemoryBackend::new().configure(&cm.backend).await?),
-        BackendType::Kubernetes => Arc::new(KubernetesBackend::new().configure(&cm.backend).await?),
+        BackendType::InMemory => Arc::new(
+            InMemoryBackend::new()
+                .configure(&cm.backend, cm.instance_name.clone())
+                .await?,
+        ),
+        BackendType::Kubernetes => Arc::new(
+            KubernetesBackend::new()
+                .configure(&cm.backend, cm.instance_name.clone())
+                .await?,
+        ),
     };
     Ok(backend)
 }

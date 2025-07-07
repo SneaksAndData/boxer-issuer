@@ -1,4 +1,5 @@
 use crate::services::backends::base::BackendType;
+use duration_string::DurationString;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -8,6 +9,10 @@ pub struct KubernetesBackendSettings {
     pub namespace: String,
     pub label_selector_key: String,
     pub label_selector_value: String,
+
+    pub lease_name: String,
+    pub lease_duration: DurationString,
+    pub lease_renew_duration: DurationString,
 }
 
 #[derive(Debug, Deserialize)]
@@ -22,6 +27,7 @@ pub struct BackendSettings {
 
 #[derive(Debug, Deserialize)]
 pub struct AppSettings {
+    pub instance_name: String,
     pub init: InitializationSettings,
     pub backend: BackendSettings,
 }

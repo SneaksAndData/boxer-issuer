@@ -6,9 +6,11 @@ use k8s_openapi::api::coordination::v1::Lease;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use k8s_openapi::NamespaceResourceScope;
 use kube::core::params::PostParams;
+use kube::core::ErrorResponse;
 use kube::runtime::reflector::ObjectRef;
 use kube::{Api, Client};
 use kubert::lease::{ClaimParams, LeaseManager};
+use log::{info};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt::Debug;
@@ -83,7 +85,14 @@ where
             },
             ..Default::default()
         };
-        api.create(&PostParams::default(), &lease).await?;
+        let err = api.create(&PostParams::default(), &lease).await;
+        if let Err(e) = err {
+            if let kube::Error::Api(ErrorResponse { code: 409, .. }) = e {
+                info!("Lease {} already exists, continuing", config.lease_name);
+            } else {
+                return Err(anyhow::anyhow!("Failed to create lease: {}", e));
+            }
+        }
         let ls = LeaseSettings {
             claimant: config.claimant.clone(),
             lease_duration: config.lease_duration,
@@ -99,20 +108,5 @@ where
 
     pub fn namespace(&self) -> String {
         self.resource_manager.namespace.clone()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::services::backends::kubernetes::schema_repository::KubernetesSchemaRepository;
-    use k8s_openapi::api::core::v1::ConfigMap;
-    use kube_client::Api;
-    use std::sync::Arc;
-
-    #[allow(dead_code)]
-    struct Kubernetes {
-        raw_api: Arc<Api<ConfigMap>>,
-        repository: Arc<KubernetesSchemaRepository>,
-        schema_str: String,
     }
 }

@@ -21,7 +21,6 @@ use kube::Config;
 use log::{debug, info};
 use std::process::Command;
 use std::sync::Arc;
-use std::time::Duration;
 
 pub struct KubernetesBackend {
     pub schemas_repository: Option<Arc<SchemaRepository>>,
@@ -73,7 +72,7 @@ impl Backend for KubernetesBackend {
 
 #[async_trait]
 impl BackendConfiguration for KubernetesBackend {
-    async fn configure(mut self, cm: &BackendSettings) -> anyhow::Result<Self> {
+    async fn configure(mut self, cm: &BackendSettings, instance_name: String) -> anyhow::Result<Self> {
         info!("Kubernetes backend configuration: {:?}", cm);
         let settings = cm
             .kubernetes
@@ -99,10 +98,10 @@ impl BackendConfiguration for KubernetesBackend {
             namespace: settings.namespace.clone(),
             label_selector_key: settings.label_selector_key.clone(),
             label_selector_value: settings.label_selector_value.clone(),
-            lease_name: "".to_string(), // TODO: Implement lease management
-            lease_duration: Duration::from_secs(60),
-            renew_deadline: Duration::from_secs(30),
-            claimant: "".to_string(), // TODO: Implement lease management
+            lease_name: settings.lease_name.clone(),
+            lease_duration: settings.lease_duration.into(),
+            renew_deadline: settings.lease_renew_duration.into(),
+            claimant: instance_name,
             kubeconfig,
         };
 
