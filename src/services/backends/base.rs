@@ -15,11 +15,16 @@ pub enum BackendType {
     Kubernetes,
 }
 
-pub trait Backend: Send + Sync {
+pub trait Backend: Send + Sync + IdentityProviderBackend {
     fn get_schemas_repository(&self) -> Arc<SchemaRepository>;
     fn get_entities_repository(&self) -> Arc<PrincipalRepository>;
     fn get_principal_association_repository(&self) -> Arc<PrincipalAssociationRepository>;
     fn get_identity_repository(&self) -> Arc<IdentityRepository>;
+}
+
+#[async_trait]
+pub trait IdentityProviderBackend: Send + Sync {
+    async fn register_identity_provider(&self, provider: String) -> Result<()>;
 }
 
 #[async_trait]

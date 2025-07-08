@@ -1,4 +1,4 @@
-use crate::services::backends::base::{Backend, BackendConfiguration};
+use crate::services::backends::base::{Backend, BackendConfiguration, IdentityProviderBackend};
 use crate::services::base::upsert_repository::{
     IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository,
 };
@@ -45,6 +45,14 @@ impl Backend for InMemoryBackend {
 
     fn get_identity_repository(&self) -> Arc<IdentityRepository> {
         Arc::clone(&self.identity_repository)
+    }
+}
+
+#[async_trait]
+impl IdentityProviderBackend for InMemoryBackend {
+    async fn register_identity_provider(&self, _: String) -> anyhow::Result<()> {
+        // In-memory backend does not require registration logic
+        Ok(())
     }
 }
 

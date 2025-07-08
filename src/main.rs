@@ -28,9 +28,11 @@ async fn main() -> Result<()> {
     std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
     let addr = ("127.0.0.1", 8888);
-    let validator_provider = Arc::new(identity_validator_provider::new());
+    
     let cm = AppSettings::new()?;
     let current_backend = load_backend(cm.get_backend_type(), &cm).await?;
+    
+    let validator_provider = Arc::new(identity_validator_provider::new(current_backend.clone()));
 
     let configuration_watcher = validator_provider.clone();
     let _ = tokio::spawn(configuration_watcher.watch_for_identity_providers());

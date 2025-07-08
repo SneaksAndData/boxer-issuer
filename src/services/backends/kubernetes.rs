@@ -4,7 +4,7 @@ mod principal_association_repository;
 mod principal_repository;
 mod schema_repository;
 
-use crate::services::backends::base::{Backend, BackendConfiguration};
+use crate::services::backends::base::{Backend, BackendConfiguration, IdentityProviderBackend};
 use crate::services::backends::kubernetes::common::KubernetesResourceManagerConfig;
 use crate::services::backends::kubernetes::identity_repository::KubernetesIdentityRepository;
 use crate::services::backends::kubernetes::principal_association_repository::KubernetesPrincipalAssociationRepository;
@@ -26,7 +26,7 @@ pub struct KubernetesBackend {
     pub schemas_repository: Option<Arc<SchemaRepository>>,
     pub entities_repository: Option<Arc<PrincipalRepository>>,
     pub principal_association_repository: Option<Arc<PrincipalAssociationRepository>>,
-    pub identity_repository: Option<Arc<IdentityRepository>>,
+    pub identity_repository: Option<Arc<KubernetesIdentityRepository>>,
 }
 
 impl KubernetesBackend {
@@ -67,6 +67,17 @@ impl Backend for KubernetesBackend {
             .as_ref()
             .expect("Backend is not started")
             .clone()
+    }
+}
+
+#[async_trait]
+impl IdentityProviderBackend for KubernetesBackend {
+    async fn register_identity_provider(&self, provider: String) -> anyhow::Result<()> {
+        info!("Registering identity provider: {}", provider);
+        let identity_repository = self.identity_repository.clone().ok_or_else(|| {
+            anyhow!("Backend not started")
+        })?;
+        identity_repository.create_if_not_exists(&provider).await
     }
 }
 
