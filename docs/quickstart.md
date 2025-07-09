@@ -35,15 +35,6 @@ Create an identity
 curl -X POST 'http://localhost:8888/identity/provider/test_user'
 ```
 
-Attach a created policy to a user
-```shell
-curl -X POST 'http://localhost:8888/attachment/provider/test_user/test-policy'
-```
-Validate that an identity is created and a policy is attached
-```shell
-curl -X GET 'http://localhost:8888/attachment/provider/test_user'
-```
-
 ### Create a schema
 
 ```shell
@@ -101,7 +92,7 @@ $ curl -X GET 'http://localhost:8888/schema/test'
 ### Create a principal
 
 ```shell
-curl -X POST 'http://localhost:8888/principal/test/User/Alice' \
+curl -X POST 'http://localhost:8888/principal/test' \
 --header 'Content-Type: application/json' \
 --data '[
 
@@ -129,6 +120,19 @@ curl -X POST 'http://localhost:8888/principal/test/User/Alice' \
         ]
     }
 ]'
+```
+
+### Create a principal association
+
+```shell
+curl -X POST 'http://localhost:8888/association/' \
+--header 'Content-Type: application/json' \
+--data '{
+    "identity_provider": "test",
+    "identity": "test_user",
+    "principal_schema": "test",
+    "principal_id": "User::\"alice\""
+}'
 ```
 
 ## Validate the setup
