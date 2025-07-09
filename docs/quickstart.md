@@ -35,13 +35,104 @@ Create an identity
 curl -X POST 'http://localhost:8888/identity/provider/test_user'
 ```
 
-Attach a created policy to a user
+### Create a schema
+
 ```shell
-curl -X POST 'http://localhost:8888/attachment/provider/test_user/test-policy'
+$ curl -X POST 'http://localhost:8888/schema/test' \
+--header 'Content-Type: application/json' \
+--data '{
+    "PhotoApp": {
+        "commonTypes": {
+            "PersonType": {
+                "type": "Record",
+                "attributes": {
+                    "age": {
+                        "type": "Long"
+                    },
+                    "name": {
+                        "type": "String"
+                    }
+                }
+            }
+        },
+        "entityTypes": {
+            "User": {
+                "shape": {
+                    "type": "Record",
+                    "attributes": {
+                        "userId": {
+                            "type": "String"
+                        },
+                        "personInformation": {
+                            "type": "PersonType"
+                        }
+                    }
+                },
+                "memberOfTypes": [
+                    "UserGroup"
+                ]
+            },
+            "UserGroup": {
+                "shape": {
+                    "type": "Record",
+                    "attributes": {}
+                }
+            }
+        },
+        "actions": {}
+    }
+}'
 ```
-Validate that an identity is created and a policy is attached
+
+### Validate that the schema is created
 ```shell
-curl -X GET 'http://localhost:8888/attachment/provider/test_user'
+$ curl -X GET 'http://localhost:8888/schema/test'
+```
+
+### Create a principal
+
+```shell
+curl -X POST 'http://localhost:8888/principal/test' \
+--header 'Content-Type: application/json' \
+--data '[
+
+{
+        "uid": {
+            "type": "PhotoApp::User",
+            "id": "alice"
+        },
+        "attrs": {
+            "userId": "897345789237492878",
+            "personInformation": {
+                "age": 25,
+                "name": "alice"
+            }
+        },
+        "parents": [
+            {
+                "type": "PhotoApp::UserGroup",
+                "id": "alice_friends"
+            },
+            {
+                "type": "PhotoApp::UserGroup",
+                "id": "AVTeam"
+            }
+        ]
+    }
+]'
+```
+
+### Create a principal association
+
+```shell
+curl -X POST 'http://localhost:8888/association/' \
+--header 'Content-Type: application/json' \
+--data '{
+    "identity_provider": "test",
+    "identity": "test_user",
+    "principal_schema": "test",
+    "principal_id": "User::\"alice\""
+}'
 ```
 
 ## Validate the setup
