@@ -5,6 +5,7 @@ pub mod synchronized_kubernetes_resource_manager;
 use anyhow::{anyhow, Error};
 use futures::future::Ready;
 use futures::StreamExt;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use k8s_openapi::NamespaceResourceScope;
 use kube::api::PostParams;
 use kube::runtime::reflector::{ObjectRef, Store};
@@ -14,6 +15,7 @@ use kube::{Api, Client, Resource};
 use log::debug;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::Arc;
@@ -47,7 +49,6 @@ impl KubernetesResourceManagerConfig {
         }
     }
 }
-
 pub struct KubernetesResourceManager<StoredObject>
 where
     StoredObject: Resource + 'static,

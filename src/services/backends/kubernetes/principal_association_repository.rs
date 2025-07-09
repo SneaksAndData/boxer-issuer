@@ -12,6 +12,7 @@ use std::{println as warn, println as debug};
 
 // Other imports
 use crate::models::api::external::identity::ExternalIdentity;
+use crate::services::backends::kubernetes::{common, models};
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
 use crate::services::backends::kubernetes::common::{KubernetesResourceManagerConfig, ResourceUpdateHandler};
 use crate::services::base::upsert_repository::{PrincipalIdentity, UpsertRepository};
@@ -26,8 +27,9 @@ use kube::runtime::watcher;
 use kube::Resource;
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{HashMap};
 use std::sync::Arc;
+use crate::services::backends::kubernetes::models::base::WithMetadata;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct PrincipalAssociationData {
@@ -42,14 +44,22 @@ struct PrincipalAssociationConfigMap {
     data: PrincipalAssociationData,
 }
 
-impl PrincipalAssociationConfigMap {
-    fn empty_metadata(name: String, namespace: String, labels: BTreeMap<String, String>) -> ObjectMeta {
-        ObjectMeta {
-            name: Some(name),
-            namespace: Some(namespace),
-            labels: Some(labels),
-            ..Default::default()
+impl Default for PrincipalAssociationConfigMap {
+    fn default() -> Self {
+        PrincipalAssociationConfigMap {
+            metadata: ObjectMeta::default(),
+            data: PrincipalAssociationData {
+                active: "{}".to_string(),
+                inactive: "{}".to_string(),
+            },
         }
+    }
+}
+
+impl WithMetadata<ObjectMeta> for PrincipalAssociationConfigMap {
+    fn with_metadata(mut self, metadata: ObjectMeta) -> Self {
+        self.metadata = metadata;
+        self
     }
 }
 
@@ -160,21 +170,15 @@ impl UpsertRepository<ExternalIdentity, PrincipalIdentity> for KubernetesPrincip
     }
 
     async fn upsert(&self, key: ExternalIdentity, principal: PrincipalIdentity) -> Result<(), Self::Error> {
+        let name = format!("principals-{}", key.identity_provider);
+        let namespace = self.resource_manager.namespace().clone();
+        let labels = btreemap! {
+            self.label_selector_key.clone() => self.label_selector_value.clone()
+        };
+        
         let configmap = match self.get_entities(key.clone()).await {
             Ok(configmap) => configmap,
-            Err(e) => Arc::new(PrincipalAssociationConfigMap {
-                metadata: PrincipalAssociationConfigMap::empty_metadata(
-                    format!("principals-{}", key.identity_provider),
-                    self.resource_manager.namespace().clone(),
-                    btreemap! {
-                    self.label_selector_key.clone() => self.label_selector_value.clone()
-                    },
-                ),
-                data: PrincipalAssociationData {
-                    active: "{}".to_string(),
-                    inactive: "{}".to_string(),
-                },
-            }),
+            Err(_e) => Arc::new(models::empty(name, namespace, labels)),
         };
         let mut active = configmap.get_active_associations()?;
         active.insert(to_key(&key), principal.clone());

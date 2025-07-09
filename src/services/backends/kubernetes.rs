@@ -3,6 +3,7 @@ mod identity_repository;
 mod principal_association_repository;
 mod principal_repository;
 mod schema_repository;
+pub mod models;
 
 use crate::services::backends::base::{Backend, BackendConfiguration, IdentityProviderBackend};
 use crate::services::backends::kubernetes::common::KubernetesResourceManagerConfig;
@@ -78,7 +79,7 @@ impl IdentityProviderBackend for KubernetesBackend {
             .identity_repository
             .clone()
             .ok_or_else(|| anyhow!("Backend not started"))?;
-        identity_repository.try_create_identity_provider(&provider).await
+        identity_repository.try_register_identity_provider(&provider).await
     }
 }
 

@@ -25,9 +25,11 @@ use log::{debug, warn};
 use futures::future::Ready;
 
 // Workaround to use prinltn! for logs.
+use crate::services::backends::kubernetes::{common, models};
 use maplit::btreemap;
 #[cfg(test)]
 use std::{println as warn, println as debug};
+use crate::services::backends::kubernetes::models::base::WithMetadata;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct ExternalIdentitiesSet {
@@ -40,6 +42,25 @@ struct ExternalIdentitiesSet {
 struct IdentitiesConfigMap {
     metadata: ObjectMeta,
     data: ExternalIdentitiesSet,
+}
+
+impl Default for IdentitiesConfigMap {
+    fn default() -> Self {
+        IdentitiesConfigMap {
+            metadata: ObjectMeta::default(),
+            data: ExternalIdentitiesSet {
+                active: "[]".to_string(),
+                inactive: "[]".to_string(),
+            },
+        }
+    }
+}
+
+impl WithMetadata<ObjectMeta> for IdentitiesConfigMap {
+    fn with_metadata(mut self, metadata: ObjectMeta) -> Self {
+        self.metadata = metadata;
+        self
+    }
 }
 
 pub struct KubernetesIdentityRepository {
@@ -98,28 +119,17 @@ impl KubernetesIdentityRepository {
         self.resource_manager.replace(provider, updated_configmap).await
     }
 
-    const EMPTY_IDENTITY_SET: &'static str = "[]";
 
-    pub async fn try_create_identity_provider(&self, provider: &str) -> Result<()> {
-        let object_meta = ObjectMeta {
-            name: Some(provider.to_string()),
-            labels: Some(btreemap! {self.label_selector_key.clone() => self.label_selector_value.clone()}),
-            namespace: Some(self.resource_manager.namespace().to_string()),
-            ..Default::default()
+    pub async fn try_register_identity_provider(&self, provider: &str) -> Result<()> {
+        let name = provider.to_string();
+        let namespace = self.resource_manager.namespace().clone();
+        let labels = btreemap! {
+            self.label_selector_key.clone() => self.label_selector_value.clone()
         };
-        let configmap = IdentitiesConfigMap {
-            metadata: object_meta,
-            data: ExternalIdentitiesSet {
-                active: Self::EMPTY_IDENTITY_SET.to_string(),
-                inactive: Self::EMPTY_IDENTITY_SET.to_string(),
-            },
-        };
-
-        let result = self.get_identities(provider).await;
-        if let Ok(_) = result {
-            return Ok(()); // ConfigMap already exists
+        match self.get_identities(provider).await{
+            Ok(_) => Ok(()),
+            _ => self.resource_manager.replace(provider, models::empty(name, namespace, labels )).await
         }
-        self.resource_manager.replace(provider, configmap).await
     }
 }
 
