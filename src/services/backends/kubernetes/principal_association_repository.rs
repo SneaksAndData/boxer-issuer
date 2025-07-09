@@ -12,9 +12,10 @@ use std::{println as warn, println as debug};
 
 // Other imports
 use crate::models::api::external::identity::ExternalIdentity;
-use crate::services::backends::kubernetes::{common, models};
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
 use crate::services::backends::kubernetes::common::{KubernetesResourceManagerConfig, ResourceUpdateHandler};
+use crate::services::backends::kubernetes::models::base::WithMetadata;
+use crate::services::backends::kubernetes::{common, models};
 use crate::services::base::upsert_repository::{PrincipalIdentity, UpsertRepository};
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -27,9 +28,8 @@ use kube::runtime::watcher;
 use kube::Resource;
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::sync::Arc;
-use crate::services::backends::kubernetes::models::base::WithMetadata;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct PrincipalAssociationData {
@@ -175,7 +175,7 @@ impl UpsertRepository<ExternalIdentity, PrincipalIdentity> for KubernetesPrincip
         let labels = btreemap! {
             self.label_selector_key.clone() => self.label_selector_value.clone()
         };
-        
+
         let configmap = match self.get_entities(key.clone()).await {
             Ok(configmap) => configmap,
             Err(_e) => Arc::new(models::empty(name, namespace, labels)),

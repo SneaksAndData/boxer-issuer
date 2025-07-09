@@ -15,9 +15,10 @@ use std::str::FromStr;
 use std::{println as warn, println as debug};
 // Other imports
 use crate::models::principal::Principal;
-use crate::services::backends::kubernetes::{common, models};
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
 use crate::services::backends::kubernetes::common::{KubernetesResourceManagerConfig, ResourceUpdateHandler};
+use crate::services::backends::kubernetes::models::base::WithMetadata;
+use crate::services::backends::kubernetes::{common, models};
 use crate::services::base::upsert_repository::{PrincipalIdentity, UpsertRepository};
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
@@ -32,7 +33,6 @@ use kube::Resource;
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use crate::services::backends::kubernetes::models::base::WithMetadata;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct PrincipalData {
@@ -182,12 +182,12 @@ impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepos
 
     async fn upsert(&self, key: PrincipalIdentity, principal: Principal) -> Result<(), Self::Error> {
         let entity_uid: EntityUid = (&key).try_into()?;
-        let name =  format!("entities-{}", key.schema_id().clone());
+        let name = format!("entities-{}", key.schema_id().clone());
         let namespace = self.resource_manager.namespace().clone();
         let labels = btreemap! {
             self.label_selector_key.clone() => self.label_selector_value.clone()
         };
-        
+
         let configmap = match self.get_entities(key.schema_id()).await {
             Ok(configmap) => configmap,
             Err(_e) => Arc::new(models::empty(name, namespace, labels)),

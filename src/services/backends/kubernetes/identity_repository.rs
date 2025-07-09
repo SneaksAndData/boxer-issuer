@@ -25,11 +25,11 @@ use log::{debug, warn};
 use futures::future::Ready;
 
 // Workaround to use prinltn! for logs.
+use crate::services::backends::kubernetes::models::base::WithMetadata;
 use crate::services::backends::kubernetes::{common, models};
 use maplit::btreemap;
 #[cfg(test)]
 use std::{println as warn, println as debug};
-use crate::services::backends::kubernetes::models::base::WithMetadata;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct ExternalIdentitiesSet {
@@ -119,16 +119,19 @@ impl KubernetesIdentityRepository {
         self.resource_manager.replace(provider, updated_configmap).await
     }
 
-
     pub async fn try_register_identity_provider(&self, provider: &str) -> Result<()> {
         let name = provider.to_string();
         let namespace = self.resource_manager.namespace().clone();
         let labels = btreemap! {
             self.label_selector_key.clone() => self.label_selector_value.clone()
         };
-        match self.get_identities(provider).await{
+        match self.get_identities(provider).await {
             Ok(_) => Ok(()),
-            _ => self.resource_manager.replace(provider, models::empty(name, namespace, labels )).await
+            _ => {
+                self.resource_manager
+                    .replace(provider, models::empty(name, namespace, labels))
+                    .await
+            }
         }
     }
 }

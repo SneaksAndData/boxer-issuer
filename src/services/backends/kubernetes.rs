@@ -1,9 +1,9 @@
 pub mod common;
 mod identity_repository;
+pub mod models;
 mod principal_association_repository;
 mod principal_repository;
 mod schema_repository;
-pub mod models;
 
 use crate::services::backends::base::{Backend, BackendConfiguration, IdentityProviderBackend};
 use crate::services::backends::kubernetes::common::KubernetesResourceManagerConfig;

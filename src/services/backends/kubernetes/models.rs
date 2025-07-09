@@ -1,7 +1,7 @@
-use std::collections::BTreeMap;
+use crate::services::backends::kubernetes::models::base::WithMetadata;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::Resource;
-use crate::services::backends::kubernetes::models::base::{WithMetadata};
+use std::collections::BTreeMap;
 
 /// Common traits and functions for Kubernetes resources
 pub mod base;
@@ -24,4 +24,3 @@ pub fn empty_metadata(name: String, namespace: String, labels: BTreeMap<String, 
         ..Default::default()
     }
 }
-
