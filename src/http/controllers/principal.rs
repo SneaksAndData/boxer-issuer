@@ -8,8 +8,6 @@ use actix_web::{delete, get, post, web, HttpResponse};
 use cedar_policy::{Entity, Schema};
 use std::sync::Arc;
 
-const MAX_PRINCIPAL_SIZE: usize = 262_144; // max payload size is 256k
-
 #[utoipa::path(context_path = "/principal/", responses((status = OK)))]
 #[post("{schema}")]
 async fn post(
