@@ -15,7 +15,7 @@ use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
 use crate::services::backends::kubernetes::common::{KubernetesResourceManagerConfig, ResourceUpdateHandler};
 use crate::services::backends::kubernetes::models::base::WithMetadata;
-use crate::services::backends::kubernetes::{common, models};
+use crate::services::backends::kubernetes::{models};
 use crate::services::base::upsert_repository::{PrincipalIdentity, UpsertRepository};
 use anyhow::anyhow;
 use async_trait::async_trait;

@@ -3,10 +3,9 @@ use crate::models::principal::Principal;
 use crate::services::base::upsert_repository::SchemaRepository;
 use crate::services::base::upsert_repository::{PrincipalIdentity, PrincipalRepository};
 use actix_web::dev::HttpServiceFactory;
-use actix_web::web::{BytesMut, Data, Path, Payload};
+use actix_web::web::{Data, Path};
 use actix_web::{delete, get, post, web, HttpResponse};
 use cedar_policy::{Entity, Schema};
-use futures::StreamExt;
 use std::sync::Arc;
 
 const MAX_PRINCIPAL_SIZE: usize = 262_144; // max payload size is 256k
