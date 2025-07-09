@@ -9,7 +9,7 @@ impl AppSettings {
     /// Creates a new instance of `AppSettings` by loading configuration from predefined sources
     pub fn new() -> Result<Self, ConfigError> {
         let s = Config::builder()
-            .add_source(File::with_name("integration-tests.toml"))
+            .add_source(File::with_name("settings.toml"))
             .add_source(Environment::with_prefix("BOXER").separator("__"))
             .build()?;
 
