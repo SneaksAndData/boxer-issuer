@@ -1,0 +1,36 @@
+# Application settings
+instance_name = "integration-tests"
+
+# Initialization settings
+[init]
+backend_type = "Kubernetes"
+
+# Backend configuration
+[backend]
+# Kubernetes backend settings
+[backend.kubernetes]
+exec = "kind get kubeconfig --name kind" # Command to get kubeconfig for the Kind cluster
+namespace = "default"                    # Kubernetes namespace
+lease_name = "boxer"                     # Name for the lease object
+lease_duration = "60s"                   # Duration string for lease lifetime
+lease_renew_duration = "15s"             # Duration string for lease renewal interval
+
+# Repository settings for identities
+[backend.kubernetes.identity_repository]
+label_selector_key = "app.kubernetes.io/component"
+label_selector_value = "identity"
+
+# Repository settings for principals
+[backend.kubernetes.principal_repository]
+label_selector_key = "app.kubernetes.io/component"
+label_selector_value = "principal"
+
+# Repository settings for schemas
+[backend.kubernetes.schema_repository]
+label_selector_key = "app.kubernetes.io/component"
+label_selector_value = "schema"
+
+# Repository settings for principal associations
+[backend.kubernetes.principal_association_repository]
+label_selector_key = "app.kubernetes.io/component"
+label_selector_value = "principal-association"

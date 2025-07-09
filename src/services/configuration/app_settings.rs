@@ -2,13 +2,14 @@ use crate::services::backends::base::BackendType;
 use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
 use crate::services::configuration::models::AppSettings;
 use async_trait::async_trait;
-use config::{Config, ConfigError, Environment};
+use config::{Config, ConfigError, Environment, File};
 use std::sync::Arc;
 
 impl AppSettings {
     /// Creates a new instance of `AppSettings` by loading configuration from predefined sources
     pub fn new() -> Result<Self, ConfigError> {
         let s = Config::builder()
+            .add_source(File::with_name("settings.toml"))
             .add_source(Environment::with_prefix("BOXER").separator("__"))
             .build()?;
 

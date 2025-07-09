@@ -96,8 +96,8 @@ impl BackendConfiguration for KubernetesBackend {
 
         let repository_config = KubernetesResourceManagerConfig {
             namespace: settings.namespace.clone(),
-            label_selector_key: settings.label_selector_key.clone(),
-            label_selector_value: settings.label_selector_value.clone(),
+            label_selector_key: settings.identity_repository.label_selector_key.clone(),
+            label_selector_value: settings.identity_repository.label_selector_value.clone(),
             lease_name: settings.lease_name.clone(),
             lease_duration: settings.lease_duration.into(),
             renew_deadline: settings.lease_renew_duration.into(),
@@ -106,10 +106,24 @@ impl BackendConfiguration for KubernetesBackend {
         };
 
         let identity_repository = KubernetesIdentityRepository::start(repository_config.clone()).await?;
-        let entities_repository = KubernetesPrincipalRepository::start(repository_config.clone()).await?;
-        let schemas_repository = KubernetesSchemaRepository::start(repository_config.clone()).await?;
+        let entities_repository = KubernetesPrincipalRepository::start(repository_config.clone_with_label_selector(
+            settings.principal_repository.label_selector_key.clone(),
+            settings.principal_repository.label_selector_value.clone(),
+        ))
+        .await?;
+
+        let schemas_repository = KubernetesSchemaRepository::start(repository_config.clone_with_label_selector(
+            settings.schema_repository.label_selector_key.clone(),
+            settings.schema_repository.label_selector_value.clone(),
+        ))
+        .await?;
+
         let principal_association_repository =
-            KubernetesPrincipalAssociationRepository::start(repository_config).await?;
+            KubernetesPrincipalAssociationRepository::start(repository_config.clone_with_label_selector(
+                settings.principal_association_repository.label_selector_key.clone(),
+                settings.principal_association_repository.label_selector_value.clone(),
+            ))
+            .await?;
 
         self.schemas_repository = Some(Arc::new(schemas_repository));
         self.entities_repository = Some(Arc::new(entities_repository));
