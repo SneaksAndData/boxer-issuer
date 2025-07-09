@@ -74,9 +74,10 @@ impl Backend for KubernetesBackend {
 impl IdentityProviderBackend for KubernetesBackend {
     async fn register_identity_provider(&self, provider: String) -> anyhow::Result<()> {
         info!("Registering identity provider: {}", provider);
-        let identity_repository = self.identity_repository.clone().ok_or_else(|| {
-            anyhow!("Backend not started")
-        })?;
+        let identity_repository = self
+            .identity_repository
+            .clone()
+            .ok_or_else(|| anyhow!("Backend not started"))?;
         identity_repository.create_if_not_exists(&provider).await
     }
 }

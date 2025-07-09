@@ -25,9 +25,9 @@ use log::{debug, warn};
 use futures::future::Ready;
 
 // Workaround to use prinltn! for logs.
+use maplit::btreemap;
 #[cfg(test)]
 use std::{println as warn, println as debug};
-use maplit::btreemap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct ExternalIdentitiesSet {
@@ -53,7 +53,11 @@ impl KubernetesIdentityRepository {
         let label_selector_key = config.label_selector_key.clone();
         let label_selector_value = config.label_selector_value.clone();
         let resource_manager = SynchronizedKubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
-        Ok(KubernetesIdentityRepository { resource_manager, label_selector_key, label_selector_value })
+        Ok(KubernetesIdentityRepository {
+            resource_manager,
+            label_selector_key,
+            label_selector_value,
+        })
     }
 
     async fn get_identities(&self, provider: &str) -> Result<Arc<IdentitiesConfigMap>> {
@@ -93,13 +97,11 @@ impl KubernetesIdentityRepository {
         updated_configmap.metadata.resource_version = None;
         self.resource_manager.replace(provider, updated_configmap).await
     }
-    
+
     pub async fn create_if_not_exists(&self, provider: &str) -> Result<()> {
         let object_meta = ObjectMeta {
             name: Some(provider.to_string()),
-            labels: Some(
-                btreemap! {self.label_selector_key.clone() => self.label_selector_value.clone()}
-            ),
+            labels: Some(btreemap! {self.label_selector_key.clone() => self.label_selector_value.clone()}),
             namespace: Some(self.resource_manager.namespace().to_string()),
             ..Default::default()
         };
@@ -110,7 +112,7 @@ impl KubernetesIdentityRepository {
                 inactive: String::new(),
             },
         };
-        
+
         let result = self.get_identities(provider).await;
         if let Ok(_) = result {
             return Ok(()); // ConfigMap already exists
