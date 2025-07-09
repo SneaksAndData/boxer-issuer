@@ -10,10 +10,10 @@ mod test_principal;
 use log::{debug, warn};
 
 // Workaround to use prinltn! for logs.
+use std::collections::BTreeMap;
 use std::str::FromStr;
 #[cfg(test)]
 use std::{println as warn, println as debug};
-
 // Other imports
 use crate::models::principal::Principal;
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
@@ -26,9 +26,12 @@ use futures::future;
 use futures::future::Ready;
 use k8s_openapi::api::core::v1::ConfigMap;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use kube::core::ErrorResponse;
 use kube::runtime::reflector::ObjectRef;
 use kube::runtime::watcher;
+use kube::Error::Api;
 use kube::Resource;
+use log::info;
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -44,6 +47,17 @@ struct PrincipalData {
 struct PrincipalConfigMap {
     metadata: ObjectMeta,
     data: PrincipalData,
+}
+
+impl PrincipalConfigMap {
+    fn empty_metadata(name: String, namespace: String, labels: BTreeMap<String, String>) -> ObjectMeta {
+        ObjectMeta {
+            name: Some(name),
+            namespace: Some(namespace),
+            labels: Some(labels),
+            ..Default::default()
+        }
+    }
 }
 
 fn serialize_entities(entities: &Entities) -> anyhow::Result<String> {
@@ -84,20 +98,21 @@ impl KubernetesPrincipalRepository {
     }
 
     async fn get_entities(&self, schema: &str) -> anyhow::Result<Arc<PrincipalConfigMap>> {
-        let or = ObjectRef::new(schema).within(self.resource_manager.namespace().as_str());
+        let configmap_name = format!("entities-{}", schema);
+        let or = ObjectRef::new(&configmap_name).within(self.resource_manager.namespace().as_str());
         self.resource_manager.get(or)
     }
 
     async fn overwrite(&self, key: PrincipalIdentity, updated_data: PrincipalData) -> Result<(), anyhow::Error> {
+        let configmap_name = format!("entities-{}", key.schema_id().clone());
         let updated_configmap = PrincipalConfigMap {
-            metadata: ObjectMeta {
-                name: Some(key.schema_id().clone()),
-                namespace: Some(self.resource_manager.namespace().clone()),
-                labels: Some(btreemap! {
+            metadata: PrincipalConfigMap::empty_metadata(
+                configmap_name,
+                self.resource_manager.namespace().clone(),
+                btreemap! {
                     self.label_selector_key.clone() => self.label_selector_value.clone()
-                }),
-                ..Default::default()
-            },
+                },
+            ),
             data: updated_data,
         };
         self.resource_manager
@@ -161,7 +176,22 @@ impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepos
 
     async fn upsert(&self, key: PrincipalIdentity, principal: Principal) -> Result<(), Self::Error> {
         let entity_uid: EntityUid = (&key).try_into()?;
-        let configmap = self.get_entities(key.schema_id()).await?;
+        let configmap = match self.get_entities(key.schema_id()).await {
+            Ok(configmap) => configmap,
+            Err(e) => Arc::new(PrincipalConfigMap {
+                metadata: PrincipalConfigMap::empty_metadata(
+                    key.schema_id().clone(),
+                    self.resource_manager.namespace().clone(),
+                    btreemap! {
+                    self.label_selector_key.clone() => self.label_selector_value.clone()
+                    },
+                ),
+                data: PrincipalData {
+                    active: "[]".to_string(),
+                    inactive: "[]".to_string(),
+                },
+            }),
+        };
 
         let inactive = configmap.get_inactive_entities()?;
         if inactive.get(&entity_uid).is_some() {
@@ -212,9 +242,11 @@ impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepos
         let entity_uid: EntityUid = (&key).try_into()?;
         let active = self
             .get_entities(key.schema_id())
-            .await
+            .await;
+        let active = active
             .unwrap()
             .get_active_entities()?;
+        active.iter().for_each(|e|debug!("Active entity extracted with UID: {:?}", e.uid().to_string()));
         Ok(active.get(&entity_uid).is_some())
     }
 }

@@ -33,6 +33,21 @@ pub struct KubernetesResourceManagerConfig {
     pub renew_deadline: Duration,
 }
 
+impl KubernetesResourceManagerConfig {
+    pub fn clone_with_label_selector(&self, label_selector_key: String, label_selector_value: String) -> Self {
+        KubernetesResourceManagerConfig {
+            namespace: self.namespace.clone(),
+            label_selector_key,
+            label_selector_value,
+            kubeconfig: self.kubeconfig.clone(),
+            lease_name: self.lease_name.clone(),
+            claimant: self.claimant.clone(),
+            lease_duration: self.lease_duration,
+            renew_deadline: self.renew_deadline,
+        }
+    }
+}
+
 pub struct KubernetesResourceManager<StoredObject>
 where
     StoredObject: Resource + 'static,

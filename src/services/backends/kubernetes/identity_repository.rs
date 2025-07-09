@@ -98,7 +98,9 @@ impl KubernetesIdentityRepository {
         self.resource_manager.replace(provider, updated_configmap).await
     }
 
-    pub async fn create_if_not_exists(&self, provider: &str) -> Result<()> {
+    const EMPTY_IDENTITY_SET: &'static str = "[]";
+
+    pub async fn try_create_identity_provider(&self, provider: &str) -> Result<()> {
         let object_meta = ObjectMeta {
             name: Some(provider.to_string()),
             labels: Some(btreemap! {self.label_selector_key.clone() => self.label_selector_value.clone()}),
@@ -108,8 +110,8 @@ impl KubernetesIdentityRepository {
         let configmap = IdentitiesConfigMap {
             metadata: object_meta,
             data: ExternalIdentitiesSet {
-                active: String::new(),
-                inactive: String::new(),
+                active: Self::EMPTY_IDENTITY_SET.to_string(),
+                inactive: Self::EMPTY_IDENTITY_SET.to_string(),
             },
         };
 

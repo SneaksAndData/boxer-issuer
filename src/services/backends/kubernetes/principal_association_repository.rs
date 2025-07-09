@@ -26,7 +26,7 @@ use kube::runtime::watcher;
 use kube::Resource;
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -40,6 +40,17 @@ struct PrincipalAssociationData {
 struct PrincipalAssociationConfigMap {
     metadata: ObjectMeta,
     data: PrincipalAssociationData,
+}
+
+impl PrincipalAssociationConfigMap {
+    fn empty_metadata(name: String, namespace: String, labels: BTreeMap<String, String>) -> ObjectMeta {
+        ObjectMeta {
+            name: Some(name),
+            namespace: Some(namespace),
+            labels: Some(labels),
+            ..Default::default()
+        }
+    }
 }
 
 impl PrincipalAssociationConfigMap {
@@ -149,7 +160,22 @@ impl UpsertRepository<ExternalIdentity, PrincipalIdentity> for KubernetesPrincip
     }
 
     async fn upsert(&self, key: ExternalIdentity, principal: PrincipalIdentity) -> Result<(), Self::Error> {
-        let configmap = self.get_entities(key.clone()).await?;
+        let configmap = match self.get_entities(key.clone()).await {
+            Ok(configmap) => configmap,
+            Err(e) => Arc::new(PrincipalAssociationConfigMap {
+                metadata: PrincipalAssociationConfigMap::empty_metadata(
+                    format!("principals-{}", key.identity_provider),
+                    self.resource_manager.namespace().clone(),
+                    btreemap! {
+                    self.label_selector_key.clone() => self.label_selector_value.clone()
+                    },
+                ),
+                data: PrincipalAssociationData {
+                    active: "{}".to_string(),
+                    inactive: "{}".to_string(),
+                },
+            }),
+        };
         let mut active = configmap.get_active_associations()?;
         active.insert(to_key(&key), principal.clone());
 

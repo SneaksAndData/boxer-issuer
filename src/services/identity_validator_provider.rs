@@ -89,7 +89,7 @@ where
     async fn watch_for_identity_providers(self) {
         let provider = ExternalIdentityProvider::from("provider".to_string());
         let settings = OidcExternalIdentityProviderSettings {
-            user_id_claim: "upn".to_string(),
+            user_id_claim: "preferred_username".to_string(),
             discovery_url: "http://localhost:8080/realms/master/".to_string(),
             issuers: vec!["http://localhost:8080/realms/master".to_string()],
             audiences: vec!["account".to_string()],
