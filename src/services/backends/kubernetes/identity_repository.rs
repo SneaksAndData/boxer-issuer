@@ -25,8 +25,8 @@ use log::{debug, warn};
 use futures::future::Ready;
 
 // Workaround to use prinltn! for logs.
+use crate::services::backends::kubernetes::models;
 use crate::services::backends::kubernetes::models::base::WithMetadata;
-use crate::services::backends::kubernetes::{models};
 use maplit::btreemap;
 #[cfg(test)]
 use std::{println as warn, println as debug};
