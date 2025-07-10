@@ -1,8 +1,8 @@
 use crate::services::backends::in_memory::InMemoryBackend;
 use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::base::upsert_repository::IdentityRepository;
-use crate::services::base::upsert_repository::PrincipalRepository;
 use crate::services::base::upsert_repository::PrincipalAssociationRepository;
+use crate::services::base::upsert_repository::PrincipalRepository;
 use crate::services::configuration::models::AppSettings;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -36,23 +36,29 @@ pub trait IdentityProviderBackend {
     async fn register_identity_provider(&self, provider: String) -> Result<()>;
 }
 
-pub trait IssuerBackend: 
-    Backend + 
-    EntitiesRepositorySource + 
-    PrincipalAssociationRepositorySource + 
-    IdentityRepositorySource + 
-    Send + Sync + IdentityProviderBackend {}
+pub trait IssuerBackend:
+    Backend
+    + EntitiesRepositorySource
+    + PrincipalAssociationRepositorySource
+    + IdentityRepositorySource
+    + Send
+    + Sync
+    + IdentityProviderBackend
+{
+}
 
 pub async fn load_backend(backend_type: BackendType, cm: &AppSettings) -> Result<Arc<dyn IssuerBackend>> {
     let backend: Arc<dyn IssuerBackend> = match backend_type {
-        BackendType::InMemory => 
+        BackendType::InMemory => {
             InMemoryBackend::new()
                 .configure(&cm.backend, cm.instance_name.clone())
-                .await?,
-        BackendType::Kubernetes => 
+                .await?
+        }
+        BackendType::Kubernetes => {
             KubernetesBackend::new()
                 .configure(&cm.backend, cm.instance_name.clone())
-                .await?,
+                .await?
+        }
     };
     Ok(backend)
 }

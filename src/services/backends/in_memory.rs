@@ -1,4 +1,7 @@
-use crate::services::backends::base::{EntitiesRepositorySource, IdentityProviderBackend, IdentityRepositorySource, IssuerBackend, PrincipalAssociationRepositorySource};
+use crate::services::backends::base::{
+    EntitiesRepositorySource, IdentityProviderBackend, IdentityRepositorySource, IssuerBackend,
+    PrincipalAssociationRepositorySource,
+};
 use crate::services::base::upsert_repository::{
     IdentityRepository, PrincipalAssociationRepository, PrincipalRepository,
 };

@@ -1,9 +1,9 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::models::principal::Principal;
+use boxer_core::services::base::upsert_repository::UpsertRepository;
 use cedar_policy::{EntityUid, SchemaFragment};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use boxer_core::services::base::upsert_repository::UpsertRepository;
 
 pub type IdentityRepository = dyn UpsertRepository<(String, String), ExternalIdentity, Error = anyhow::Error>;
 

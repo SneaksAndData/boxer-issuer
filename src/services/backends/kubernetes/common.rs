@@ -3,6 +3,7 @@ pub mod fixtures;
 pub mod synchronized_kubernetes_resource_manager;
 
 use anyhow::{anyhow, Error};
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use futures::future::Ready;
 use futures::StreamExt;
 use k8s_openapi::NamespaceResourceScope;
@@ -17,7 +18,6 @@ use serde::Serialize;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::Arc;
-use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 
 pub struct KubernetesResourceManager<StoredObject>
 where

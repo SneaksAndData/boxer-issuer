@@ -13,12 +13,14 @@ use std::{println as warn, println as debug};
 // Other imports
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
-use crate::services::backends::kubernetes::common::{ResourceUpdateHandler};
+use crate::services::backends::kubernetes::common::ResourceUpdateHandler;
 use crate::services::backends::kubernetes::models;
 use crate::services::backends::kubernetes::models::base::WithMetadata;
-use crate::services::base::upsert_repository::{PrincipalIdentity};
+use crate::services::base::upsert_repository::PrincipalIdentity;
 use anyhow::anyhow;
 use async_trait::async_trait;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
+use boxer_core::services::base::upsert_repository::UpsertRepository;
 use futures::future;
 use futures::future::Ready;
 use k8s_openapi::api::core::v1::ConfigMap;
@@ -30,8 +32,6 @@ use maplit::btreemap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
-use boxer_core::services::base::upsert_repository::UpsertRepository;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct PrincipalAssociationData {

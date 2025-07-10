@@ -1,6 +1,6 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
-use crate::services::backends::kubernetes::common::{ResourceUpdateHandler};
+use crate::services::backends::kubernetes::common::ResourceUpdateHandler;
 use anyhow::{anyhow, bail, Result};
 use async_trait::async_trait;
 use futures::future;
@@ -26,11 +26,11 @@ use futures::future::Ready;
 // Workaround to use prinltn! for logs.
 use crate::services::backends::kubernetes::models;
 use crate::services::backends::kubernetes::models::base::WithMetadata;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
+use boxer_core::services::base::upsert_repository::UpsertRepository;
 use maplit::btreemap;
 #[cfg(test)]
 use std::{println as warn, println as debug};
-use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
-use boxer_core::services::base::upsert_repository::UpsertRepository;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct ExternalIdentitiesSet {
