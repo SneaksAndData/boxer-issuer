@@ -16,10 +16,10 @@ use std::{println as warn, println as debug};
 // Other imports
 use crate::models::principal::Principal;
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
-use crate::services::backends::kubernetes::common::{KubernetesResourceManagerConfig, ResourceUpdateHandler};
+use crate::services::backends::kubernetes::common::{ResourceUpdateHandler};
 use crate::services::backends::kubernetes::models;
 use crate::services::backends::kubernetes::models::base::WithMetadata;
-use crate::services::base::upsert_repository::{PrincipalIdentity, UpsertRepository};
+use crate::services::base::upsert_repository::{PrincipalIdentity};
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use cedar_policy::{Entities, EntityUid};
@@ -33,6 +33,8 @@ use kube::Resource;
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
+use boxer_core::services::base::upsert_repository::UpsertRepository;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct PrincipalData {

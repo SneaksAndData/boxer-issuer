@@ -550,6 +550,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "base64 0.22.1",
+ "boxer_core",
  "cedar-policy",
  "config",
  "duration-string",
@@ -572,6 +573,26 @@ dependencies = [
  "tokio",
  "utoipa",
  "utoipa-swagger-ui",
+ "uuid",
+]
+
+[[package]]
+name = "boxer_core"
+version = "0.1.0"
+source = "git+https://github.com/SneaksAndData/boxer-core.git#f2daea26d52d22d65c9f09dd1f6ecb4f21f41494"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "cedar-policy",
+ "futures",
+ "k8s-openapi",
+ "kube",
+ "kubert",
+ "log",
+ "maplit",
+ "serde",
+ "serde_json",
+ "tokio",
  "uuid",
 ]
 

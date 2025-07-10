@@ -1,6 +1,4 @@
 use super::*;
-use crate::services::backends::kubernetes::common::KubernetesResourceManagerConfig;
-use crate::services::base::upsert_repository::UpsertRepository;
 use k8s_openapi::api::core::v1::{ConfigMap, Namespace};
 use kube::api::PostParams;
 use kube::{Api, Client};

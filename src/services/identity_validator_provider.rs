@@ -11,7 +11,7 @@ use tokio::sync::RwLock;
 use tokio::time::sleep;
 
 /// Creates a new external identity validation service.
-pub fn new(backend: Arc<dyn IdentityProviderBackend>) -> ExternalIdentityValidationService {
+pub fn new(backend: Arc<dyn IdentityProviderBackend + Send + Sync>) -> ExternalIdentityValidationService {
     ExternalIdentityValidationService::new(backend)
 }
 
@@ -43,7 +43,7 @@ pub trait ExternalIdentityValidatorProvider {
 
 pub struct ExternalIdentityValidationService {
     validators: RwLock<HashMap<ExternalIdentityProvider, Arc<dyn ExternalIdentityValidator + Send + Sync>>>,
-    backend: Arc<dyn IdentityProviderBackend>,
+    backend: Arc<dyn IdentityProviderBackend + Send + Sync>,
 }
 
 #[async_trait]
@@ -106,7 +106,7 @@ where
 }
 
 impl ExternalIdentityValidationService {
-    fn new(backend: Arc<dyn IdentityProviderBackend>) -> Self {
+    fn new(backend: Arc<dyn IdentityProviderBackend + Send + Sync>) -> Self {
         let validators = RwLock::new(HashMap::new());
         ExternalIdentityValidationService { validators, backend }
     }

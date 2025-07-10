@@ -2,10 +2,11 @@ use crate::services::backends::in_memory::InMemoryBackend;
 use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::base::upsert_repository::IdentityRepository;
 use crate::services::base::upsert_repository::PrincipalRepository;
-use crate::services::base::upsert_repository::{PrincipalAssociationRepository, SchemaRepository};
-use crate::services::configuration::models::{AppSettings, BackendSettings};
+use crate::services::base::upsert_repository::PrincipalAssociationRepository;
+use crate::services::configuration::models::AppSettings;
 use anyhow::Result;
 use async_trait::async_trait;
+use boxer_core::services::backends::{Backend, BackendConfiguration};
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -15,35 +16,43 @@ pub enum BackendType {
     Kubernetes,
 }
 
-pub trait Backend: Send + Sync + IdentityProviderBackend {
-    fn get_schemas_repository(&self) -> Arc<SchemaRepository>;
+pub trait EntitiesRepositorySource {
+    #[allow(dead_code)]
     fn get_entities_repository(&self) -> Arc<PrincipalRepository>;
+}
+
+pub trait PrincipalAssociationRepositorySource {
+    #[allow(dead_code)]
     fn get_principal_association_repository(&self) -> Arc<PrincipalAssociationRepository>;
+}
+
+pub trait IdentityRepositorySource {
+    #[allow(dead_code)]
     fn get_identity_repository(&self) -> Arc<IdentityRepository>;
 }
 
 #[async_trait]
-pub trait IdentityProviderBackend: Send + Sync {
+pub trait IdentityProviderBackend {
     async fn register_identity_provider(&self, provider: String) -> Result<()>;
 }
 
-#[async_trait]
-pub trait BackendConfiguration: Send + Sync + Sized {
-    async fn configure(mut self, cm: &BackendSettings, instance_name: String) -> Result<Self>;
-}
+pub trait IssuerBackend: 
+    Backend + 
+    EntitiesRepositorySource + 
+    PrincipalAssociationRepositorySource + 
+    IdentityRepositorySource + 
+    Send + Sync + IdentityProviderBackend {}
 
-pub async fn load_backend(backend_type: BackendType, cm: &AppSettings) -> Result<Arc<dyn Backend>> {
-    let backend: Arc<dyn Backend> = match backend_type {
-        BackendType::InMemory => Arc::new(
+pub async fn load_backend(backend_type: BackendType, cm: &AppSettings) -> Result<Arc<dyn IssuerBackend>> {
+    let backend: Arc<dyn IssuerBackend> = match backend_type {
+        BackendType::InMemory => 
             InMemoryBackend::new()
                 .configure(&cm.backend, cm.instance_name.clone())
                 .await?,
-        ),
-        BackendType::Kubernetes => Arc::new(
+        BackendType::Kubernetes => 
             KubernetesBackend::new()
                 .configure(&cm.backend, cm.instance_name.clone())
                 .await?,
-        ),
     };
     Ok(backend)
 }

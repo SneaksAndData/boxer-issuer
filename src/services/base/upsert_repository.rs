@@ -1,27 +1,9 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::models::principal::Principal;
-use async_trait::async_trait;
 use cedar_policy::{EntityUid, SchemaFragment};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-
-#[async_trait]
-/// Represents a repository for policies
-pub trait UpsertRepository<Key, Entity>: Send + Sync {
-    type Error;
-
-    /// Retrieves a policy by id
-    async fn get(&self, key: Key) -> Result<Entity, Self::Error>;
-
-    /// Updates or inserts a policy by id
-    async fn upsert(&self, key: Key, entity: Entity) -> Result<(), Self::Error>;
-
-    /// Deletes policy by id
-    async fn delete(&self, key: Key) -> Result<(), Self::Error>;
-
-    /// Checks if an object exists
-    async fn exists(&self, key: Key) -> Result<bool, Self::Error>;
-}
+use boxer_core::services::base::upsert_repository::UpsertRepository;
 
 pub type IdentityRepository = dyn UpsertRepository<(String, String), ExternalIdentity, Error = anyhow::Error>;
 

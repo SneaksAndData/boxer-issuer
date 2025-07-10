@@ -17,36 +17,8 @@ use serde::Serialize;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::Arc;
-use std::time::Duration;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 
-/// Configuration for the Kubernetes repository.
-#[derive(Clone)]
-pub struct KubernetesResourceManagerConfig {
-    pub namespace: String,
-    pub label_selector_key: String,
-    pub label_selector_value: String,
-    pub kubeconfig: kube::Config,
-
-    pub lease_name: String,
-    pub claimant: String,
-    pub lease_duration: Duration,
-    pub renew_deadline: Duration,
-}
-
-impl KubernetesResourceManagerConfig {
-    pub fn clone_with_label_selector(&self, label_selector_key: String, label_selector_value: String) -> Self {
-        KubernetesResourceManagerConfig {
-            namespace: self.namespace.clone(),
-            label_selector_key,
-            label_selector_value,
-            kubeconfig: self.kubeconfig.clone(),
-            lease_name: self.lease_name.clone(),
-            claimant: self.claimant.clone(),
-            lease_duration: self.lease_duration,
-            renew_deadline: self.renew_deadline,
-        }
-    }
-}
 pub struct KubernetesResourceManager<StoredObject>
 where
     StoredObject: Resource + 'static,

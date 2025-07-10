@@ -1,5 +1,5 @@
 use crate::services::backends::kubernetes::common::{
-    KubernetesResourceManager, KubernetesResourceManagerConfig, ResourceUpdateHandler,
+    KubernetesResourceManager, ResourceUpdateHandler,
 };
 use anyhow::Error;
 use k8s_openapi::api::coordination::v1::Lease;
@@ -17,6 +17,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::Arc;
 use std::time::Duration;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 
 pub struct LeaseSettings {
     pub claimant: String,

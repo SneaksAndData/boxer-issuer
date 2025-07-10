@@ -1,9 +1,11 @@
-use crate::services::backends::base::{Backend, BackendConfiguration, IdentityProviderBackend};
+use crate::services::backends::base::{EntitiesRepositorySource, IdentityProviderBackend, IdentityRepositorySource, IssuerBackend, PrincipalAssociationRepositorySource};
 use crate::services::base::upsert_repository::{
-    IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository,
+    IdentityRepository, PrincipalAssociationRepository, PrincipalRepository,
 };
 use crate::services::configuration::models::BackendSettings;
 use async_trait::async_trait;
+use boxer_core::services::backends::{Backend, BackendConfiguration, SchemaRepositorySource};
+use boxer_core::services::base::types::SchemaRepository;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -30,19 +32,25 @@ impl InMemoryBackend {
     }
 }
 
-impl Backend for InMemoryBackend {
+impl SchemaRepositorySource for InMemoryBackend {
     fn get_schemas_repository(&self) -> Arc<SchemaRepository> {
         Arc::clone(&self.schemas_repository)
     }
+}
 
+impl EntitiesRepositorySource for InMemoryBackend {
     fn get_entities_repository(&self) -> Arc<PrincipalRepository> {
         Arc::clone(&self.entities_repository)
     }
+}
 
+impl PrincipalAssociationRepositorySource for InMemoryBackend {
     fn get_principal_association_repository(&self) -> Arc<PrincipalAssociationRepository> {
         Arc::clone(&self.principal_association_repository)
     }
+}
 
+impl IdentityRepositorySource for InMemoryBackend {
     fn get_identity_repository(&self) -> Arc<IdentityRepository> {
         Arc::clone(&self.identity_repository)
     }
@@ -56,10 +64,21 @@ impl IdentityProviderBackend for InMemoryBackend {
     }
 }
 
+impl Backend for InMemoryBackend {
+    // Nothing here, as this is a marker trait
+}
+
+impl IssuerBackend for InMemoryBackend {
+    // Nothing here, as this is a marker trait
+}
+
 #[async_trait]
 impl BackendConfiguration for InMemoryBackend {
-    async fn configure(mut self, _: &BackendSettings, _: String) -> anyhow::Result<Self> {
+    type BackendSettings = BackendSettings;
+    type InitializedBackend = InMemoryBackend;
+
+    async fn configure(mut self, _: &BackendSettings, _: String) -> anyhow::Result<Arc<Self::InitializedBackend>> {
         // No additional configuration needed for InMemoryBackend
-        Ok(self)
+        Ok(Arc::new(self))
     }
 }
