@@ -27,7 +27,9 @@ use futures::future::Ready;
 use crate::services::backends::kubernetes::models;
 use crate::services::backends::kubernetes::models::base::WithMetadata;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
-use boxer_core::services::base::upsert_repository::UpsertRepository;
+use boxer_core::services::base::upsert_repository::{
+    CanDelete, ReadOnlyRepository, UpsertRepository, UpsertRepositoryWithDelete,
+};
 use maplit::btreemap;
 #[cfg(test)]
 use std::{println as warn, println as debug};
@@ -169,18 +171,6 @@ impl Drop for KubernetesIdentityRepository {
 impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentityRepository {
     type Error = anyhow::Error;
 
-    async fn get(&self, key: (String, String)) -> Result<ExternalIdentity, Self::Error> {
-        let (provider, user) = key;
-
-        let configmap = self.get_identities(&provider).await?;
-        let active_set = self.get_active_identities(&configmap.data).await?;
-        let username_extracted = active_set.get(&user).cloned();
-
-        username_extracted
-            .ok_or(anyhow!("External identity not found: {:?}/{:?}", provider, user))
-            .map(|_| ExternalIdentity::new(provider, user))
-    }
-
     async fn upsert(&self, key: (String, String), entity: ExternalIdentity) -> Result<(), Self::Error> {
         let (provider, user) = key;
         let configmap = self.get_identities(provider.as_str()).await?;
@@ -201,7 +191,35 @@ impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentity
             .await
     }
 
-    async fn delete(&self, key: (String, String)) -> Result<(), Self::Error> {
+    async fn exists(&self, key: (String, String)) -> Result<bool, Self::Error> {
+        let (provider, user) = key;
+        let configmap = self.get_identities(provider.as_str()).await?;
+        let active_set = self.get_active_identities(&configmap.data).await?;
+        Ok(active_set.contains(&user))
+    }
+}
+
+#[async_trait]
+impl ReadOnlyRepository<(String, String), ExternalIdentity> for KubernetesIdentityRepository {
+    type ReadError = anyhow::Error;
+
+    async fn get(&self, key: (String, String)) -> Result<ExternalIdentity, Self::ReadError> {
+        let (provider, user) = key;
+        let configmap = self.get_identities(&provider).await?;
+        let active_set = self.get_active_identities(&configmap.data).await?;
+        let username_extracted = active_set.get(&user).cloned();
+
+        username_extracted
+            .ok_or(anyhow!("External identity not found: {:?}/{:?}", provider, user))
+            .map(|_| ExternalIdentity::new(provider, user))
+    }
+}
+
+#[async_trait]
+impl CanDelete<(String, String), ExternalIdentity> for KubernetesIdentityRepository {
+    type DeleteError = anyhow::Error;
+
+    async fn delete(&self, key: (String, String)) -> Result<(), Self::DeleteError> {
         let (provider, user) = key;
         let configmap = self.get_identities(provider.as_str()).await?;
         let mut active_set = self.get_active_identities(&configmap.data).await?;
@@ -220,11 +238,6 @@ impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentity
             Ok(())
         }
     }
-
-    async fn exists(&self, key: (String, String)) -> Result<bool, Self::Error> {
-        let (provider, user) = key;
-        let configmap = self.get_identities(provider.as_str()).await?;
-        let active_set = self.get_active_identities(&configmap.data).await?;
-        Ok(active_set.contains(&user))
-    }
 }
+
+impl UpsertRepositoryWithDelete<(String, String), ExternalIdentity> for KubernetesIdentityRepository {}

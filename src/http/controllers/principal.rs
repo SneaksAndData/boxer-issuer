@@ -1,10 +1,10 @@
 use crate::http::errors::*;
 use crate::models::principal::Principal;
-use crate::services::base::upsert_repository::SchemaRepository;
 use crate::services::base::upsert_repository::{PrincipalIdentity, PrincipalRepository};
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Path};
 use actix_web::{delete, get, post, web, HttpResponse};
+use boxer_core::services::base::types::SchemaRepository;
 use cedar_policy::{Entity, Schema};
 use std::sync::Arc;
 

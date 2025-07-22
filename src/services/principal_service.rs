@@ -1,9 +1,10 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::models::principal::Principal;
 use crate::services::base::upsert_repository::{
-    IdentityRepository, PrincipalAssociationRepository, PrincipalIdentity, PrincipalRepository, SchemaRepository,
+    IdentityRepository, PrincipalAssociationRepository, PrincipalIdentity, PrincipalRepository,
 };
 use anyhow::bail;
+use boxer_core::services::base::types::SchemaRepository;
 use cedar_policy::SchemaFragment;
 use std::sync::Arc;
 

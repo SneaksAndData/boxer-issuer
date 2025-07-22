@@ -9,10 +9,6 @@ mod test_principal;
 #[cfg(not(test))]
 use log::{debug, warn};
 
-// Workaround to use prinltn! for logs.
-use std::str::FromStr;
-#[cfg(test)]
-use std::{println as warn, println as debug};
 // Other imports
 use crate::models::principal::Principal;
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
@@ -23,7 +19,9 @@ use crate::services::base::upsert_repository::PrincipalIdentity;
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
-use boxer_core::services::base::upsert_repository::UpsertRepository;
+use boxer_core::services::base::upsert_repository::{
+    CanDelete, ReadOnlyRepository, UpsertRepository, UpsertRepositoryWithDelete,
+};
 use cedar_policy::{Entities, EntityUid};
 use futures::future;
 use futures::future::Ready;
@@ -34,7 +32,11 @@ use kube::runtime::watcher;
 use kube::Resource;
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
+// Workaround to use prinltn! for logs.
+use std::str::FromStr;
 use std::sync::Arc;
+#[cfg(test)]
+use std::{println as warn, println as debug};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct PrincipalData {
@@ -171,17 +173,6 @@ impl ResourceUpdateHandler<PrincipalConfigMap> for UpdateHandler {
 impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepository {
     type Error = anyhow::Error;
 
-    async fn get(&self, key: PrincipalIdentity) -> Result<Principal, Self::Error> {
-        let entity_uid: EntityUid = (&key).try_into()?;
-        let configmap = self.get_entities(key.schema_id()).await?;
-        let active_entities = configmap.get_active_entities()?;
-        let entity = active_entities
-            .get(&entity_uid)
-            .ok_or_else(|| anyhow!("Entity with UID {} not found in active entities", entity_uid))?;
-
-        Ok(Principal::new(entity.clone(), key.schema_id().clone()))
-    }
-
     async fn upsert(&self, key: PrincipalIdentity, principal: Principal) -> Result<(), Self::Error> {
         let entity_uid: EntityUid = (&key).try_into()?;
         let name = format!("entities-{}", key.schema_id().clone());
@@ -217,7 +208,38 @@ impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepos
         Ok(())
     }
 
-    async fn delete(&self, key: PrincipalIdentity) -> Result<(), Self::Error> {
+    async fn exists(&self, key: PrincipalIdentity) -> Result<bool, Self::Error> {
+        let entity_uid: EntityUid = (&key).try_into()?;
+        let active = self.get_entities(key.schema_id()).await;
+        let active = active.unwrap().get_active_entities()?;
+        active
+            .iter()
+            .for_each(|e| debug!("Active entity extracted with UID: {:?}", e.uid().to_string()));
+        Ok(active.get(&entity_uid).is_some())
+    }
+}
+
+#[async_trait]
+impl ReadOnlyRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepository {
+    type ReadError = anyhow::Error;
+
+    async fn get(&self, key: PrincipalIdentity) -> Result<Principal, Self::ReadError> {
+        let entity_uid: EntityUid = (&key).try_into()?;
+        let configmap = self.get_entities(key.schema_id()).await?;
+        let active_entities = configmap.get_active_entities()?;
+        let entity = active_entities
+            .get(&entity_uid)
+            .ok_or_else(|| anyhow!("Entity with UID {} not found in active entities", entity_uid))?;
+
+        Ok(Principal::new(entity.clone(), key.schema_id().clone()))
+    }
+}
+
+#[async_trait]
+impl CanDelete<PrincipalIdentity, Principal> for KubernetesPrincipalRepository {
+    type DeleteError = anyhow::Error;
+
+    async fn delete(&self, key: PrincipalIdentity) -> Result<(), Self::DeleteError> {
         let entity_uid: EntityUid = (&key).try_into()?;
         let configmap = self.get_entities(key.schema_id()).await?;
 
@@ -239,14 +261,6 @@ impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepos
         self.overwrite(key, updated_data).await?;
         Ok(())
     }
-
-    async fn exists(&self, key: PrincipalIdentity) -> Result<bool, Self::Error> {
-        let entity_uid: EntityUid = (&key).try_into()?;
-        let active = self.get_entities(key.schema_id()).await;
-        let active = active.unwrap().get_active_entities()?;
-        active
-            .iter()
-            .for_each(|e| debug!("Active entity extracted with UID: {:?}", e.uid().to_string()));
-        Ok(active.get(&entity_uid).is_some())
-    }
 }
+
+impl UpsertRepositoryWithDelete<PrincipalIdentity, Principal> for KubernetesPrincipalRepository {}

@@ -4,7 +4,7 @@ mod services;
 
 use crate::http::controllers::{association, identity, principal, schema, token::token};
 use crate::services::base::upsert_repository::{
-    IdentityRepository, PrincipalAssociationRepository, PrincipalRepository, SchemaRepository,
+    IdentityRepository, PrincipalAssociationRepository, PrincipalRepository,
 };
 use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
 use crate::services::identity_validator_provider;
@@ -22,6 +22,7 @@ use crate::services::configuration::models::AppSettings;
 use crate::services::identity_validator_provider::ExternalIdentityWatcher;
 use crate::services::principal_service::PrincipalService;
 use anyhow::Result;
+use boxer_core::services::base::types::SchemaRepository;
 
 #[actix_web::main]
 async fn main() -> Result<()> {

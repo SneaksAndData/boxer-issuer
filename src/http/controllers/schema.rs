@@ -1,8 +1,8 @@
 use crate::http::errors::*;
-use crate::services::base::upsert_repository::SchemaRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{BytesMut, Data, Path, Payload};
 use actix_web::{delete, get, post, web, HttpResponse};
+use boxer_core::services::base::types::SchemaRepository;
 use cedar_policy::SchemaFragment;
 use futures::StreamExt;
 use std::sync::Arc;

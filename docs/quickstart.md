@@ -94,9 +94,7 @@ $ curl -X GET 'http://localhost:8888/schema/test'
 ```shell
 curl -X POST 'http://localhost:8888/principal/test' \
 --header 'Content-Type: application/json' \
---data '[
-
-{
+--data '{
         "uid": {
             "type": "PhotoApp::User",
             "id": "alice"
@@ -119,7 +117,7 @@ curl -X POST 'http://localhost:8888/principal/test' \
             }
         ]
     }
-]'
+'
 ```
 
 ### Create a principal association
@@ -140,7 +138,7 @@ curl -X POST 'http://localhost:8888/association/' \
 ### Getting the external token
 
 ```shell
-$ export EXTERNAL_TOKEN=$(curl \
+export EXTERNAL_TOKEN=$(curl \
   -d "client_id=test_client" \
   -d "client_secret=test_client_secret" \
   -d "username=test_user" \
@@ -151,5 +149,5 @@ $ export EXTERNAL_TOKEN=$(curl \
 
 ### Getting the boxer token
 ```shell
-$ curl -X GET 'http://localhost:8888/token/provider' --header "Authorization: Bearer $EXTERNAL_TOKEN"
+curl -X GET 'http://localhost:8888/token/provider' --header "Authorization: Bearer $EXTERNAL_TOKEN"
 ```

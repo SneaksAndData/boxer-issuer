@@ -579,7 +579,6 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git#f2daea26d52d22d65c9f09dd1f6ecb4f21f41494"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -592,6 +591,7 @@ dependencies = [
  "maplit",
  "serde",
  "serde_json",
+ "serde_yml",
  "tokio",
  "uuid",
 ]

@@ -20,7 +20,9 @@ use crate::services::base::upsert_repository::PrincipalIdentity;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
-use boxer_core::services::base::upsert_repository::UpsertRepository;
+use boxer_core::services::base::upsert_repository::{
+    CanDelete, ReadOnlyRepository, UpsertRepository, UpsertRepositoryWithDelete,
+};
 use futures::future;
 use futures::future::Ready;
 use k8s_openapi::api::core::v1::ConfigMap;
@@ -162,15 +164,6 @@ fn to_key(external_identity: &ExternalIdentity) -> String {
 impl UpsertRepository<ExternalIdentity, PrincipalIdentity> for KubernetesPrincipalAssociationRepository {
     type Error = anyhow::Error;
 
-    async fn get(&self, key: ExternalIdentity) -> Result<PrincipalIdentity, Self::Error> {
-        let configmap = self.get_entities(key.clone()).await?;
-        let active = configmap.get_active_associations()?;
-        let principal_identity = active
-            .get(&to_key(&key))
-            .ok_or_else(|| anyhow!("Principal with identity {:?} not found in active associations", key))?;
-        Ok(principal_identity.clone())
-    }
-
     async fn upsert(&self, key: ExternalIdentity, principal: PrincipalIdentity) -> Result<(), Self::Error> {
         let name = format!("principals-{}", key.identity_provider);
         let namespace = self.resource_manager.namespace().clone();
@@ -193,7 +186,32 @@ impl UpsertRepository<ExternalIdentity, PrincipalIdentity> for KubernetesPrincip
         Ok(())
     }
 
-    async fn delete(&self, key: ExternalIdentity) -> Result<(), Self::Error> {
+    async fn exists(&self, key: ExternalIdentity) -> Result<bool, Self::Error> {
+        let configmap = self.get_entities(key.clone()).await?;
+        let active = configmap.get_active_associations()?;
+        Ok(active.get(&to_key(&key)).is_some())
+    }
+}
+
+#[async_trait]
+impl ReadOnlyRepository<ExternalIdentity, PrincipalIdentity> for KubernetesPrincipalAssociationRepository {
+    type ReadError = anyhow::Error;
+
+    async fn get(&self, key: ExternalIdentity) -> Result<PrincipalIdentity, Self::ReadError> {
+        let configmap = self.get_entities(key.clone()).await?;
+        let active = configmap.get_active_associations()?;
+        let principal_identity = active
+            .get(&to_key(&key))
+            .ok_or_else(|| anyhow!("Principal with identity {:?} not found in active associations", key))?;
+        Ok(principal_identity.clone())
+    }
+}
+
+#[async_trait]
+impl CanDelete<ExternalIdentity, PrincipalIdentity> for KubernetesPrincipalAssociationRepository {
+    type DeleteError = anyhow::Error;
+
+    async fn delete(&self, key: ExternalIdentity) -> Result<(), Self::DeleteError> {
         let configmap = self.get_entities(key.clone()).await?;
         let mut active = configmap.get_active_associations()?;
         let mut inactive = configmap.get_inactive_associations()?;
@@ -210,10 +228,6 @@ impl UpsertRepository<ExternalIdentity, PrincipalIdentity> for KubernetesPrincip
         self.overwrite(key, updated_data).await?;
         Ok(())
     }
-
-    async fn exists(&self, key: ExternalIdentity) -> Result<bool, Self::Error> {
-        let configmap = self.get_entities(key.clone()).await?;
-        let active = configmap.get_active_associations()?;
-        Ok(active.get(&to_key(&key)).is_some())
-    }
 }
+
+impl UpsertRepositoryWithDelete<ExternalIdentity, PrincipalIdentity> for KubernetesPrincipalAssociationRepository {}

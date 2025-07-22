@@ -1,17 +1,33 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::models::principal::Principal;
-use boxer_core::services::base::upsert_repository::UpsertRepository;
-use cedar_policy::{EntityUid, SchemaFragment};
+use boxer_core::services::base::upsert_repository::UpsertRepositoryWithDelete;
+use cedar_policy::EntityUid;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
-pub type IdentityRepository = dyn UpsertRepository<(String, String), ExternalIdentity, Error = anyhow::Error>;
+pub type IdentityRepository = dyn UpsertRepositoryWithDelete<
+    (String, String),
+    ExternalIdentity,
+    Error = anyhow::Error,
+    ReadError = anyhow::Error,
+    DeleteError = anyhow::Error,
+>;
 
-pub type SchemaRepository = dyn UpsertRepository<String, SchemaFragment, Error = anyhow::Error>;
-pub type PrincipalRepository = dyn UpsertRepository<PrincipalIdentity, Principal, Error = anyhow::Error>;
+pub type PrincipalRepository = dyn UpsertRepositoryWithDelete<
+    PrincipalIdentity,
+    Principal,
+    Error = anyhow::Error,
+    ReadError = anyhow::Error,
+    DeleteError = anyhow::Error,
+>;
 
-pub type PrincipalAssociationRepository =
-    dyn UpsertRepository<ExternalIdentity, PrincipalIdentity, Error = anyhow::Error>;
+pub type PrincipalAssociationRepository = dyn UpsertRepositoryWithDelete<
+    ExternalIdentity,
+    PrincipalIdentity,
+    Error = anyhow::Error,
+    ReadError = anyhow::Error,
+    DeleteError = anyhow::Error,
+>;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PrincipalIdentity {
