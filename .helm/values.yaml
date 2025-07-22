@@ -1,0 +1,288 @@
+environment: "Development"
+
+image:
+  # Repository to pull the image from
+  repository: "ghcr.io/sneaksanddata/boxer-issuer"
+  
+  # Tag to pull (defaults to the chart appVersion)
+  tag: ""
+  
+  # Image pull policy
+  pullPolicy: "IfNotPresent"
+
+# Image pull secrets for private repositories
+imagePullSecrets: [ ]
+
+# Override the application name
+nameOverride: ""
+
+# Fullname override
+fullnameOverride: ""
+
+# Service account configuration
+serviceAccount:
+  
+  # Specifies whether a service account should be created
+  create: true
+  
+  # Annotations to add to the service account
+  annotations: { }
+  
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+
+# Additional labels for the stream classes
+additionalLabels: { }
+# Example:
+#
+#  app.my-company.com/name: company
+#  app.my-company.com/component: auth
+
+# Additional labels for the stream classes
+additionalAnnotations: { }
+# Example:
+#
+#  app.my-company.com/name: company
+#  app.my-company.com/application: application
+
+# Extra environment variables to set in the deployment
+extraEnv: { }
+# Example:
+#
+#  - name: DEPLOY_ENVIRONMENT
+#    value: production
+
+# Extra environment variables referencing a ConfigMap or Secret
+extraEnvFrom: { }
+# Example:
+#
+#  envFrom:
+#    - configMapRef:
+#        name: custom-app-environment
+
+extraVolumes: { }
+# Example:
+#
+#  - name: data-volume
+#    emptyDir:
+#      sizeLimit: 500Mi
+
+# Extra volumes to add to the deployment
+extraVolumeMounts: { }
+# Example:
+#
+#  - mountPath: /data
+#    name: data-volume
+
+# Resources constraints. By default, the operator does not specify any constraints to allow for easier deployment
+resources: { }
+# Example:
+#
+#  requests:
+#    cpu: 1
+#    memory: 1Gi
+#  limits:
+#    cpu: 1
+#    memory: 1Gi
+
+# Node labels for pod assignment
+tolerations: { }
+
+# Node labels for pod assignment
+affinity: { }
+
+# Security context settings for the container
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+
+### Role Based Access Control configuration
+rbac:
+
+  # Specifies whether RBAC resources should be created
+  clusterRole:
+
+    # Allows Boxer to manage configmaps in the cluster
+    configMapEditor:
+      additionalLabels: { }
+      additionalAnnotations: { }
+      create: true
+      nameOverride: ""
+
+    # Allows Boxer to manage leases in the cluster
+    leaseEditor:
+      additionalLabels: { }
+      additionalAnnotations: { }
+      create: true
+      nameOverride: ""
+
+  # This parameter determines whether role binding resources need to be created.
+  # If you have any roles in your configuration set to 'true', then this parameter for creating role binding resources
+  # should also be set to 'true'.
+  clusterRoleBindings:
+    additionalLabels: { }
+    additionalAnnotations: { }
+    create: true
+
+
+# The Boxer validator configuration
+issuer:
+
+  # Number of replicas for the validator deployment
+  replicas: 3
+
+  maxUnavailable: 1
+
+  # The deployment strategy for the validator
+  deploymentStrategy:
+    type: RollingUpdate
+
+    # Rolling update strategy configuration
+    rollingUpdate:
+      # Maximum number of pods that can be unavailable during the update
+      maxUnavailable: 1
+
+      # Maximum number of pods that can be created over the desired number of pods
+      maxSurge: 1
+
+  # autoscaling configuration
+  autoscaling:
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 9
+    targetMemoryAvg: 80
+    targetCPUAvg: 60
+    scaleStabilizationWindowSeconds: 180
+    scalePeriodSeconds: 30
+    scaleByPercent: 10
+
+  # Validator configuration
+  # Individual settings can be overridden using environment variables
+  # Whole config can also be overridden by setting config.enabled=false and mounting a new settings.toml to /app path in the container
+  config:
+    enabled: true
+
+    # The port on which the validator listens for HTTP requests
+    port: 8080
+
+    # The instance name for the validator
+    # Used to generate the lease name and other instance-specific settings
+    # Defaults to the release name
+    instance_name: ""
+
+    # The backend configuration
+    backend:
+      kubernetes:
+        # Namespace where the backend operates
+        # Defaults to the namespace where the is deployed
+        namespace: ""
+
+        # The kubeconfig source
+        kubeconfig:
+
+          # Set to true to use the in-cluster kubeconfig
+          # Default: In cluster kubeconfig is used
+          # If set to false, the kubeconfig filePath or exec will be used
+          # The settings prioritize as follows:
+          # - inCluster
+          # - filePath
+          # - exec
+          inCluster: true
+
+          # The kubeconfig file path to use
+          filePath: ""
+
+          # The executable to use for kubeconfig
+          exec: ""
+
+        # Coordination settings for the backend
+        coordination:
+
+          # The Kubernetes lease object used for coordination
+          # Defaults to Release name + "-validator-nginx"
+          leaseName: ""
+
+          # The lease duration in seconds
+          leaseDuration: 60s
+
+          # The renewal deadline in seconds
+          renewDeadline: 15s
+
+        # Schemas storage configuration
+        schemas:
+          # The Kubernetes ConfigMap used for storing schemas
+          # Defaults to Release name + "-validator-nginx-schemas"
+          objectName: ""
+
+          # The label selector for the actions discovery documents
+          labelSelectorKey: "app.kubernetes.io/component"
+
+          # The label selector value for the actions discovery documents
+          labelSelectorValue: "schema-document"
+
+
+        # The actions discovery settings
+        actionDiscoverySettings:
+
+          # The label selector for the actions discovery documents
+          labelSelectorKey: "app.kubernetes.io/component"
+
+          # The label selector value for the actions discovery documents
+          labelSelectorValue: "action-discovery-document"
+
+        # The actions discovery settings
+        resourceDiscoverySettings:
+
+          # The label selector for the actions discovery documents
+          labelSelectorKey: "app.kubernetes.io/component"
+
+          # The label selector value for the actions discovery documents
+          labelSelectorValue: "resource-discovery-document"
+
+        # The actions discovery settings
+        policySettings:
+
+          # The label selector for the actions discovery documents
+          labelSelectorKey: "app.kubernetes.io/component"
+
+          # The label selector value for the actions discovery documents
+          labelSelectorValue: "policy-discovery-document"
+
+# Observability settings for Datadog
+datadog:
+
+  # if enabled, will set Datadog-specific environment variables on the container
+  enabled: false
+
+  # Datadog endpoint to sink logs to
+  endpoint: "datadoghq.eu"
+
+  # Name for a Secret resource that contains Datadog API Key to use for log submissions
+  apiKeySecret: "secretName"
+
+  # Key in the secret that contains datadog api key
+  apiKeySecretKey: "secretKey"
+
+  # Datadog Service Name parameter
+  serviceName: "boxer-issuer"
+
+  # value to use as a DogStatsd server url
+  # Examples: udp://127.0.0.1:8125 or unix:///path/to/dsd.socket
+  # https://github.com/DataDog/datadog-go?tab=readme-ov-file#unix-domain-sockets-client
+  statsdUrl: unix:///var/run/datadog/dsd.socket
+
+  # enables metric origin detection by setting DD_ENTITY_ID
+  enableOriginDetection: true
+
+
+

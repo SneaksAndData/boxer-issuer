@@ -1,0 +1,6 @@
+apiVersion: v2
+name: boxer-validator-nginx
+description: The Nginx validator for Boxer Tokens
+type: application
+version: 0.0.0
+appVersion: 0.0.0

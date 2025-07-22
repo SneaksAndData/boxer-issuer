@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.name" . }}
+  labels:
+    {{- include "app.labels" $ | nindent 4 }}
+  {{- with .Values.additionalAnnotations }}
+  annotations:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "app.selectorLabels" $ | nindent 6 }}
+  replicas: {{ .Values.issuer.replicas | default 1 }}
+  # The deployment strategy is hardcoded as well until NCC supports HA mode
+  strategy:
+    type: {{ .Values.issuer.deploymentStrategy.type | default 1 }}
+  template:
+    metadata:
+      labels:
+        {{- include "app.labels" $ | nindent 8 }}
+      {{- with .Values.additionalAnnotations }}
+      annotations:
+        deployment/date: {{ now }} # Force redeployment
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "app.serviceAccountName" . }}
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: boxer-issuer
+          ports:
+            - containerPort: {{ .Values.issuer.config.port }}
+              name: http
+              protocol: TCP
+        {{- with .Values.securityContext }}
+          securityContext:
+        {{ toYaml . | nindent 12 }}
+        {{- end }}
+          image: "{{ include "app.image" . }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          env:
+            - name: APPLICATION_VERSION
+              value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}"
+          {{- if .Values.issuer.config.enabled }}
+            - name: BOXER_VALIDATOR__INSTANCE_NAME
+              value: {{ .Values.issuer.config.instance_name | default .Release.Name }}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__EXEC
+              value: {{ .Values.issuer.config.backend.kubernetes.kubeconfig.exec | quote }}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__KUBECONFIG
+              value: {{ .Values.issuer.config.backend.kubernetes.kubeconfig.filePath | quote }}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__IN_CLUSTER
+              value: {{ .Values.issuer.config.backend.kubernetes.kubeconfig.inCluster | quote }}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__NAMESPACE
+              value: "{{ (default .Release.Namespace .Values.issuer.config.backend.kubernetes.namespace) }}"
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__LEASE_NAME
+              value: {{ include "app.leaseName" . | quote }}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__LEASE_DURATION
+              value: {{ .Values.issuer.config.backend.kubernetes.coordination.leaseDuration }}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__LEASE_RENEW_DURATION
+              value: {{ .Values.issuer.config.backend.kubernetes.coordination.renewDeadline }}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__SCHEMA_REPOSITORY__LABEL_SELECTOR_KEY
+              value: {{ .Values.issuer.config.backend.kubernetes.schemas.labelSelectorKey }}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__SCHEMA_REPOSITORY__LABEL_SELECTOR_VALUE
+              value: {{ .Values.issuer.config.backend.kubernetes.schemas.labelSelectorValue }}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__SCHEMA_REPOSITORY__NAME
+              value: {{ include "app.leaseName" . | quote }}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__ACTIONS_REPOSITORY__LABEL_SELECTOR_KEY
+              value: {{ .Values.issuer.config.backend.kubernetes.actionDiscoverySettings.labelSelectorKey}}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__ACTIONS_REPOSITORY__LABEL_SELECTOR_VALUE
+              value: {{ .Values.issuer.config.backend.kubernetes.actionDiscoverySettings.labelSelectorValue}}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__RESOURCE_REPOSITORY__LABEL_SELECTOR_KEY
+              value: {{ .Values.issuer.config.backend.kubernetes.resourceDiscoverySettings.labelSelectorKey}}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__RESOURCE_REPOSITORY__LABEL_SELECTOR_VALUE
+              value: {{ .Values.issuer.config.backend.kubernetes.resourceDiscoverySettings.labelSelectorValue}}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__POLICY_REPOSITORY__LABEL_SELECTOR_KEY
+              value: {{ .Values.issuer.config.backend.kubernetes.policySettings.labelSelectorKey}}
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__POLICY_REPOSITORY__LABEL_SELECTOR_VALUE
+              value: {{ .Values.issuer.config.backend.kubernetes.policySettings.labelSelectorValue}}
+          {{- end }}
+        {{- if .Values.datadog.enabled }}
+            - name: DATADOG__API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.datadog.apiKeySecret | quote }}
+                  key: {{ .Values.datadog.apiKeySecretKey | quote }}
+            - name: DATADOG__ENDPOINT
+              value: {{ .Values.datadog.endpoint | quote }}
+            - name: DATADOG__APPLICATION_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+        {{- if .Values.datadog.enableOriginDetection }}
+            - name: DD_ENTITY_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+        {{- end }}
+            - name: DATADOG__SERVICE_NAME
+              value: {{ .Values.datadog.serviceName }}
+            - name: DD_SERVICE
+              value: {{ .Values.datadog.serviceName }}
+            - name: DD_VERSION
+              value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}"
+            - name: DD_DOGSTATSD_URL
+              value: {{ .Values.datadog.statsdUrl | quote }}
+        {{- end }}
+        {{- with .Values.extraEnv }}
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with .Values.extraEnvFrom }}
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
+        {{- if .Values.datadog.enabled }}
+        - name: dsdsocket
+          mountPath: /var/run/datadog
+          readOnly: false
+        {{- end }}
+        {{- with .Values.extraVolumeMounts }}
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with .Values.resources }}
+        resources:
+          {{ toYaml . | nindent 12 }}
+        {{- end }}
+      {{- if or .Values.extraVolumes .Values.datadog.enabled }}
+      volumes:
+        {{- if .Values.datadog.enabled }}
+        - name: dsdsocket
+          hostPath:
+            path: /var/run/datadog/
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+          {{ toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}

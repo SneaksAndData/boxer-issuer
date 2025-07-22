@@ -1,0 +1,12 @@
+{{- if and .Values.rbac.clusterRole.configMapEditor.create .Values.rbac.clusterRoleBindings.create -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "app.clusteRole.configMapEditor" . }}
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "configmaps" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
+
+{{- end }}
