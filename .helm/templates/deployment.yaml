@@ -51,40 +51,48 @@ spec:
             - name: APPLICATION_VERSION
               value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}"
           {{- if .Values.issuer.config.enabled }}
-            - name: BOXER_VALIDATOR__INSTANCE_NAME
-              value: {{ .Values.issuer.config.instance_name | default .Release.Name }}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__EXEC
+{{/*            global settings */}}
+            - name: BOXER_ISSUER__INSTANCE_NAME
+              value: {{ .Values.issuer.config.instanceName | default .Release.Name }}
+            - name: BOXER_ISSUER__INIT__BACKEND_TYPE
+              value: {{ .Values.issuer.config.backend.type | default .Release.Name }}
+
+{{/*            kubernetes backend settings*/}}
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__EXEC
               value: {{ .Values.issuer.config.backend.kubernetes.kubeconfig.exec | quote }}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__KUBECONFIG
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__KUBECONFIG
               value: {{ .Values.issuer.config.backend.kubernetes.kubeconfig.filePath | quote }}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__IN_CLUSTER
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__IN_CLUSTER
               value: {{ .Values.issuer.config.backend.kubernetes.kubeconfig.inCluster | quote }}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__NAMESPACE
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__NAMESPACE
               value: "{{ (default .Release.Namespace .Values.issuer.config.backend.kubernetes.namespace) }}"
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__LEASE_NAME
+{{/*            coordination settings*/}}
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__LEASE_NAME
               value: {{ include "app.leaseName" . | quote }}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__LEASE_DURATION
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__LEASE_DURATION
               value: {{ .Values.issuer.config.backend.kubernetes.coordination.leaseDuration }}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__LEASE_RENEW_DURATION
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__LEASE_RENEW_DURATION
               value: {{ .Values.issuer.config.backend.kubernetes.coordination.renewDeadline }}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__SCHEMA_REPOSITORY__LABEL_SELECTOR_KEY
+{{/*            identity repository settings*/}}
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__IDENTITY_REPOSITORY__LABEL_SELECTOR_KEY
+              value: {{ .Values.issuer.config.backend.kubernetes.identities.labelSelectorKey }}
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__IDENTITY_REPOSITORY__LABEL_SELECTOR_VALUE
+              value: {{ .Values.issuer.config.backend.kubernetes.identities.labelSelectorValue }}
+{{/*            principal repository settings*/}}
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__PRINCIPAL_REPOSITORY__LABEL_SELECTOR_KEY
+              value: {{ .Values.issuer.config.backend.kubernetes.principals.labelSelectorKey }}
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__PRINCIPAL_REPOSITORY__LABEL_SELECTOR_VALUE
+              value: {{ .Values.issuer.config.backend.kubernetes.principals.labelSelectorValue }}
+{{/*            schema repository settings*/}}
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__SCHEMA_REPOSITORY__LABEL_SELECTOR_KEY
               value: {{ .Values.issuer.config.backend.kubernetes.schemas.labelSelectorKey }}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__SCHEMA_REPOSITORY__LABEL_SELECTOR_VALUE
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__SCHEMA_REPOSITORY__LABEL_SELECTOR_VALUE
               value: {{ .Values.issuer.config.backend.kubernetes.schemas.labelSelectorValue }}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__SCHEMA_REPOSITORY__NAME
-              value: {{ include "app.leaseName" . | quote }}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__ACTIONS_REPOSITORY__LABEL_SELECTOR_KEY
-              value: {{ .Values.issuer.config.backend.kubernetes.actionDiscoverySettings.labelSelectorKey}}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__ACTIONS_REPOSITORY__LABEL_SELECTOR_VALUE
-              value: {{ .Values.issuer.config.backend.kubernetes.actionDiscoverySettings.labelSelectorValue}}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__RESOURCE_REPOSITORY__LABEL_SELECTOR_KEY
-              value: {{ .Values.issuer.config.backend.kubernetes.resourceDiscoverySettings.labelSelectorKey}}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__RESOURCE_REPOSITORY__LABEL_SELECTOR_VALUE
-              value: {{ .Values.issuer.config.backend.kubernetes.resourceDiscoverySettings.labelSelectorValue}}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__POLICY_REPOSITORY__LABEL_SELECTOR_KEY
-              value: {{ .Values.issuer.config.backend.kubernetes.policySettings.labelSelectorKey}}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__POLICY_REPOSITORY__LABEL_SELECTOR_VALUE
-              value: {{ .Values.issuer.config.backend.kubernetes.policySettings.labelSelectorValue}}
+{{/*            principal association repository settings*/}}
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__PRINCIPAL_ASSOCIATION_REPOSITORY__LABEL_SELECTOR_KEY
+              value: {{ .Values.issuer.config.backend.kubernetes.principalAssociations.labelSelectorKey }}
+            - name: BOXER_ISSUER__BACKEND__KUBERNETES__PRINCIPAL_ASSOCIATION_REPOSITORY__LABEL_SELECTOR_VALUE
+              value: {{ .Values.issuer.config.backend.kubernetes.principalAssociations.labelSelectorValue }}
           {{- end }}
         {{- if .Values.datadog.enabled }}
             - name: DATADOG__API_KEY

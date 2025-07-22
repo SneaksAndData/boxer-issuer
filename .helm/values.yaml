@@ -178,10 +178,12 @@ issuer:
     # The instance name for the validator
     # Used to generate the lease name and other instance-specific settings
     # Defaults to the release name
-    instance_name: ""
+    instanceName: ""
 
     # The backend configuration
     backend:
+      type: "kubernetes"
+
       kubernetes:
         # Namespace where the backend operates
         # Defaults to the namespace where the is deployed
@@ -218,17 +220,37 @@ issuer:
           # The renewal deadline in seconds
           renewDeadline: 15s
 
+        # Identities storage configuration
+        identities:
+          # The label selector for the identities discovery documents
+          labelSelectorKey: "app.kubernetes.io/component"
+
+          # The label selector value for the identities discovery documents
+          labelSelectorValue: "identity-document"
+
+        # Principals storage configuration
+        principals:
+          # The label selector for the identities discovery documents
+          labelSelectorKey: "app.kubernetes.io/component"
+
+          # The label selector value for the identities discovery documents
+          labelSelectorValue: "principal-document"
+
         # Schemas storage configuration
         schemas:
-          # The Kubernetes ConfigMap used for storing schemas
-          # Defaults to Release name + "-validator-nginx-schemas"
-          objectName: ""
-
           # The label selector for the actions discovery documents
           labelSelectorKey: "app.kubernetes.io/component"
 
           # The label selector value for the actions discovery documents
           labelSelectorValue: "schema-document"
+
+        # Principal associations storage configuration
+        principalAssociations:
+          # The label selector for the identities discovery documents
+          labelSelectorKey: "app.kubernetes.io/component"
+
+          # The label selector value for the identities discovery documents
+          labelSelectorValue: "principal-association-document"
 
 
         # The actions discovery settings
