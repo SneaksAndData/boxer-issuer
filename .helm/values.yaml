@@ -252,34 +252,6 @@ issuer:
           # The label selector value for the identities discovery documents
           labelSelectorValue: "principal-association-document"
 
-
-        # The actions discovery settings
-        actionDiscoverySettings:
-
-          # The label selector for the actions discovery documents
-          labelSelectorKey: "app.kubernetes.io/component"
-
-          # The label selector value for the actions discovery documents
-          labelSelectorValue: "action-discovery-document"
-
-        # The actions discovery settings
-        resourceDiscoverySettings:
-
-          # The label selector for the actions discovery documents
-          labelSelectorKey: "app.kubernetes.io/component"
-
-          # The label selector value for the actions discovery documents
-          labelSelectorValue: "resource-discovery-document"
-
-        # The actions discovery settings
-        policySettings:
-
-          # The label selector for the actions discovery documents
-          labelSelectorKey: "app.kubernetes.io/component"
-
-          # The label selector value for the actions discovery documents
-          labelSelectorValue: "policy-discovery-document"
-
 # Observability settings for Datadog
 datadog:
 
