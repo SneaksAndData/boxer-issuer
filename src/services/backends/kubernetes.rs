@@ -17,6 +17,7 @@ use crate::services::base::upsert_repository::{
 use crate::services::configuration::models::{BackendSettings, KubernetesBackendSettings};
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
+use boxer_core::services::backends::kubernetes::kubeconfig_loader::from_cluster;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::KubernetesSchemaRepository;
 use boxer_core::services::backends::{Backend, BackendConfiguration, SchemaRepositorySource};
@@ -117,6 +118,7 @@ impl BackendConfiguration for KubernetesBackend {
             .as_ref()
             .ok_or(anyhow!("Kubernetes backend configuration is missing"))?;
         let kubeconfig = match settings {
+            KubernetesBackendSettings { in_cluster: true, .. } => from_cluster().load()?,
             KubernetesBackendSettings {
                 kubeconfig: Some(path), ..
             } => Self::get_from_file(&path).await?,

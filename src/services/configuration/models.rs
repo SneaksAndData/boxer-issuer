@@ -30,6 +30,7 @@ pub struct IdentityRepositorySettings {
 pub struct KubernetesBackendSettings {
     pub kubeconfig: Option<String>,
     pub exec: Option<String>,
+    pub in_cluster: bool,
     pub namespace: String,
 
     pub lease_name: String,

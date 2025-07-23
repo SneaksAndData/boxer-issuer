@@ -27,7 +27,7 @@ serde_yml = "0.0.12"
 maplit = "1.0.2"
 duration-string = { version = "0.5.2", features = ["serde"] }
 #boxer_core = { path = "../boxer-core/" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", branch = "add-new-config-loader" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git" }
 
 # Kubernetes dependencies
 kube = { version = "0.99.0", features = ["config", "client", "runtime", "derive"] }
@@ -38,4 +38,4 @@ kubert = { version = "0.24.0", features = ["lease"] }
 test-context = "0.4.1"
 rstest = "0.25.0"
 #boxer_core = { path = "../boxer-core/", features = ["testing"] }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", features = ["testing"], branch = "add-new-config-loader" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", features = ["testing"] }
