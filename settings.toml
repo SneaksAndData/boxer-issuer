@@ -10,6 +10,7 @@ backend_type = "Kubernetes"
 # Kubernetes backend settings
 [backend.kubernetes]
 exec = "kind get kubeconfig --name kind" # Command to get kubeconfig for the Kind cluster
+in_cluster = false                       # Whether to run in-cluster or not
 namespace = "default"                    # Kubernetes namespace
 lease_name = "boxer"                     # Name for the lease object
 lease_duration = "60s"                   # Duration string for lease lifetime
