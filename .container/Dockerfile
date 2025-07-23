@@ -12,4 +12,4 @@ RUN apt-get update -y && apt-get install -y curl
 WORKDIR /app
 COPY --from=build-env /app/src/target/release .
 COPY --from=build-env /app/src/settings.toml /app/settings.toml
-CMD ["/app/boxer-issuer"]
+ENTRYPOINT ["/app/boxer-issuer"]

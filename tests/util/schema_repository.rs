@@ -1,6 +1,6 @@
 use super::test_data::{schema_fragment, schema_name};
 use async_trait::async_trait;
-use boxer_issuer::services::base::upsert_repository::SchemaRepository;
+use boxer_core::services::base::types::SchemaRepository;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;

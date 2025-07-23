@@ -135,15 +135,15 @@ rbac:
     create: true
 
 
-# The Boxer validator configuration
+# The Boxer Issuer configuration
 issuer:
 
-  # Number of replicas for the validator deployment
+  # Number of replicas for the issuer deployment
   replicas: 3
 
   maxUnavailable: 1
 
-  # The deployment strategy for the validator
+  # The deployment strategy for the issuer
   deploymentStrategy:
     type: RollingUpdate
 
@@ -166,23 +166,23 @@ issuer:
     scalePeriodSeconds: 30
     scaleByPercent: 10
 
-  # Validator configuration
+  # Issuer configuration
   # Individual settings can be overridden using environment variables
   # Whole config can also be overridden by setting config.enabled=false and mounting a new settings.toml to /app path in the container
   config:
     enabled: true
 
-    # The port on which the validator listens for HTTP requests
+    # The port on which the application listens for HTTP requests
     port: 8080
 
-    # The instance name for the validator
+    # The instance name for the issuer
     # Used to generate the lease name and other instance-specific settings
     # Defaults to the release name
     instanceName: ""
 
     # The backend configuration
     backend:
-      type: "kubernetes"
+      type: "Kubernetes"
 
       kubernetes:
         # Namespace where the backend operates
@@ -211,7 +211,7 @@ issuer:
         coordination:
 
           # The Kubernetes lease object used for coordination
-          # Defaults to Release name + "-validator-nginx"
+          # Defaults to Release name + "-issuer"
           leaseName: ""
 
           # The lease duration in seconds
