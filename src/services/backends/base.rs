@@ -62,3 +62,7 @@ pub async fn load_backend(backend_type: BackendType, cm: &AppSettings) -> Result
     };
     Ok(backend)
 }
+
+pub trait ListRepository<Key, Value> {
+    fn list(&self) -> Result<Vec<(Key, Value)>>;
+}

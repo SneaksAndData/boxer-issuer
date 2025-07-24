@@ -35,9 +35,55 @@ use boxer_core::services::base::upsert_repository::{
 use maplit::btreemap;
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+struct ExternalIdentityInfo {
+    pub name: String,
+    pub principal: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
 struct IdentitySetData {
-    pub active: HashSet<String>,
-    pub inactive: HashSet<String>,
+    pub active: Vec<ExternalIdentityInfo>,
+    pub inactive: Vec<ExternalIdentityInfo>,
+}
+
+impl IdentitySetData {
+    pub fn contains(&self, user: &str) -> bool {
+        self.active.iter().any(|info| info.name == user)
+    }
+
+    pub fn insert(&mut self, user_id: String) {
+        if !self.contains(&user_id) {
+            self.active.push(ExternalIdentityInfo {
+                name: user_id,
+                principal: String::new(), // Principal can be set later
+            });
+        }
+    }
+
+    pub fn get_active(&self) -> HashSet<String> {
+        self.active.iter().map(|info| info.name.clone()).collect()
+    }
+
+    pub fn get_inactive(&self) -> HashSet<String> {
+        self.active.iter().map(|info| info.name.clone()).collect()
+    }
+
+    pub fn remove(&mut self, user: &str) -> bool {
+        if let Some(pos) = self.active.iter().position(|info| info.name == user) {
+            let info = self.active.remove(pos);
+            self.inactive.push(info);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn new() -> Self {
+        IdentitySetData {
+            active: Vec::new(),
+            inactive: Vec::new(),
+        }
+    }
 }
 
 #[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
@@ -158,11 +204,11 @@ impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentity
     async fn upsert(&self, key: (String, String), entity: ExternalIdentity) -> Result<(), Self::Error> {
         let (provider, user) = key;
         let mut ip = self.get_identities(provider.as_str()).await?;
-        if ip.spec.identities.inactive.contains(&user) {
+        if ip.spec.identities.contains(&user) {
             bail!("User {:?} is inactive in provider {:?}", user, provider)
         }
         let ip = Arc::make_mut(&mut ip);
-        ip.spec.identities.active.insert(entity.user_id);
+        ip.spec.identities.insert(entity.user_id);
         self.overwrite(&provider, ip).await
     }
 
@@ -173,7 +219,6 @@ impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentity
             .await?
             .spec
             .identities
-            .active
             .contains(&user);
         Ok(contains)
     }
@@ -185,8 +230,7 @@ impl ReadOnlyRepository<(String, String), ExternalIdentity> for KubernetesIdenti
 
     async fn get(&self, key: (String, String)) -> Result<ExternalIdentity, Self::ReadError> {
         let (provider, user) = key;
-        let active_set = &self.get_identities(&provider).await?.spec.identities.active;
-
+        let active_set = &self.get_identities(&provider).await?.spec.identities.get_active();
         active_set
             .get(&user)
             .cloned()
@@ -203,17 +247,11 @@ impl CanDelete<(String, String), ExternalIdentity> for KubernetesIdentityReposit
         let (provider, user) = key;
         let mut ip = self.get_identities(&provider).await?;
         let resource = Arc::make_mut(&mut ip);
-        let was_present = resource.spec.identities.active.remove(&user);
-        match was_present {
-            true => {
-                resource.spec.identities.inactive.insert(user.clone());
-                self.overwrite(provider.as_str(), resource).await
-            }
-            false => {
-                warn!("User {:?} not found in provider {:?}", user, provider);
-                Ok(())
-            }
+        let was_present = resource.spec.identities.remove(&user);
+        if let was_present = false {
+            warn!("User {:?} not found in provider {:?}", user, provider);
         }
+        self.overwrite(provider.as_str(), resource).await
     }
 }
 

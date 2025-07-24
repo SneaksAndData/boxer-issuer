@@ -9,6 +9,12 @@ use std::time::Duration;
 use test_context::{test_context, AsyncTestContext};
 use tokio::time::{sleep, timeout};
 
+impl ExternalIdentityInfo {
+    fn new(name: String, principal: String) -> Self {
+        ExternalIdentityInfo { name, principal }
+    }
+}
+
 const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[allow(dead_code)] // Dead code is allowed here because this struct is used in kubernetes
@@ -40,8 +46,14 @@ impl AsyncTestContext for KubernetesIdentityRepositoryTest {
             let config_map = IdentityProvider {
                 spec: IdentityProviderSpec {
                     identities: IdentitySetData {
-                        active: active.clone(),
-                        inactive: inactive.clone(),
+                        active: active
+                            .into_iter()
+                            .map(|user| ExternalIdentityInfo::new(user.to_string(), "".to_string()))
+                            .collect(),
+                        inactive: active
+                            .into_iter()
+                            .map(|user| ExternalIdentityInfo::new(user.to_string(), "".to_string()))
+                            .collect(),
                     },
                 },
                 metadata: ObjectMeta {
