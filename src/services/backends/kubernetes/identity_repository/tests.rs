@@ -10,8 +10,11 @@ use test_context::{test_context, AsyncTestContext};
 use tokio::time::{sleep, timeout};
 
 impl ExternalIdentityInfo {
-    fn new(name: String, principal: String) -> Self {
-        ExternalIdentityInfo { name, principal }
+    fn new(name: String) -> Self {
+        ExternalIdentityInfo {
+            name,
+            principal: Default::default(),
+        }
     }
 }
 
@@ -48,11 +51,11 @@ impl AsyncTestContext for KubernetesIdentityRepositoryTest {
                     identities: IdentitySetData {
                         active: active
                             .into_iter()
-                            .map(|user| ExternalIdentityInfo::new(user.to_string(), "".to_string()))
+                            .map(|user| ExternalIdentityInfo::new(user.to_string()))
                             .collect(),
-                        inactive: active
+                        inactive: inactive
                             .into_iter()
-                            .map(|user| ExternalIdentityInfo::new(user.to_string(), "".to_string()))
+                            .map(|user| ExternalIdentityInfo::new(user.to_string()))
                             .collect(),
                     },
                 },
@@ -242,7 +245,7 @@ async fn test_add_to_unexisted_provider(ctx: &mut KubernetesIdentityRepositoryTe
     // Assert
     let message = result.err().unwrap().to_string();
     assert!(
-        message.contains("Object with name [identity-provider-5] not found"),
+        message.contains("Identity provider \"identity-provider-5\" not found in namespace"),
         "Unexpected error message: {}",
         message
     );
@@ -398,7 +401,7 @@ async fn test_delete_from_unexisted_provider(ctx: &mut KubernetesIdentityReposit
     // Assert
     let message = result.err().unwrap().to_string();
     assert!(
-        message.contains("Object with name [identity-provider-5] not found in namespace"),
+        message.contains("Identity provider \"identity-provider-5\" not found in namespace:"),
         "Unexpected error message: {}",
         message
     );

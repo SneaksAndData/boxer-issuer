@@ -35,9 +35,15 @@ use boxer_core::services::base::upsert_repository::{
 use maplit::btreemap;
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+struct PrincipalAssociation {
+    schema: String,
+    principal: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
 struct ExternalIdentityInfo {
     pub name: String,
-    pub principal: String,
+    pub principal: PrincipalAssociation,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
@@ -51,20 +57,20 @@ impl IdentitySetData {
         self.active.iter().any(|info| info.name == user)
     }
 
+    pub fn is_deleted(&self, user: &str) -> bool {
+        self.inactive.iter().any(|info| info.name == user)
+    }
+
     pub fn insert(&mut self, user_id: String) {
         if !self.contains(&user_id) {
             self.active.push(ExternalIdentityInfo {
                 name: user_id,
-                principal: String::new(), // Principal can be set later
+                principal: Default::default(),
             });
         }
     }
 
     pub fn get_active(&self) -> HashSet<String> {
-        self.active.iter().map(|info| info.name.clone()).collect()
-    }
-
-    pub fn get_inactive(&self) -> HashSet<String> {
         self.active.iter().map(|info| info.name.clone()).collect()
     }
 
@@ -75,13 +81,6 @@ impl IdentitySetData {
             true
         } else {
             false
-        }
-    }
-
-    pub fn new() -> Self {
-        IdentitySetData {
-            active: Vec::new(),
-            inactive: Vec::new(),
         }
     }
 }
@@ -204,7 +203,7 @@ impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentity
     async fn upsert(&self, key: (String, String), entity: ExternalIdentity) -> Result<(), Self::Error> {
         let (provider, user) = key;
         let mut ip = self.get_identities(provider.as_str()).await?;
-        if ip.spec.identities.contains(&user) {
+        if ip.spec.identities.is_deleted(&user) {
             bail!("User {:?} is inactive in provider {:?}", user, provider)
         }
         let ip = Arc::make_mut(&mut ip);
@@ -248,7 +247,7 @@ impl CanDelete<(String, String), ExternalIdentity> for KubernetesIdentityReposit
         let mut ip = self.get_identities(&provider).await?;
         let resource = Arc::make_mut(&mut ip);
         let was_present = resource.spec.identities.remove(&user);
-        if let was_present = false {
+        if !was_present {
             warn!("User {:?} not found in provider {:?}", user, provider);
         }
         self.overwrite(provider.as_str(), resource).await
