@@ -7,10 +7,10 @@ use futures::future;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::runtime::reflector::ObjectRef;
 use kube::runtime::watcher;
-use kube::{Api, CustomResource, Resource};
+use kube::CustomResource;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::Arc;
 
 // tests module is used to test the KubernetesIdentityRepository
@@ -202,7 +202,7 @@ impl CanDelete<(String, String), ExternalIdentity> for KubernetesIdentityReposit
     async fn delete(&self, key: (String, String)) -> Result<(), Self::DeleteError> {
         let (provider, user) = key;
         let mut ip = self.get_identities(&provider).await?;
-        let mut resource = Arc::make_mut(&mut ip);
+        let resource = Arc::make_mut(&mut ip);
         let was_present = resource.spec.identities.active.remove(&user);
         match was_present {
             true => {

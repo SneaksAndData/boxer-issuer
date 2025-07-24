@@ -1,6 +1,6 @@
 use super::*;
 use crate::services::backends::kubernetes::common::fixtures::get_kubeconfig;
-use crate::services::backends::kubernetes::principal_repository::test_principal::principal;
+use crate::services::backends::kubernetes::principal_repository::test_principal::{principal, updated_principal};
 use boxer_core::testing::create_namespace;
 use k8s_openapi::api::core::v1::ConfigMap;
 use kube::api::PostParams;
@@ -82,7 +82,7 @@ impl AsyncTestContext for KubernetesPrincipalRepositoryTest {
 async fn test_create_principal(ctx: &mut KubernetesPrincipalRepositoryTest) {
     // Arrange
     let name = "test-schema-entities";
-    let entity_uid = "PhotoApp::User::\"Alice\"".to_string();
+    let entity_uid = "PhotoApp::User::\"alice\"".to_string();
     let principal_id = PrincipalIdentity::new(name.to_string(), entity_uid);
 
     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
@@ -102,77 +102,70 @@ async fn test_create_principal(ctx: &mut KubernetesPrincipalRepositoryTest) {
         .expect("Failed to get schema from Kubernetes");
 
     // Assert
-    let expected: String = retrieved_principal.get_entity().to_json_string().unwrap();
-    let actual: String = principal(name.to_string()).get_entity().to_json_string().unwrap();
+    let expected: String = retrieved_principal.get_entity().uid().to_string();
+    let actual: String = principal(name.to_string()).get_entity().uid().to_string();
     assert_eq!(expected, actual);
 }
 
-// #[test_context(KubernetesPrincipalRepositoryTest)]
-// #[tokio::test]
-// async fn test_delete_principal(ctx: &mut KubernetesPrincipalRepositoryTest) {
-//     // Arrange
-//     let name = "test-schema-entities";
-//     let principal_id = PrincipalIdentity::new(name.to_string(), "PhotoApp::User::\"alice\"".to_string());
-//     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
-//
-//     ctx.repository
-//         .upsert(principal_id.clone(), principal(name.to_string()))
-//         .await
-//         .expect("Failed to upsert principal");
-//
-//     let retrieved_principal = ctx
-//         .raw_api
-//         .get(&name)
-//         .await
-//         .expect("Failed to get schema from Kubernetes");
-//     assert_eq!(retrieved_principal.metadata.name.unwrap(), "test-schema-entities");
-//
-//     // Act
-//     ctx.repository
-//         .delete(principal_id.clone())
-//         .await
-//         .expect("Failed to delete principal");
-//
-//     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
-//
-//     // Assert
-//     let principal_result = ctx.repository.get(principal_id).await;
-//     assert!(principal_result.is_err(), "Principal should not exist after deletion");
-// }
-// //
-// #[test_context(KubernetesPrincipalRepositoryTest)]
-// #[tokio::test]
-// async fn test_update_schema(ctx: &mut KubernetesPrincipalRepositoryTest) {
-//     // Arrange
-//     let name = "test-schema-entities";
-//     let principal_id = PrincipalIdentity::new(name.to_string(), "PhotoApp::User::\"alice\"".to_string());
-//     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
-//
-//     ctx.repository
-//         .upsert(principal_id.clone(), principal(name.to_string()))
-//         .await
-//         .expect("Failed to upsert principal");
-//
-//     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
-//
-//     // Act
-//     ctx.repository
-//         .upsert(principal_id.clone(), updated_principal(name.to_string()))
-//         .await
-//         .expect("Failed to update principal");
-//
-//     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
-//
-//     // Assert
-//     let principal_result = ctx
-//         .repository
-//         .get(principal_id)
-//         .await
-//         .expect("Failed to get schema after deletion");
-//
-//     let entity = principal_result.get_entity();
-//     let old_principal = principal(name.to_string());
-//     let old_entity = old_principal.get_entity();
-//
-//     assert_ne!(entity.attr("age"), old_entity.attr("age"), "Age should be updated");
-// }
+#[test_context(KubernetesPrincipalRepositoryTest)]
+#[tokio::test]
+async fn test_delete_principal(ctx: &mut KubernetesPrincipalRepositoryTest) {
+    // Arrange
+    let name = "test-schema-entities";
+    let principal_id = PrincipalIdentity::new(name.to_string(), "PhotoApp::User::\"alice\"".to_string());
+    sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
+
+    ctx.repository
+        .upsert(principal_id.clone(), principal(name.to_string()))
+        .await
+        .expect("Failed to upsert principal");
+
+    // Act
+    ctx.repository
+        .delete(principal_id.clone())
+        .await
+        .expect("Failed to delete principal");
+
+    sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
+
+    // Assert
+    let principal_result = ctx.repository.get(principal_id).await;
+    assert!(principal_result.is_err(), "Principal should not exist after deletion");
+}
+
+#[test_context(KubernetesPrincipalRepositoryTest)]
+#[tokio::test]
+async fn test_update_schema(ctx: &mut KubernetesPrincipalRepositoryTest) {
+    // Arrange
+    let name = "test-schema-entities";
+    let principal_id = PrincipalIdentity::new(name.to_string(), "PhotoApp::User::\"alice\"".to_string());
+    sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
+
+    ctx.repository
+        .upsert(principal_id.clone(), principal(name.to_string()))
+        .await
+        .expect("Failed to upsert principal");
+
+    sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
+
+    // Act
+    ctx.repository
+        .upsert(principal_id.clone(), updated_principal(name.to_string()))
+        .await
+        .expect("Failed to update principal");
+
+    sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
+
+    // Assert
+    let principal_result = ctx
+        .repository
+        .get(principal_id)
+        .await
+        .expect("Failed to get schema after deletion");
+
+    let entity = principal_result.get_entity();
+    let old_principal = principal(name.to_string());
+    let old_entity = old_principal.get_entity();
+
+    assert_ne!(entity.attr("age"), old_entity.attr("age"), "Age should be updated");
+}

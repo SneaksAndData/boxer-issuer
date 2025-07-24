@@ -25,16 +25,14 @@ use boxer_core::services::base::upsert_repository::{
 use cedar_policy::{Entities, EntityUid};
 use futures::future;
 use futures::future::Ready;
-use k8s_openapi::api::core::v1::ConfigMap;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::runtime::reflector::ObjectRef;
 use kube::runtime::watcher;
-use kube::{CustomResource, Resource};
+use kube::CustomResource;
 use maplit::btreemap;
 // Workaround to use prinltn! for logs.
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
 #[cfg(test)]
@@ -233,6 +231,9 @@ impl ReadOnlyRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRep
             .await
             .ok_or(anyhow!("Cannot fin entities for schema {}", key.schema_id()))?;
         let active_entities = resource.spec.entities.get_active_entities()?;
+        for entity in active_entities.clone() {
+            debug!("Found active entity: {:?}", entity.uid());
+        }
         let entity = active_entities
             .get(&entity_uid)
             .ok_or_else(|| anyhow!("Entity with UID {} not found in active entities", entity_uid))?;
