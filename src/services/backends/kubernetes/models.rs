@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 
 /// Common traits and functions for Kubernetes resources
 pub mod base;
+pub mod identity_provider;
 
 /// Creates an empty resource with the specified metadata.
 pub fn empty<K>(name: String, namespace: String, labels: BTreeMap<String, String>) -> K

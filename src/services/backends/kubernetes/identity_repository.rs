@@ -7,10 +7,6 @@ use futures::future;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::runtime::reflector::ObjectRef;
 use kube::runtime::watcher;
-use kube::CustomResource;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use std::sync::Arc;
 
 // tests module is used to test the KubernetesIdentityRepository
@@ -26,91 +22,15 @@ use std::{println as warn, println as debug};
 use futures::future::Ready;
 
 // Workaround to use prinltn! for logs.
+use crate::services::backends::kubernetes::common::update_handler::UpdateHandler;
 use crate::services::backends::kubernetes::models;
 use crate::services::backends::kubernetes::models::base::WithMetadata;
+use crate::services::backends::kubernetes::models::identity_provider::IdentityProvider;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::base::upsert_repository::{
     CanDelete, ReadOnlyRepository, UpsertRepository, UpsertRepositoryWithDelete,
 };
 use maplit::btreemap;
-
-#[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
-struct PrincipalAssociation {
-    schema: String,
-    principal: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
-struct ExternalIdentityInfo {
-    pub name: String,
-    pub principal: PrincipalAssociation,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
-struct IdentitySetData {
-    pub active: Vec<ExternalIdentityInfo>,
-    pub inactive: Vec<ExternalIdentityInfo>,
-}
-
-impl IdentitySetData {
-    pub fn contains(&self, user: &str) -> bool {
-        self.active.iter().any(|info| info.name == user)
-    }
-
-    pub fn is_deleted(&self, user: &str) -> bool {
-        self.inactive.iter().any(|info| info.name == user)
-    }
-
-    pub fn insert(&mut self, user_id: String) {
-        if !self.contains(&user_id) {
-            self.active.push(ExternalIdentityInfo {
-                name: user_id,
-                principal: Default::default(),
-            });
-        }
-    }
-
-    pub fn get_active(&self) -> HashSet<String> {
-        self.active.iter().map(|info| info.name.clone()).collect()
-    }
-
-    pub fn remove(&mut self, user: &str) -> bool {
-        if let Some(pos) = self.active.iter().position(|info| info.name == user) {
-            let info = self.active.remove(pos);
-            self.inactive.push(info);
-            true
-        } else {
-            false
-        }
-    }
-}
-
-#[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
-#[kube(
-    group = "auth.sneaksanddata.com",
-    version = "v1beta1",
-    kind = "IdentityProvider",
-    plural = "identity-providers",
-    singular = "identity-provider",
-    namespaced
-)]
-struct IdentityProviderSpec {
-    identities: IdentitySetData,
-}
-
-impl Default for IdentityProvider {
-    fn default() -> Self {
-        IdentityProvider {
-            metadata: ObjectMeta::default(),
-            spec: IdentityProviderSpec {
-                identities: IdentitySetData {
-                    inactive: Default::default(),
-                    active: Default::default(),
-                },
-            },
-        }
-    }
-}
 
 impl WithMetadata<ObjectMeta> for IdentityProvider {
     fn with_metadata(mut self, metadata: ObjectMeta) -> Self {
@@ -165,26 +85,6 @@ impl KubernetesIdentityRepository {
                 self.resource_manager.replace(provider, &mut new_provider).await
             }
         }
-    }
-}
-
-struct UpdateHandler;
-impl ResourceUpdateHandler<IdentityProvider> for UpdateHandler {
-    fn handle_update(&self, event: core::result::Result<IdentityProvider, watcher::Error>) -> Ready<()> {
-        match event {
-            Ok(IdentityProvider {
-                metadata:
-                    ObjectMeta {
-                        name: Some(name),
-                        namespace: Some(namespace),
-                        ..
-                    },
-                spec: _,
-            }) => debug!("Saw [{}] in [{}]", name, namespace),
-            Ok(_) => warn!("Saw an object without name or namespace"),
-            Err(e) => warn!("watcher error: {}", e),
-        }
-        future::ready(())
     }
 }
 

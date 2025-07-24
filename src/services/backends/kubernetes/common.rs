@@ -1,6 +1,7 @@
 #[cfg(test)]
 pub mod fixtures;
 pub mod synchronized_kubernetes_resource_manager;
+pub mod update_handler;
 
 use anyhow::{anyhow, Error};
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;

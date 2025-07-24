@@ -1,6 +1,6 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::models::principal::Principal;
-use boxer_core::services::base::upsert_repository::UpsertRepositoryWithDelete;
+use boxer_core::services::base::upsert_repository::{UpsertRepository, UpsertRepositoryWithDelete};
 use cedar_policy::EntityUid;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -21,13 +21,8 @@ pub type PrincipalRepository = dyn UpsertRepositoryWithDelete<
     DeleteError = anyhow::Error,
 >;
 
-pub type PrincipalAssociationRepository = dyn UpsertRepositoryWithDelete<
-    ExternalIdentity,
-    PrincipalIdentity,
-    Error = anyhow::Error,
-    ReadError = anyhow::Error,
-    DeleteError = anyhow::Error,
->;
+pub type PrincipalAssociationRepository =
+    dyn UpsertRepository<ExternalIdentity, PrincipalIdentity, Error = anyhow::Error, ReadError = anyhow::Error>;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PrincipalIdentity {

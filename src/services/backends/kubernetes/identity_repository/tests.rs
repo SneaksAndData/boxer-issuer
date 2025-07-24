@@ -1,22 +1,11 @@
 use super::*;
-use crate::services::backends::kubernetes::common::fixtures::get_kubeconfig;
+use crate::services::backends::kubernetes::common::fixtures::{create_mock_identity_providers, get_kubeconfig};
 use boxer_core::testing::create_namespace;
-use kube::api::PostParams;
 use kube::{Api, Client};
-use maplit::{btreemap, hashset};
 use std::sync::Arc;
 use std::time::Duration;
 use test_context::{test_context, AsyncTestContext};
 use tokio::time::{sleep, timeout};
-
-impl ExternalIdentityInfo {
-    fn new(name: String) -> Self {
-        ExternalIdentityInfo {
-            name,
-            principal: Default::default(),
-        }
-    }
-}
 
 const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -35,45 +24,9 @@ impl AsyncTestContext for KubernetesIdentityRepositoryTest {
         let config = get_kubeconfig().await.expect("Failed to create config");
         let client = Client::try_from(config.clone()).expect("Failed to create client");
 
-        let api: Api<IdentityProvider> = Api::namespaced(client.clone(), namespace.as_str());
+        let api: Arc<Api<IdentityProvider>> = Arc::new(Api::namespaced(client.clone(), namespace.as_str()));
 
-        #[rustfmt::skip]
-            let providers = [
-                ("identity-provider-1", hashset!["user1".to_string(), "user2".to_string()], hashset![]),
-                ("identity-provider-2", hashset!["user1".to_string()], hashset![]),
-                ( "identity-provider-3", hashset!["user3".to_string()], hashset!["user4".to_string(), "user5".to_string(), "deleted_user".to_string()] ),
-                ("identity-provider-4", hashset![], hashset![]),
-            ];
-
-        for (provider, active, inactive) in &providers {
-            let config_map = IdentityProvider {
-                spec: IdentityProviderSpec {
-                    identities: IdentitySetData {
-                        active: active
-                            .into_iter()
-                            .map(|user| ExternalIdentityInfo::new(user.to_string()))
-                            .collect(),
-                        inactive: inactive
-                            .into_iter()
-                            .map(|user| ExternalIdentityInfo::new(user.to_string()))
-                            .collect(),
-                    },
-                },
-                metadata: ObjectMeta {
-                    name: Some(provider.to_string()),
-                    namespace: Some(namespace.clone()),
-                    labels: Some(btreemap! {
-                        LABEL_SELECTOR_KEY.to_string() => LABEL_SELECTOR_VALUE.to_string(),
-                        "provider".to_string() => provider.to_string(),
-                    }),
-                    ..Default::default()
-                },
-                ..Default::default()
-            };
-            api.create(&PostParams::default(), &config_map)
-                .await
-                .expect("Failed to create ConfigMap");
-        }
+        create_mock_identity_providers(api.clone(), namespace.clone(), LABEL_SELECTOR_KEY, LABEL_SELECTOR_VALUE).await;
 
         let config = KubernetesResourceManagerConfig {
             namespace: namespace.clone(),
@@ -90,7 +43,7 @@ impl AsyncTestContext for KubernetesIdentityRepositoryTest {
             .expect("Failed to start repository");
 
         KubernetesIdentityRepositoryTest {
-            api: Arc::new(api),
+            api,
             repository: Arc::new(repository),
         }
     }

@@ -2,22 +2,13 @@
 #[cfg(test)]
 mod tests;
 
-// Use log crate when building application
-#[cfg(not(test))]
-use log::{debug, warn};
-
-// Workaround to use prinltn! for logs.
-#[cfg(test)]
-use std::{println as warn, println as debug};
-
 // Other imports
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
-use crate::services::backends::kubernetes::common::ResourceUpdateHandler;
-use crate::services::backends::kubernetes::models;
-use crate::services::backends::kubernetes::models::base::WithMetadata;
+use crate::services::backends::kubernetes::common::update_handler::UpdateHandler;
+use crate::services::backends::kubernetes::models::identity_provider::{IdentityProvider, PrincipalAssociation};
 use crate::services::base::upsert_repository::PrincipalIdentity;
-use anyhow::anyhow;
+use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::base::upsert_repository::{
@@ -30,63 +21,64 @@ use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::runtime::reflector::ObjectRef;
 use kube::runtime::watcher;
 use kube::Resource;
+use log::{debug, warn};
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-struct PrincipalAssociationData {
-    active: String,
-    inactive: String,
-}
-
-#[derive(Resource, Serialize, Deserialize, Clone, Debug)]
-#[resource(inherit = ConfigMap)]
-struct PrincipalAssociationConfigMap {
-    metadata: ObjectMeta,
-    data: PrincipalAssociationData,
-}
-
-impl Default for PrincipalAssociationConfigMap {
-    fn default() -> Self {
-        PrincipalAssociationConfigMap {
-            metadata: ObjectMeta::default(),
-            data: PrincipalAssociationData {
-                active: "{}".to_string(),
-                inactive: "{}".to_string(),
-            },
-        }
-    }
-}
-
-impl WithMetadata<ObjectMeta> for PrincipalAssociationConfigMap {
-    fn with_metadata(mut self, metadata: ObjectMeta) -> Self {
-        self.metadata = metadata;
-        self
-    }
-}
-
-impl PrincipalAssociationConfigMap {
+impl IdentityProvider {
     fn get_active_associations(&self) -> anyhow::Result<HashMap<String, PrincipalIdentity>> {
-        serde_json::from_str(self.data.active.as_str())
-            .map_err(|e| anyhow!("Failed to deserialize active associations: {}", e))
+        let mut hm = HashMap::new();
+        for i in &self.spec.identities.active {
+            if let Some(ref principal) = i.principal {
+                hm.insert(
+                    i.name.clone(),
+                    PrincipalIdentity::new(principal.schema.clone(), principal.principal.clone()),
+                );
+            }
+        }
+        Ok(hm)
     }
 
     fn get_inactive_associations(&self) -> anyhow::Result<HashMap<String, PrincipalIdentity>> {
-        serde_json::from_str(self.data.inactive.as_str())
-            .map_err(|e| anyhow!("Failed to deserialize active associations: {}", e))
+        let mut hm = HashMap::new();
+        for i in &self.spec.identities.inactive {
+            if let Some(ref principal) = i.principal {
+                hm.insert(
+                    i.name.clone(),
+                    PrincipalIdentity::new(principal.schema.clone(), principal.principal.clone()),
+                );
+            }
+        }
+        Ok(hm)
+    }
+
+    fn associate(&mut self, user: String, principal: PrincipalIdentity) -> anyhow::Result<()> {
+        if self.spec.identities.is_deleted(&user) {
+            bail!("User {:?} is inactive in provider {:?}", user, self.metadata.name);
+        }
+
+        for i in &mut self.spec.identities.active {
+            if i.name == user {
+                i.principal = Some(PrincipalAssociation {
+                    schema: principal.schema_id().clone(),
+                    principal: principal.principal_id().clone(),
+                })
+            }
+        }
+
+        Ok(())
     }
 }
 
 pub struct KubernetesPrincipalAssociationRepository {
-    resource_manager: SynchronizedKubernetesResourceManager<PrincipalAssociationConfigMap>,
+    resource_manager: SynchronizedKubernetesResourceManager<IdentityProvider>,
     label_selector_key: String,
     label_selector_value: String,
 }
 
 impl KubernetesPrincipalAssociationRepository {
-    #[allow(dead_code)] // Dead code is allowed here because this function is used in kubernetes
     pub async fn start(config: KubernetesResourceManagerConfig) -> anyhow::Result<Self> {
         let label_selector_key = config.label_selector_key.clone();
         let label_selector_value = config.label_selector_value.clone();
@@ -98,35 +90,23 @@ impl KubernetesPrincipalAssociationRepository {
         })
     }
 
-    async fn get_entities(&self, key: ExternalIdentity) -> anyhow::Result<Arc<PrincipalAssociationConfigMap>> {
-        let name = format!("principals-{}", key.identity_provider);
-        let or = ObjectRef::new(&name).within(self.resource_manager.namespace().as_str());
-        self.resource_manager
-            .get(or)
-            .ok_or(anyhow!("Principal association not found for key: {:?}", key))
+    async fn get_entities(&self, provider: &str) -> anyhow::Result<Arc<IdentityProvider>> {
+        let or = ObjectRef::new(provider).within(self.resource_manager.namespace().as_str());
+        self.resource_manager.get(or).ok_or_else(|| {
+            anyhow!(
+                "Identity provider \"{}\" not found in namespace: {:?}",
+                provider,
+                self.resource_manager.namespace()
+            )
+        })
     }
 
     async fn overwrite(
         &self,
-        key: ExternalIdentity,
-        updated_data: PrincipalAssociationData,
-    ) -> Result<(), anyhow::Error> {
-        let name = format!("principals-{}", key.identity_provider);
-        let mut updated_configmap = PrincipalAssociationConfigMap {
-            metadata: ObjectMeta {
-                name: Some(name.clone()),
-                namespace: Some(self.resource_manager.namespace().clone()),
-                labels: Some(btreemap! {
-                    self.label_selector_key.clone() => self.label_selector_value.clone()
-                }),
-                ..Default::default()
-            },
-            data: updated_data,
-        };
-        self.resource_manager
-            .replace(&name, &mut updated_configmap)
-            .await
-            .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
+        provider: &str,
+        updated_data: &mut IdentityProvider,
+    ) -> anyhow::Result<(), anyhow::Error> {
+        self.resource_manager.replace(provider, updated_data).await
     }
 }
 
@@ -138,60 +118,28 @@ impl Drop for KubernetesPrincipalAssociationRepository {
     }
 }
 
-struct UpdateHandler;
-impl ResourceUpdateHandler<PrincipalAssociationConfigMap> for UpdateHandler {
-    fn handle_update(&self, event: Result<PrincipalAssociationConfigMap, watcher::Error>) -> Ready<()> {
-        match event {
-            Ok(PrincipalAssociationConfigMap {
-                metadata:
-                    ObjectMeta {
-                        name: Some(name),
-                        namespace: Some(namespace),
-                        ..
-                    },
-                data: _,
-            }) => debug!("Saw [{}] in [{}]", name, namespace),
-            Ok(_) => warn!("Saw an object without name or namespace"),
-            Err(e) => warn!("watcher error: {}", e),
-        }
-        future::ready(())
-    }
-}
-
-fn to_key(external_identity: &ExternalIdentity) -> String {
-    format!("{}/{}", external_identity.identity_provider, external_identity.user_id)
-}
-
 #[async_trait]
 impl UpsertRepository<ExternalIdentity, PrincipalIdentity> for KubernetesPrincipalAssociationRepository {
     type Error = anyhow::Error;
 
     async fn upsert(&self, key: ExternalIdentity, principal: PrincipalIdentity) -> Result<(), Self::Error> {
-        let name = format!("principals-{}", key.identity_provider);
-        let namespace = self.resource_manager.namespace().clone();
-        let labels = btreemap! {
-            self.label_selector_key.clone() => self.label_selector_value.clone()
-        };
-
-        let configmap = match self.get_entities(key.clone()).await {
-            Ok(configmap) => configmap,
-            Err(_e) => Arc::new(models::empty(name, namespace, labels)),
-        };
-        let mut active = configmap.get_active_associations()?;
-        active.insert(to_key(&key), principal.clone());
-
-        let updated_data = PrincipalAssociationData {
-            active: serde_json::to_string(&active)?,
-            inactive: configmap.data.inactive.clone(),
-        };
-        self.overwrite(key, updated_data).await?;
-        Ok(())
+        let user = key.user_id.clone();
+        let mut ip = self.get_entities(&key.identity_provider).await?;
+        if ip.spec.identities.is_deleted(&user) {
+            bail!("User {:?} is inactive in provider {:?}", user, key.identity_provider)
+        }
+        let ip = Arc::make_mut(&mut ip);
+        ip.associate(key.user_id, principal.clone())?;
+        self.overwrite(&key.identity_provider, ip).await
     }
 
     async fn exists(&self, key: ExternalIdentity) -> Result<bool, Self::Error> {
-        let configmap = self.get_entities(key.clone()).await?;
-        let active = configmap.get_active_associations()?;
-        Ok(active.get(&to_key(&key)).is_some())
+        let result = self
+            .get_entities(&key.identity_provider)
+            .await?
+            .get_active_associations()?
+            .contains_key(&key.user_id);
+        Ok(result)
     }
 }
 
@@ -200,36 +148,11 @@ impl ReadOnlyRepository<ExternalIdentity, PrincipalIdentity> for KubernetesPrinc
     type ReadError = anyhow::Error;
 
     async fn get(&self, key: ExternalIdentity) -> Result<PrincipalIdentity, Self::ReadError> {
-        let configmap = self.get_entities(key.clone()).await?;
-        let active = configmap.get_active_associations()?;
-        let principal_identity = active
-            .get(&to_key(&key))
-            .ok_or_else(|| anyhow!("Principal with identity {:?} not found in active associations", key))?;
-        Ok(principal_identity.clone())
+        self.get_entities(&key.identity_provider)
+            .await?
+            .get_active_associations()?
+            .get(&key.user_id)
+            .cloned()
+            .ok_or(anyhow::anyhow!("Principal association not found for {:?}", key))
     }
 }
-
-#[async_trait]
-impl CanDelete<ExternalIdentity, PrincipalIdentity> for KubernetesPrincipalAssociationRepository {
-    type DeleteError = anyhow::Error;
-
-    async fn delete(&self, key: ExternalIdentity) -> Result<(), Self::DeleteError> {
-        let configmap = self.get_entities(key.clone()).await?;
-        let mut active = configmap.get_active_associations()?;
-        let mut inactive = configmap.get_inactive_associations()?;
-
-        let to_delete = active
-            .remove(&to_key(&key))
-            .ok_or_else(|| anyhow!("Association not found for external identity: {:?}", key))?;
-
-        inactive.insert(to_key(&key), to_delete);
-        let updated_data = PrincipalAssociationData {
-            active: serde_json::to_string(&active)?,
-            inactive: serde_json::to_string(&inactive)?,
-        };
-        self.overwrite(key, updated_data).await?;
-        Ok(())
-    }
-}
-
-impl UpsertRepositoryWithDelete<ExternalIdentity, PrincipalIdentity> for KubernetesPrincipalAssociationRepository {}

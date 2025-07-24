@@ -1,5 +1,7 @@
 use super::*;
-use k8s_openapi::api::core::v1::{ConfigMap, Namespace};
+use crate::services::backends::kubernetes::common::fixtures::create_mock_identity_providers;
+use crate::services::backends::kubernetes::identity_repository::KubernetesIdentityRepository;
+use k8s_openapi::api::core::v1::Namespace;
 use kube::api::PostParams;
 use kube::{Api, Client};
 use serde_json::json;
@@ -15,9 +17,9 @@ const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[allow(dead_code)] // Dead code is allowed here because this struct is used in kubernetes
 struct KubernetesPrincipalAssociationRepositoryTest {
-    raw_api: Arc<Api<ConfigMap>>,
-    data_api: Arc<Api<PrincipalAssociationConfigMap>>,
+    api: Arc<Api<IdentityProvider>>,
     repository: Arc<KubernetesPrincipalAssociationRepository>,
+    identity_repository: Arc<KubernetesIdentityRepository>,
 }
 
 static LABEL_SELECTOR_KEY: &str = "repository.boxer.io/type";
@@ -42,8 +44,8 @@ impl AsyncTestContext for KubernetesPrincipalAssociationRepositoryTest {
             .await
             .expect("Create Namespace failed");
 
-        let raw_api: Api<ConfigMap> = Api::namespaced(client.clone(), namespace.as_str());
-        let data_api: Api<PrincipalAssociationConfigMap> = Api::namespaced(client.clone(), namespace.as_str());
+        let api: Arc<Api<IdentityProvider>> = Arc::new(Api::namespaced(client.clone(), namespace.as_str()));
+        create_mock_identity_providers(api.clone(), namespace.clone(), LABEL_SELECTOR_KEY, LABEL_SELECTOR_VALUE).await;
 
         let config = KubernetesResourceManagerConfig {
             namespace: namespace.clone(),
@@ -56,36 +58,18 @@ impl AsyncTestContext for KubernetesPrincipalAssociationRepositoryTest {
             claimant: "boxer".to_string(),
         };
 
-        let repository = KubernetesPrincipalAssociationRepository::start(config)
+        let repository = KubernetesPrincipalAssociationRepository::start(config.clone())
             .await
             .expect("Failed to start repository");
 
-        let api: Api<ConfigMap> = Api::namespaced(client.clone(), namespace.as_str());
-        let data = btreemap! {
-            "active".to_string() => serde_json::to_string(&HashMap::<String, String>::new()).unwrap(),
-            "inactive".to_string() => serde_json::to_string(&HashMap::<String, String>::new()).unwrap(),
-        };
-        let config_map = ConfigMap {
-            data: Some(data),
-            metadata: ObjectMeta {
-                name: Some("principals-identity-provider".to_string()),
-                namespace: Some(namespace.clone()),
-                labels: Some(btreemap! {
-                    LABEL_SELECTOR_KEY.to_string() => LABEL_SELECTOR_VALUE.to_string(),
-                }),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-
-        api.create(&PostParams::default(), &config_map)
+        let identity_repository = KubernetesIdentityRepository::start(config)
             .await
-            .expect("Failed to create ConfigMap");
+            .expect("Failed to start repository");
 
         KubernetesPrincipalAssociationRepositoryTest {
-            raw_api: Arc::new(raw_api),
-            data_api: Arc::new(data_api),
+            api,
             repository: Arc::new(repository),
+            identity_repository: Arc::new(identity_repository),
         }
     }
 
@@ -98,7 +82,7 @@ impl AsyncTestContext for KubernetesPrincipalAssociationRepositoryTest {
 #[tokio::test]
 async fn test_create_association(ctx: &mut KubernetesPrincipalAssociationRepositoryTest) {
     // Arrange
-    let external_identity = ExternalIdentity::new("identity-provider".to_string(), "external_id".to_string());
+    let external_identity = ExternalIdentity::new("identity-provider-1".to_string(), "user1".to_string());
     let principal_identity = PrincipalIdentity::new(
         "test-schema-entities".to_string(),
         "PhotoApp::User::\"alice\"".to_string(),
@@ -106,24 +90,30 @@ async fn test_create_association(ctx: &mut KubernetesPrincipalAssociationReposit
 
     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
 
+    ctx.repository
+        .get(external_identity.clone())
+        .await
+        .expect_err("Principal should not exist before upsert");
+
     // Act
     ctx.repository
-        .upsert(external_identity, principal_identity)
+        .upsert(external_identity.clone(), principal_identity)
         .await
         .expect("Failed to upsert principal");
 
     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
 
-    let retrieved_principal = ctx
-        .raw_api
-        .get("principals-identity-provider")
+    let association = ctx
+        .repository
+        .get(external_identity.clone())
         .await
-        .expect("Failed to get schema from Kubernetes");
+        .expect("Principal should not exist before upsert");
 
     // Assert
     assert_eq!(
-        retrieved_principal.metadata.name.unwrap(),
-        "principals-identity-provider"
+        association.schema_id(),
+        "test-schema-entities",
+        "Schema ID should match the upserted principal identity"
     );
 }
 
@@ -131,36 +121,28 @@ async fn test_create_association(ctx: &mut KubernetesPrincipalAssociationReposit
 #[tokio::test]
 async fn test_delete_principal(ctx: &mut KubernetesPrincipalAssociationRepositoryTest) {
     // Arrange
-    let external_identity = ExternalIdentity::new("identity-provider".to_string(), "external_id".to_string());
+    let external_identity = ExternalIdentity::new("identity-provider-1".to_string(), "user1".to_string());
     let principal_identity = PrincipalIdentity::new(
         "test-schema-entities".to_string(),
         "PhotoApp::User::\"alice\"".to_string(),
     );
-    sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
 
     ctx.repository
         .upsert(external_identity.clone(), principal_identity)
         .await
         .expect("Failed to upsert principal");
 
-    let retrieved_principal = ctx
-        .raw_api
-        .get(&"principals-identity-provider")
+    ctx.identity_repository
+        .delete((
+            external_identity.identity_provider.clone(),
+            external_identity.user_id.clone(),
+        ))
         .await
-        .expect("Failed to get schema from Kubernetes");
-    assert_eq!(
-        retrieved_principal.metadata.name.unwrap(),
-        "principals-identity-provider"
-    );
-
-    // Act
-    ctx.repository
-        .delete(external_identity.clone())
-        .await
-        .expect("Failed to delete principal");
+        .expect("Failed to delete identity provider");
 
     sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
 
+    // Act
     // Assert
     let principal_result = ctx.repository.get(external_identity.clone()).await;
     assert!(principal_result.is_err(), "Principal should not exist after deletion");
