@@ -1,12 +1,9 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
-use crate::services::backends::kubernetes::common::ResourceUpdateHandler;
 use anyhow::{anyhow, bail, Result};
 use async_trait::async_trait;
-use futures::future;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::runtime::reflector::ObjectRef;
-use kube::runtime::watcher;
 use std::sync::Arc;
 
 // tests module is used to test the KubernetesIdentityRepository
@@ -15,11 +12,9 @@ mod tests;
 
 // Use log crate when building application
 #[cfg(not(test))]
-use log::{debug, warn};
+use log::warn;
 #[cfg(test)]
-use std::{println as warn, println as debug};
-
-use futures::future::Ready;
+use std::println as warn;
 
 // Workaround to use prinltn! for logs.
 use crate::services::backends::kubernetes::common::update_handler::UpdateHandler;

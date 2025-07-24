@@ -11,19 +11,9 @@ use crate::services::base::upsert_repository::PrincipalIdentity;
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
-use boxer_core::services::base::upsert_repository::{
-    CanDelete, ReadOnlyRepository, UpsertRepository, UpsertRepositoryWithDelete,
-};
-use futures::future;
-use futures::future::Ready;
-use k8s_openapi::api::core::v1::ConfigMap;
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRepository};
 use kube::runtime::reflector::ObjectRef;
-use kube::runtime::watcher;
-use kube::Resource;
-use log::{debug, warn};
-use maplit::btreemap;
-use serde::{Deserialize, Serialize};
+use log::warn;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -31,19 +21,6 @@ impl IdentityProvider {
     fn get_active_associations(&self) -> anyhow::Result<HashMap<String, PrincipalIdentity>> {
         let mut hm = HashMap::new();
         for i in &self.spec.identities.active {
-            if let Some(ref principal) = i.principal {
-                hm.insert(
-                    i.name.clone(),
-                    PrincipalIdentity::new(principal.schema.clone(), principal.principal.clone()),
-                );
-            }
-        }
-        Ok(hm)
-    }
-
-    fn get_inactive_associations(&self) -> anyhow::Result<HashMap<String, PrincipalIdentity>> {
-        let mut hm = HashMap::new();
-        for i in &self.spec.identities.inactive {
             if let Some(ref principal) = i.principal {
                 hm.insert(
                     i.name.clone(),
@@ -74,20 +51,12 @@ impl IdentityProvider {
 
 pub struct KubernetesPrincipalAssociationRepository {
     resource_manager: SynchronizedKubernetesResourceManager<IdentityProvider>,
-    label_selector_key: String,
-    label_selector_value: String,
 }
 
 impl KubernetesPrincipalAssociationRepository {
     pub async fn start(config: KubernetesResourceManagerConfig) -> anyhow::Result<Self> {
-        let label_selector_key = config.label_selector_key.clone();
-        let label_selector_value = config.label_selector_value.clone();
         let resource_manager = SynchronizedKubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
-        Ok(KubernetesPrincipalAssociationRepository {
-            resource_manager,
-            label_selector_key,
-            label_selector_value,
-        })
+        Ok(KubernetesPrincipalAssociationRepository { resource_manager })
     }
 
     async fn get_entities(&self, provider: &str) -> anyhow::Result<Arc<IdentityProvider>> {

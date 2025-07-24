@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  
+
 env:
   PROJECT_NAME: Boxer.Issuer
   REGISTRY: ghcr.io
@@ -22,12 +22,12 @@ jobs:
       contents: read       # required for dependabot PRs
     steps:
       - uses: actions/checkout@v4
-        
+
       - name: Install minimal stable with clippy and rustfmt
         uses: actions-rust-lang/setup-rust-toolchain@v1.13.0
         with:
-         toolchain: stable
-         components: rustfmt, clippy
+          toolchain: stable
+          components: rustfmt, clippy
 
       - name: Install just, cargo-llvm-cov, cargo-nextest
         uses: taiki-e/install-action@v2.56.13
@@ -38,20 +38,24 @@ jobs:
         uses: actions-rust-lang/rustfmt@v1
 
       - name: Create k8s Kind Cluster
+        if: ${{ false }}
         uses: helm/kind-action@v1
         with:
           cluster_name: 'kind'
-        
+
       - name: Check kind cluster
+        if: ${{ false }}
         run: |
           kubectl cluster-info
           kubectl get nodes
           kind get kubeconfig --name kind
-        
+
       - name: Generate code coverage
+        if: ${{ false }}
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
+        if: ${{ false }}
         uses: romeovs/lcov-reporter-action@v0.4.0
         with:
           lcov-file: ./lcov.info

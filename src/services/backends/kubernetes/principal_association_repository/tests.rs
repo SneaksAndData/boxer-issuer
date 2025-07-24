@@ -1,6 +1,7 @@
 use super::*;
 use crate::services::backends::kubernetes::common::fixtures::create_mock_identity_providers;
 use crate::services::backends::kubernetes::identity_repository::KubernetesIdentityRepository;
+use boxer_core::services::base::upsert_repository::CanDelete;
 use k8s_openapi::api::core::v1::Namespace;
 use kube::api::PostParams;
 use kube::{Api, Client};
