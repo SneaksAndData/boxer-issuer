@@ -15,6 +15,5 @@ use utoipa::OpenApi;
     controllers::principal::delete,
     controllers::association::post,
     controllers::association::get,
-    controllers::association::delete,
 ))]
 pub struct ApiDoc;

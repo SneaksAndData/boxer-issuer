@@ -49,14 +49,6 @@ async fn get(path: Path<(String, String)>, data: Data<Arc<PrincipalAssociationRe
     }))
 }
 
-#[utoipa::path(context_path = "/association/identities", responses((status = OK)))]
-#[get("/identities/{identity_provider}/{id}")]
-async fn delete(path: Path<(String, String)>, data: Data<Arc<PrincipalAssociationRepository>>) -> Result<HttpResponse> {
-    let external_identity = ExternalIdentity::from(path.into_inner());
-    data.delete(external_identity).await?;
-    Ok(HttpResponse::Ok().finish())
-}
-
 pub fn crud() -> impl HttpServiceFactory {
-    web::scope("/association").service(post).service(get).service(delete)
+    web::scope("/association").service(post).service(get)
 }
