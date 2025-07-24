@@ -1,21 +1,19 @@
 use super::*;
-use k8s_openapi::api::core::v1::Namespace;
+use crate::services::backends::kubernetes::common::fixtures::get_kubeconfig;
+use boxer_core::testing::create_namespace;
 use kube::api::PostParams;
 use kube::{Api, Client};
-use maplit::btreemap;
-use serde_json::json;
-use std::println as info;
+use maplit::{btreemap, hashset};
 use std::sync::Arc;
 use std::time::Duration;
 use test_context::{test_context, AsyncTestContext};
 use tokio::time::{sleep, timeout};
-use uuid::Uuid;
 
 const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[allow(dead_code)] // Dead code is allowed here because this struct is used in kubernetes
 struct KubernetesIdentityRepositoryTest {
-    api: Arc<Api<ConfigMap>>,
+    api: Arc<Api<IdentityProvider>>,
     repository: Arc<KubernetesIdentityRepository>,
 }
 
@@ -24,39 +22,28 @@ const LABEL_SELECTOR_VALUE: &str = "identity-provider";
 
 impl AsyncTestContext for KubernetesIdentityRepositoryTest {
     async fn setup() -> KubernetesIdentityRepositoryTest {
-        let config = super::super::common::fixtures::get_kubeconfig()
-            .await
-            .expect("Failed to get kubeconfig");
+        let namespace = create_namespace().await.expect("Failed to create namespace");
+        let config = get_kubeconfig().await.expect("Failed to create config");
+        let client = Client::try_from(config.clone()).expect("Failed to create client");
 
-        let client = Client::try_from(config.clone()).expect("Failed to create Kubernetes client");
-
-        let namespace = Uuid::new_v4().to_string();
-        info!("Using namespace: {}", namespace);
-        let namespaces: Api<Namespace> = Api::all(client.clone());
-        let ns = serde_json::from_value(json!({ "metadata": { "name": namespace.clone() } }))
-            .expect("Failed to deserialize namespace");
-        namespaces
-            .create(&PostParams::default(), &ns)
-            .await
-            .expect("Create Namespace failed");
-
-        let api: Api<ConfigMap> = Api::namespaced(client.clone(), namespace.as_str());
+        let api: Api<IdentityProvider> = Api::namespaced(client.clone(), namespace.as_str());
 
         #[rustfmt::skip]
             let providers = [
-                ("identity-provider-1", vec!["user1", "user2"], vec![]),
-                ("identity-provider-2", vec!["user1"], vec![]),
-                ( "identity-provider-3", vec!["user3"], vec!["user4", "user5", "deleted_user"] ),
-                ("identity-provider-4", vec![], vec![]),
+                ("identity-provider-1", hashset!["user1".to_string(), "user2".to_string()], hashset![]),
+                ("identity-provider-2", hashset!["user1".to_string()], hashset![]),
+                ( "identity-provider-3", hashset!["user3".to_string()], hashset!["user4".to_string(), "user5".to_string(), "deleted_user".to_string()] ),
+                ("identity-provider-4", hashset![], hashset![]),
             ];
 
         for (provider, active, inactive) in &providers {
-            let data = btreemap! {
-                "active".to_string() => serde_json::to_string(&active).unwrap(),
-                "inactive".to_string() => serde_json::to_string(&inactive).unwrap(),
-            };
-            let config_map = ConfigMap {
-                data: Some(data),
+            let config_map = IdentityProvider {
+                spec: IdentityProviderSpec {
+                    identities: IdentitySetData {
+                        active: active.clone(),
+                        inactive: inactive.clone(),
+                    },
+                },
                 metadata: ObjectMeta {
                     name: Some(provider.to_string()),
                     namespace: Some(namespace.clone()),

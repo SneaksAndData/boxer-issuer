@@ -29,41 +29,69 @@ use k8s_openapi::api::core::v1::ConfigMap;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::runtime::reflector::ObjectRef;
 use kube::runtime::watcher;
-use kube::Resource;
+use kube::{CustomResource, Resource};
 use maplit::btreemap;
-use serde::{Deserialize, Serialize};
 // Workaround to use prinltn! for logs.
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
 #[cfg(test)]
 use std::{println as warn, println as debug};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-struct PrincipalData {
-    active: String,
-    inactive: String,
+#[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+struct EntitySetData {
+    pub active: String,
+    pub inactive: String,
 }
 
-#[derive(Resource, Serialize, Deserialize, Clone, Debug)]
-#[resource(inherit = ConfigMap)]
-struct PrincipalConfigMap {
-    metadata: ObjectMeta,
-    data: PrincipalData,
+impl EntitySetData {
+    fn get_active_entities(&self) -> anyhow::Result<Entities> {
+        if self.active.is_empty() {
+            return Ok(Entities::default());
+        }
+        let active_set = Entities::from_json_str(&self.active, None)?;
+        Ok(active_set)
+    }
+
+    fn get_inactive_entities(&self) -> anyhow::Result<Entities> {
+        if self.inactive.is_empty() {
+            return Ok(Entities::default());
+        }
+        let inactive_set = Entities::from_json_str(&self.inactive, None)?;
+        Ok(inactive_set)
+    }
 }
 
-impl Default for PrincipalConfigMap {
+#[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+#[kube(
+    group = "auth.sneaksanddata.com",
+    version = "v1beta1",
+    kind = "EntitySet",
+    plural = "entity-sets",
+    singular = "entity-set",
+    namespaced
+)]
+struct EntitySetSpec {
+    entities: EntitySetData,
+}
+
+impl Default for EntitySet {
     fn default() -> Self {
-        PrincipalConfigMap {
+        EntitySet {
             metadata: ObjectMeta::default(),
-            data: PrincipalData {
-                active: "[]".to_string(),
-                inactive: "[]".to_string(),
+            spec: EntitySetSpec {
+                entities: EntitySetData {
+                    inactive: Default::default(),
+                    active: Default::default(),
+                },
             },
         }
     }
 }
 
-impl WithMetadata<ObjectMeta> for PrincipalConfigMap {
+impl WithMetadata<ObjectMeta> for EntitySet {
     fn with_metadata(mut self, metadata: ObjectMeta) -> Self {
         self.metadata = metadata;
         self
@@ -76,20 +104,8 @@ fn serialize_entities(entities: &Entities) -> anyhow::Result<String> {
     String::from_utf8(vec).map_err(|e| anyhow!("Failed to serialize entities: {}", e))
 }
 
-impl PrincipalConfigMap {
-    fn get_active_entities(&self) -> anyhow::Result<Entities> {
-        let active_set = Entities::from_json_str(&self.data.active, None)?;
-        Ok(active_set)
-    }
-
-    fn get_inactive_entities(&self) -> anyhow::Result<Entities> {
-        let inactive_set = Entities::from_json_str(&self.data.inactive, None)?;
-        Ok(inactive_set)
-    }
-}
-
 pub struct KubernetesPrincipalRepository {
-    resource_manager: SynchronizedKubernetesResourceManager<PrincipalConfigMap>,
+    resource_manager: SynchronizedKubernetesResourceManager<EntitySet>,
     label_selector_key: String,
     label_selector_value: String,
 }
@@ -107,28 +123,15 @@ impl KubernetesPrincipalRepository {
         })
     }
 
-    async fn get_entities(&self, schema: &str) -> anyhow::Result<Arc<PrincipalConfigMap>> {
+    async fn get_entities(&self, schema: &str) -> Option<Arc<EntitySet>> {
         let configmap_name = format!("entities-{}", schema);
         let or = ObjectRef::new(&configmap_name).within(self.resource_manager.namespace().as_str());
         self.resource_manager.get(or)
     }
 
-    async fn overwrite(&self, key: PrincipalIdentity, updated_data: PrincipalData) -> Result<(), anyhow::Error> {
+    async fn overwrite(&self, key: PrincipalIdentity, updated_data: &mut EntitySet) -> Result<(), anyhow::Error> {
         let configmap_name = format!("entities-{}", key.schema_id().clone());
-        let updated_configmap = PrincipalConfigMap {
-            metadata: models::empty_metadata(
-                configmap_name,
-                self.resource_manager.namespace().clone(),
-                btreemap! {
-                    self.label_selector_key.clone() => self.label_selector_value.clone()
-                },
-            ),
-            data: updated_data,
-        };
-        self.resource_manager
-            .replace(&key.schema_id(), updated_configmap)
-            .await
-            .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
+        self.resource_manager.replace(&configmap_name, updated_data).await
     }
 }
 
@@ -150,17 +153,17 @@ impl TryInto<EntityUid> for &PrincipalIdentity {
 }
 
 struct UpdateHandler;
-impl ResourceUpdateHandler<PrincipalConfigMap> for UpdateHandler {
-    fn handle_update(&self, event: Result<PrincipalConfigMap, watcher::Error>) -> Ready<()> {
+impl ResourceUpdateHandler<EntitySet> for UpdateHandler {
+    fn handle_update(&self, event: Result<EntitySet, watcher::Error>) -> Ready<()> {
         match event {
-            Ok(PrincipalConfigMap {
+            Ok(EntitySet {
                 metadata:
                     ObjectMeta {
                         name: Some(name),
                         namespace: Some(namespace),
                         ..
                     },
-                data: _,
+                spec: _,
             }) => debug!("Saw [{}] in [{}]", name, namespace),
             Ok(_) => warn!("Saw an object without name or namespace"),
             Err(e) => warn!("watcher error: {}", e),
@@ -181,12 +184,13 @@ impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepos
             self.label_selector_key.clone() => self.label_selector_value.clone()
         };
 
-        let configmap = match self.get_entities(key.schema_id()).await {
-            Ok(configmap) => configmap,
-            Err(_e) => Arc::new(models::empty(name, namespace, labels)),
-        };
+        let mut resource = self
+            .get_entities(key.schema_id())
+            .await
+            .unwrap_or(Arc::new(models::empty(name, namespace, labels)));
+        let resource = Arc::make_mut(&mut resource);
+        let inactive = resource.spec.entities.get_inactive_entities()?;
 
-        let inactive = configmap.get_inactive_entities()?;
         if inactive.get(&entity_uid).is_some() {
             bail!(
                 "Principal {:?} is inactive in schema {:?}",
@@ -195,26 +199,25 @@ impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepos
             )
         }
 
-        let active = configmap
+        let new_active = resource
+            .spec
+            .entities
             .get_active_entities()?
             .remove_entities(Some(entity_uid))?
             .add_entities(Some(principal.get_entity().clone()), None)?;
 
-        let updated_data = PrincipalData {
-            active: serialize_entities(&active)?,
-            inactive: serialize_entities(&inactive)?, // Keep inactive entities unchanged
-        };
-        self.overwrite(key, updated_data).await?;
-        Ok(())
+        resource.spec.entities.active = serialize_entities(&new_active)?;
+
+        self.overwrite(key, resource).await
     }
 
     async fn exists(&self, key: PrincipalIdentity) -> Result<bool, Self::Error> {
         let entity_uid: EntityUid = (&key).try_into()?;
-        let active = self.get_entities(key.schema_id()).await;
-        let active = active.unwrap().get_active_entities()?;
-        active
-            .iter()
-            .for_each(|e| debug!("Active entity extracted with UID: {:?}", e.uid().to_string()));
+        let active = self
+            .get_entities(key.schema_id())
+            .await
+            .ok_or(anyhow!("Cannot fin entities for schema {}", key.schema_id()))?;
+        let active = active.spec.entities.get_active_entities()?;
         Ok(active.get(&entity_uid).is_some())
     }
 }
@@ -225,12 +228,14 @@ impl ReadOnlyRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRep
 
     async fn get(&self, key: PrincipalIdentity) -> Result<Principal, Self::ReadError> {
         let entity_uid: EntityUid = (&key).try_into()?;
-        let configmap = self.get_entities(key.schema_id()).await?;
-        let active_entities = configmap.get_active_entities()?;
+        let resource = self
+            .get_entities(key.schema_id())
+            .await
+            .ok_or(anyhow!("Cannot fin entities for schema {}", key.schema_id()))?;
+        let active_entities = resource.spec.entities.get_active_entities()?;
         let entity = active_entities
             .get(&entity_uid)
             .ok_or_else(|| anyhow!("Entity with UID {} not found in active entities", entity_uid))?;
-
         Ok(Principal::new(entity.clone(), key.schema_id().clone()))
     }
 }
@@ -241,24 +246,28 @@ impl CanDelete<PrincipalIdentity, Principal> for KubernetesPrincipalRepository {
 
     async fn delete(&self, key: PrincipalIdentity) -> Result<(), Self::DeleteError> {
         let entity_uid: EntityUid = (&key).try_into()?;
-        let configmap = self.get_entities(key.schema_id()).await?;
+        let mut resource = self
+            .get_entities(key.schema_id())
+            .await
+            .ok_or(anyhow!("Cannot find entities for schema {}", key.schema_id()))?;
+        let resource = Arc::make_mut(&mut resource);
 
-        let active_entities = configmap.get_active_entities()?;
+        let active_entities = resource.spec.entities.get_active_entities()?;
 
         let to_delete = active_entities
             .get(&entity_uid)
             .ok_or(anyhow!("Entity with UID {} not found in active entities", entity_uid))?;
 
         let active_entities = active_entities.clone().remove_entities(Some(entity_uid))?;
-        let inactive_entities = configmap
+        let inactive_entities = resource
+            .spec
+            .entities
             .get_inactive_entities()?
             .add_entities(Some(to_delete.clone()), None)?;
 
-        let updated_data = PrincipalData {
-            active: serialize_entities(&active_entities)?,
-            inactive: serialize_entities(&inactive_entities)?, // Keep inactive entities unchanged
-        };
-        self.overwrite(key, updated_data).await?;
+        resource.spec.entities.active = serialize_entities(&active_entities)?;
+        resource.spec.entities.inactive = serialize_entities(&inactive_entities)?;
+        self.overwrite(key, resource).await?;
         Ok(())
     }
 }

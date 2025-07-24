@@ -52,7 +52,7 @@ where
         }
     }
 
-    pub async fn replace(&self, name: &str, object: Resource) -> Result<(), Error> {
+    pub async fn replace(&self, name: &str, object: &mut Resource) -> Result<(), Error> {
         let lm = LeaseManager::init(self.api.clone(), self.lease_settings.lease_name.clone()).await?;
 
         let claims_params = ClaimParams {
@@ -65,7 +65,7 @@ where
         Ok(())
     }
 
-    pub fn get(&self, object_ref: ObjectRef<Resource>) -> Result<Arc<Resource>, Error> {
+    pub fn get(&self, object_ref: ObjectRef<Resource>) -> Option<Arc<Resource>> {
         self.resource_manager.get(object_ref)
     }
 

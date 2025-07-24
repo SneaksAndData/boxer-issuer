@@ -101,7 +101,9 @@ impl KubernetesPrincipalAssociationRepository {
     async fn get_entities(&self, key: ExternalIdentity) -> anyhow::Result<Arc<PrincipalAssociationConfigMap>> {
         let name = format!("principals-{}", key.identity_provider);
         let or = ObjectRef::new(&name).within(self.resource_manager.namespace().as_str());
-        self.resource_manager.get(or)
+        self.resource_manager
+            .get(or)
+            .ok_or(anyhow!("Principal association not found for key: {:?}", key))
     }
 
     async fn overwrite(
@@ -110,7 +112,7 @@ impl KubernetesPrincipalAssociationRepository {
         updated_data: PrincipalAssociationData,
     ) -> Result<(), anyhow::Error> {
         let name = format!("principals-{}", key.identity_provider);
-        let updated_configmap = PrincipalAssociationConfigMap {
+        let mut updated_configmap = PrincipalAssociationConfigMap {
             metadata: ObjectMeta {
                 name: Some(name.clone()),
                 namespace: Some(self.resource_manager.namespace().clone()),
@@ -122,7 +124,7 @@ impl KubernetesPrincipalAssociationRepository {
             data: updated_data,
         };
         self.resource_manager
-            .replace(&name, updated_configmap)
+            .replace(&name, &mut updated_configmap)
             .await
             .map_err(|e| anyhow!("Failed to update ConfigMap: {}", e))
     }

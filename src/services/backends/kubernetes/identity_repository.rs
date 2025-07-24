@@ -4,13 +4,13 @@ use crate::services::backends::kubernetes::common::ResourceUpdateHandler;
 use anyhow::{anyhow, bail, Result};
 use async_trait::async_trait;
 use futures::future;
-use k8s_openapi::api::core::v1::ConfigMap;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::runtime::reflector::ObjectRef;
 use kube::runtime::watcher;
-use kube::Resource;
+use kube::{Api, CustomResource, Resource};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 // tests module is used to test the KubernetesIdentityRepository
@@ -20,6 +20,8 @@ mod tests;
 // Use log crate when building application
 #[cfg(not(test))]
 use log::{debug, warn};
+#[cfg(test)]
+use std::{println as warn, println as debug};
 
 use futures::future::Ready;
 
@@ -31,35 +33,41 @@ use boxer_core::services::base::upsert_repository::{
     CanDelete, ReadOnlyRepository, UpsertRepository, UpsertRepositoryWithDelete,
 };
 use maplit::btreemap;
-#[cfg(test)]
-use std::{println as warn, println as debug};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-struct ExternalIdentitiesSet {
-    active: String,
-    inactive: String,
+#[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+struct IdentitySetData {
+    pub active: HashSet<String>,
+    pub inactive: HashSet<String>,
 }
 
-#[derive(Resource, Serialize, Deserialize, Clone, Debug)]
-#[resource(inherit = ConfigMap)]
-struct IdentitiesConfigMap {
-    metadata: ObjectMeta,
-    data: ExternalIdentitiesSet,
+#[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+#[kube(
+    group = "auth.sneaksanddata.com",
+    version = "v1beta1",
+    kind = "IdentityProvider",
+    plural = "identity-providers",
+    singular = "identity-provider",
+    namespaced
+)]
+struct IdentityProviderSpec {
+    identities: IdentitySetData,
 }
 
-impl Default for IdentitiesConfigMap {
+impl Default for IdentityProvider {
     fn default() -> Self {
-        IdentitiesConfigMap {
+        IdentityProvider {
             metadata: ObjectMeta::default(),
-            data: ExternalIdentitiesSet {
-                active: "[]".to_string(),
-                inactive: "[]".to_string(),
+            spec: IdentityProviderSpec {
+                identities: IdentitySetData {
+                    inactive: Default::default(),
+                    active: Default::default(),
+                },
             },
         }
     }
 }
 
-impl WithMetadata<ObjectMeta> for IdentitiesConfigMap {
+impl WithMetadata<ObjectMeta> for IdentityProvider {
     fn with_metadata(mut self, metadata: ObjectMeta) -> Self {
         self.metadata = metadata;
         self
@@ -67,7 +75,7 @@ impl WithMetadata<ObjectMeta> for IdentitiesConfigMap {
 }
 
 pub struct KubernetesIdentityRepository {
-    resource_manager: SynchronizedKubernetesResourceManager<IdentitiesConfigMap>,
+    resource_manager: SynchronizedKubernetesResourceManager<IdentityProvider>,
     label_selector_key: String,
     label_selector_value: String,
 }
@@ -84,42 +92,19 @@ impl KubernetesIdentityRepository {
         })
     }
 
-    async fn get_identities(&self, provider: &str) -> Result<Arc<IdentitiesConfigMap>> {
+    async fn get_identities(&self, provider: &str) -> Result<Arc<IdentityProvider>> {
         let or = ObjectRef::new(provider).within(self.resource_manager.namespace().as_str());
-        self.resource_manager.get(or).map_err(|e| {
+        self.resource_manager.get(or).ok_or_else(|| {
             anyhow!(
                 "Identity provider \"{}\" not found in namespace: {:?}",
                 provider,
                 self.resource_manager.namespace()
             )
-            .context(e)
         })
     }
 
-    async fn get_active_identities(&self, ids: &ExternalIdentitiesSet) -> Result<HashSet<String>> {
-        let active_set: HashSet<String> =
-            serde_json::from_str(&ids.active).map_err(|e| anyhow!("Failed to parse active identities: {}", e))?;
-        Ok(active_set)
-    }
-
-    async fn get_inactive_identities(&self, ids: &ExternalIdentitiesSet) -> Result<HashSet<String>> {
-        let active_set: HashSet<String> =
-            serde_json::from_str(&ids.inactive).map_err(|e| anyhow!("Failed to parse active identities: {}", e))?;
-        Ok(active_set)
-    }
-
-    async fn overwrite(
-        &self,
-        provider: &str,
-        object_meta: ObjectMeta,
-        updated_data: ExternalIdentitiesSet,
-    ) -> Result<(), anyhow::Error> {
-        let mut updated_configmap = IdentitiesConfigMap {
-            metadata: object_meta.clone(),
-            data: updated_data,
-        };
-        updated_configmap.metadata.resource_version = None;
-        self.resource_manager.replace(provider, updated_configmap).await
+    async fn overwrite(&self, provider: &str, updated_data: &mut IdentityProvider) -> Result<(), anyhow::Error> {
+        self.resource_manager.replace(provider, updated_data).await
     }
 
     pub async fn try_register_identity_provider(&self, provider: &str) -> Result<()> {
@@ -131,26 +116,25 @@ impl KubernetesIdentityRepository {
         match self.get_identities(provider).await {
             Ok(_) => Ok(()),
             _ => {
-                self.resource_manager
-                    .replace(provider, models::empty(name, namespace, labels))
-                    .await
+                let mut new_provider = models::empty(name, namespace, labels);
+                self.resource_manager.replace(provider, &mut new_provider).await
             }
         }
     }
 }
 
 struct UpdateHandler;
-impl ResourceUpdateHandler<IdentitiesConfigMap> for UpdateHandler {
-    fn handle_update(&self, event: core::result::Result<IdentitiesConfigMap, watcher::Error>) -> Ready<()> {
+impl ResourceUpdateHandler<IdentityProvider> for UpdateHandler {
+    fn handle_update(&self, event: core::result::Result<IdentityProvider, watcher::Error>) -> Ready<()> {
         match event {
-            Ok(IdentitiesConfigMap {
+            Ok(IdentityProvider {
                 metadata:
                     ObjectMeta {
                         name: Some(name),
                         namespace: Some(namespace),
                         ..
                     },
-                data: _,
+                spec: _,
             }) => debug!("Saw [{}] in [{}]", name, namespace),
             Ok(_) => warn!("Saw an object without name or namespace"),
             Err(e) => warn!("watcher error: {}", e),
@@ -173,29 +157,25 @@ impl UpsertRepository<(String, String), ExternalIdentity> for KubernetesIdentity
 
     async fn upsert(&self, key: (String, String), entity: ExternalIdentity) -> Result<(), Self::Error> {
         let (provider, user) = key;
-        let configmap = self.get_identities(provider.as_str()).await?;
-        let inactive_set = self.get_inactive_identities(&configmap.data).await?;
-        if inactive_set.contains(&user) {
+        let mut ip = self.get_identities(provider.as_str()).await?;
+        if ip.spec.identities.inactive.contains(&user) {
             bail!("User {:?} is inactive in provider {:?}", user, provider)
         }
-
-        let mut active_set = self.get_inactive_identities(&configmap.data).await?;
-
-        active_set.insert(entity.user_id);
-        let updated_data = ExternalIdentitiesSet {
-            active: serde_json::to_string(&active_set)?,
-            inactive: serde_json::to_string(&inactive_set)?,
-        };
-
-        self.overwrite(provider.as_str(), configmap.metadata.clone(), updated_data)
-            .await
+        let ip = Arc::make_mut(&mut ip);
+        ip.spec.identities.active.insert(entity.user_id);
+        self.overwrite(&provider, ip).await
     }
 
     async fn exists(&self, key: (String, String)) -> Result<bool, Self::Error> {
         let (provider, user) = key;
-        let configmap = self.get_identities(provider.as_str()).await?;
-        let active_set = self.get_active_identities(&configmap.data).await?;
-        Ok(active_set.contains(&user))
+        let contains = self
+            .get_identities(provider.as_str())
+            .await?
+            .spec
+            .identities
+            .active
+            .contains(&user);
+        Ok(contains)
     }
 }
 
@@ -205,13 +185,13 @@ impl ReadOnlyRepository<(String, String), ExternalIdentity> for KubernetesIdenti
 
     async fn get(&self, key: (String, String)) -> Result<ExternalIdentity, Self::ReadError> {
         let (provider, user) = key;
-        let configmap = self.get_identities(&provider).await?;
-        let active_set = self.get_active_identities(&configmap.data).await?;
-        let username_extracted = active_set.get(&user).cloned();
+        let active_set = &self.get_identities(&provider).await?.spec.identities.active;
 
-        username_extracted
+        active_set
+            .get(&user)
+            .cloned()
             .ok_or(anyhow!("External identity not found: {:?}/{:?}", provider, user))
-            .map(|_| ExternalIdentity::new(provider, user))
+            .map(|user| ExternalIdentity::new(provider, user))
     }
 }
 
@@ -221,21 +201,18 @@ impl CanDelete<(String, String), ExternalIdentity> for KubernetesIdentityReposit
 
     async fn delete(&self, key: (String, String)) -> Result<(), Self::DeleteError> {
         let (provider, user) = key;
-        let configmap = self.get_identities(provider.as_str()).await?;
-        let mut active_set = self.get_active_identities(&configmap.data).await?;
-
-        let was_present = active_set.remove(&user);
-        if was_present {
-            let mut inactive_set = self.get_inactive_identities(&configmap.data).await?;
-            inactive_set.insert(user.clone());
-            let updated_data = ExternalIdentitiesSet {
-                active: serde_json::to_string(&active_set)?,
-                inactive: serde_json::to_string(&inactive_set)?,
-            };
-            self.overwrite(provider.as_str(), configmap.metadata.clone(), updated_data)
-                .await
-        } else {
-            Ok(())
+        let mut ip = self.get_identities(&provider).await?;
+        let mut resource = Arc::make_mut(&mut ip);
+        let was_present = resource.spec.identities.active.remove(&user);
+        match was_present {
+            true => {
+                resource.spec.identities.inactive.insert(user.clone());
+                self.overwrite(provider.as_str(), resource).await
+            }
+            false => {
+                warn!("User {:?} not found in provider {:?}", user, provider);
+                Ok(())
+            }
         }
     }
 }
