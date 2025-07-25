@@ -69,6 +69,10 @@ where
         self.resource_manager.get(object_ref)
     }
 
+    pub async fn delete(&self, name: &str) -> Result<(), Error> {
+        self.resource_manager.delete(name).await
+    }
+
     pub async fn start(
         config: KubernetesResourceManagerConfig,
         update_handler: Arc<dyn ResourceUpdateHandler<Resource>>,

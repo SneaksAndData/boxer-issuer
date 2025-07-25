@@ -144,6 +144,31 @@ async fn test_get_from_not_existed_provider(ctx: &mut KubernetesIdentityReposito
 
 #[test_context(KubernetesIdentityRepositoryTest)]
 #[tokio::test]
+async fn test_upsert_to_unexisted_provider(ctx: &mut KubernetesIdentityRepositoryTest) {
+    // Arrange
+    let provider = "identity-provider-5".to_string();
+    let user = "user1".to_string();
+    let external_identity = ExternalIdentity::new(provider.clone(), user.clone());
+
+    // Act
+    let _ = ctx
+        .repository
+        .upsert((provider.clone(), user.clone()), external_identity)
+        .await;
+
+    let result = ctx.repository.get((provider.clone(), user.clone())).await;
+
+    // Assert
+    let message = result.err().unwrap().to_string();
+    assert!(
+        message.contains("Identity provider \"identity-provider-5\" not found in namespace"),
+        "Unexpected error message: {}",
+        message
+    );
+}
+
+#[test_context(KubernetesIdentityRepositoryTest)]
+#[tokio::test]
 async fn test_add_user(ctx: &mut KubernetesIdentityRepositoryTest) {
     // Arrange
     let provider = "identity-provider-1".to_string();

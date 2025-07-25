@@ -8,7 +8,7 @@ use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::Kub
 use futures::future::Ready;
 use futures::StreamExt;
 use k8s_openapi::NamespaceResourceScope;
-use kube::api::PostParams;
+use kube::api::{DeleteParams, PostParams};
 use kube::runtime::reflector::{ObjectRef, Store};
 use kube::runtime::watcher::Config;
 use kube::runtime::{reflector, watcher, WatchStreamExt};
@@ -90,6 +90,11 @@ where
 
     pub fn get(&self, object_ref: ObjectRef<S>) -> Option<Arc<S>> {
         self.reader.get(&object_ref)
+    }
+
+    pub async fn delete(&self, name: &str) -> Result<(), Error> {
+        self.api.delete(name, &DeleteParams::default()).await?;
+        Ok(())
     }
 
     pub fn stop(&self) -> anyhow::Result<()> {

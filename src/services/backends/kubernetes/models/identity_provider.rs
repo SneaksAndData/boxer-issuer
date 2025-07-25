@@ -1,3 +1,5 @@
+use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
+use crate::services::backends::kubernetes::models::base::WithMetadata;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::CustomResource;
 use schemars::JsonSchema;
@@ -66,6 +68,7 @@ impl IdentitySetData {
 )]
 pub struct IdentityProviderSpec {
     pub identities: IdentitySetData,
+    pub oidc: Option<OidcExternalIdentityProviderSettings>,
 }
 
 impl Default for IdentityProvider {
@@ -77,7 +80,15 @@ impl Default for IdentityProvider {
                     inactive: Default::default(),
                     active: Default::default(),
                 },
+                oidc: Default::default(),
             },
         }
+    }
+}
+
+impl WithMetadata<ObjectMeta> for IdentityProvider {
+    fn with_metadata(mut self, metadata: ObjectMeta) -> Self {
+        self.metadata = metadata;
+        self
     }
 }

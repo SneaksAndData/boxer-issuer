@@ -1,9 +1,18 @@
 use crate::models::api::external::identity::ExternalIdentity;
+use crate::models::identity_provider_registration::IdentityProviderRegistration;
 use crate::models::principal::Principal;
 use boxer_core::services::base::upsert_repository::{UpsertRepository, UpsertRepositoryWithDelete};
 use cedar_policy::EntityUid;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+
+pub type IdentityProviderRepository = dyn UpsertRepositoryWithDelete<
+    String,
+    IdentityProviderRegistration,
+    Error = anyhow::Error,
+    ReadError = anyhow::Error,
+    DeleteError = anyhow::Error,
+>;
 
 pub type IdentityRepository = dyn UpsertRepositoryWithDelete<
     (String, String),

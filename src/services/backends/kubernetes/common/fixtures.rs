@@ -70,6 +70,7 @@ pub async fn create_mock_identity_providers(
                         .map(|user| ExternalIdentityInfo::new(user.to_string()))
                         .collect(),
                 },
+                oidc: Default::default(),
             },
             metadata: ObjectMeta {
                 name: Some(provider.to_string()),

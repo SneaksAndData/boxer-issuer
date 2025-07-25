@@ -1,8 +1,8 @@
 use crate::services::backends::in_memory::InMemoryBackend;
 use crate::services::backends::kubernetes::KubernetesBackend;
-use crate::services::base::upsert_repository::IdentityRepository;
 use crate::services::base::upsert_repository::PrincipalAssociationRepository;
 use crate::services::base::upsert_repository::PrincipalRepository;
+use crate::services::base::upsert_repository::{IdentityProviderRepository, IdentityRepository};
 use crate::services::configuration::models::AppSettings;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -31,19 +31,24 @@ pub trait IdentityRepositorySource {
     fn get_identity_repository(&self) -> Arc<IdentityRepository>;
 }
 
+pub trait IdentityProviderRepositorySource {
+    #[allow(dead_code)]
+    fn get_identity_provider_repository(&self) -> Arc<IdentityProviderRepository>;
+}
+
 #[async_trait]
 pub trait IdentityProviderBackend {
     async fn register_identity_provider(&self, provider: String) -> Result<()>;
 }
 
 pub trait IssuerBackend:
-    Backend
+    Send
+    + Sync
+    + Backend
     + EntitiesRepositorySource
     + PrincipalAssociationRepositorySource
     + IdentityRepositorySource
-    + Send
-    + Sync
-    + IdentityProviderBackend
+    + IdentityProviderRepositorySource
 {
 }
 

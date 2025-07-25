@@ -1,3 +1,7 @@
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
 pub struct OidcExternalIdentityProviderSettings {
     /// The claim that contains the user id (or name) in the external token.
     /// This is used to extract the user id from the token and issue the internal token with

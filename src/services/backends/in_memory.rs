@@ -1,9 +1,9 @@
 use crate::services::backends::base::{
-    EntitiesRepositorySource, IdentityProviderBackend, IdentityRepositorySource, IssuerBackend,
-    PrincipalAssociationRepositorySource,
+    EntitiesRepositorySource, IdentityProviderBackend, IdentityProviderRepositorySource, IdentityRepositorySource,
+    IssuerBackend, PrincipalAssociationRepositorySource,
 };
 use crate::services::base::upsert_repository::{
-    IdentityRepository, PrincipalAssociationRepository, PrincipalRepository,
+    IdentityProviderRepository, IdentityRepository, PrincipalAssociationRepository, PrincipalRepository,
 };
 use crate::services::configuration::models::BackendSettings;
 use async_trait::async_trait;
@@ -18,6 +18,7 @@ pub struct InMemoryBackend {
     pub entities_repository: Arc<PrincipalRepository>,
     pub principal_association_repository: Arc<PrincipalAssociationRepository>,
     pub identity_repository: Arc<IdentityRepository>,
+    pub identity_provider_repository: Arc<IdentityProviderRepository>,
 }
 
 impl InMemoryBackend {
@@ -26,11 +27,13 @@ impl InMemoryBackend {
         let entities_repository = Arc::new(RwLock::new(HashMap::new()));
         let principal_association_repository = Arc::new(RwLock::new(HashMap::new()));
         let identity_repository = Arc::new(RwLock::new(HashMap::new()));
+        let identity_provider_repository = Arc::new(RwLock::new(HashMap::new()));
         InMemoryBackend {
             schemas_repository,
             entities_repository,
             principal_association_repository,
             identity_repository,
+            identity_provider_repository,
         }
     }
 }
@@ -56,6 +59,12 @@ impl PrincipalAssociationRepositorySource for InMemoryBackend {
 impl IdentityRepositorySource for InMemoryBackend {
     fn get_identity_repository(&self) -> Arc<IdentityRepository> {
         Arc::clone(&self.identity_repository)
+    }
+}
+
+impl IdentityProviderRepositorySource for InMemoryBackend {
+    fn get_identity_provider_repository(&self) -> Arc<IdentityProviderRepository> {
+        Arc::clone(&self.identity_provider_repository)
     }
 }
 

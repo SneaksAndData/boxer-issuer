@@ -2,7 +2,6 @@ use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::backends::kubernetes::common::synchronized_kubernetes_resource_manager::SynchronizedKubernetesResourceManager;
 use anyhow::{anyhow, bail, Result};
 use async_trait::async_trait;
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::runtime::reflector::ObjectRef;
 use std::sync::Arc;
 
@@ -18,21 +17,11 @@ use std::println as warn;
 
 // Workaround to use prinltn! for logs.
 use crate::services::backends::kubernetes::common::update_handler::UpdateHandler;
-use crate::services::backends::kubernetes::models;
-use crate::services::backends::kubernetes::models::base::WithMetadata;
 use crate::services::backends::kubernetes::models::identity_provider::IdentityProvider;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::base::upsert_repository::{
     CanDelete, ReadOnlyRepository, UpsertRepository, UpsertRepositoryWithDelete,
 };
-use maplit::btreemap;
-
-impl WithMetadata<ObjectMeta> for IdentityProvider {
-    fn with_metadata(mut self, metadata: ObjectMeta) -> Self {
-        self.metadata = metadata;
-        self
-    }
-}
 
 pub struct KubernetesIdentityRepository {
     resource_manager: SynchronizedKubernetesResourceManager<IdentityProvider>,
@@ -65,21 +54,6 @@ impl KubernetesIdentityRepository {
 
     async fn overwrite(&self, provider: &str, updated_data: &mut IdentityProvider) -> Result<(), anyhow::Error> {
         self.resource_manager.replace(provider, updated_data).await
-    }
-
-    pub async fn try_register_identity_provider(&self, provider: &str) -> Result<()> {
-        let name = provider.to_string();
-        let namespace = self.resource_manager.namespace().clone();
-        let labels = btreemap! {
-            self.label_selector_key.clone() => self.label_selector_value.clone()
-        };
-        match self.get_identities(provider).await {
-            Ok(_) => Ok(()),
-            _ => {
-                let mut new_provider = models::empty(name, namespace, labels);
-                self.resource_manager.replace(provider, &mut new_provider).await
-            }
-        }
     }
 }
 
