@@ -25,20 +25,12 @@ use boxer_core::services::base::upsert_repository::{
 
 pub struct KubernetesIdentityRepository {
     resource_manager: SynchronizedKubernetesResourceManager<IdentityProvider>,
-    label_selector_key: String,
-    label_selector_value: String,
 }
 
 impl KubernetesIdentityRepository {
     pub async fn start(config: KubernetesResourceManagerConfig) -> Result<Self> {
-        let label_selector_key = config.label_selector_key.clone();
-        let label_selector_value = config.label_selector_value.clone();
         let resource_manager = SynchronizedKubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
-        Ok(KubernetesIdentityRepository {
-            resource_manager,
-            label_selector_key,
-            label_selector_value,
-        })
+        Ok(KubernetesIdentityRepository { resource_manager })
     }
 
     async fn get_identities(&self, provider: &str) -> Result<Arc<IdentityProvider>> {

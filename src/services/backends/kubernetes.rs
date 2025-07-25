@@ -6,8 +6,8 @@ mod principal_association_repository;
 mod principal_repository;
 
 use crate::services::backends::base::{
-    EntitiesRepositorySource, IdentityProviderRepositorySource, IdentityRepositorySource, IssuerBackend,
-    PrincipalAssociationRepositorySource,
+    EntitiesRepositorySource, IdentityProviderBackend, IdentityProviderRepositorySource, IdentityRepositorySource,
+    IssuerBackend, PrincipalAssociationRepositorySource,
 };
 use crate::services::backends::kubernetes::identity_provider_repository::KubernetesIdentityProviderRepository;
 use crate::services::backends::kubernetes::identity_repository::KubernetesIdentityRepository;
@@ -88,6 +88,14 @@ impl IdentityProviderRepositorySource for KubernetesBackend {
 
 impl Backend for KubernetesBackend {
     // Nothing here, as this is a marker trait
+}
+
+#[async_trait]
+impl IdentityProviderBackend for KubernetesBackend {
+    async fn register_identity_provider(&self, provider: String) -> anyhow::Result<()> {
+        info!("Registering identity provider: {}", provider);
+        Ok(())
+    }
 }
 
 impl IssuerBackend for KubernetesBackend {

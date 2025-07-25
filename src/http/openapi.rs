@@ -13,7 +13,10 @@ use utoipa::OpenApi;
     controllers::principal::post,
     controllers::principal::get,
     controllers::principal::delete,
-    controllers::association::post,
+    // controllers::association::post,
     controllers::association::get,
+    controllers::identity_provider::post,
+    controllers::identity_provider::get,
+    controllers::identity_provider::delete,
 ))]
 pub struct ApiDoc;

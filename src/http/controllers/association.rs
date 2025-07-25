@@ -1,10 +1,9 @@
 use crate::http::errors::*;
 use crate::models::api::external::identity::ExternalIdentity;
-use crate::services::base::upsert_repository::{PrincipalAssociationRepository, PrincipalIdentity};
-use crate::services::principal_service::{IdentityAssociationRequest, PrincipalService};
+use crate::services::base::upsert_repository::PrincipalAssociationRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, web, Responder};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::ToSchema;
@@ -17,19 +16,19 @@ struct IdentityAssociation {
     principal_id: String,
 }
 
-#[utoipa::path(context_path = "/association/", responses((status = OK)))]
-#[post("/")]
-async fn post(
-    request: Json<IdentityAssociation>,
-    principal_service: Data<Arc<PrincipalService>>,
-) -> Result<HttpResponse> {
-    let request = IdentityAssociationRequest {
-        external_identity_info: (request.identity_provider.clone(), request.identity.clone()),
-        principal_id: PrincipalIdentity::from((request.principal_schema.clone(), request.principal_id.clone())),
-    };
-    principal_service.associate(request).await?;
-    Ok(HttpResponse::Ok().finish())
-}
+// #[utoipa::path(context_path = "/association", responses((status = OK)))]
+// #[post("/")]
+// async fn post(
+//     request: Json<IdentityAssociation>,
+//     principal_service: Data<Arc<PrincipalService>>,
+// ) -> Result<HttpResponse> {
+//     let request = IdentityAssociationRequest {
+//         external_identity_info: (request.identity_provider.clone(), request.identity.clone()),
+//         principal_id: PrincipalIdentity::from((request.principal_schema.clone(), request.principal_id.clone())),
+//     };
+//     principal_service.associate(request).await?;
+//     Ok(HttpResponse::Ok().finish())
+// }
 
 #[utoipa::path(
     context_path = "/association/identities",
@@ -50,5 +49,6 @@ async fn get(path: Path<(String, String)>, data: Data<Arc<PrincipalAssociationRe
 }
 
 pub fn crud() -> impl HttpServiceFactory {
-    web::scope("/association").service(post).service(get)
+    web::scope("/association") /*.service(post)*/
+        .service(get)
 }

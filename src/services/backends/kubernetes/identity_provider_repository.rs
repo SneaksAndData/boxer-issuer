@@ -32,15 +32,9 @@ impl KubernetesIdentityProviderRepository {
         Ok(KubernetesIdentityProviderRepository { resource_manager })
     }
 
-    async fn get_identities(&self, provider: &str) -> Result<Arc<IdentityProvider>> {
+    async fn get_identities(&self, provider: &str) -> Option<Arc<IdentityProvider>> {
         let or = ObjectRef::new(provider).within(self.resource_manager.namespace().as_str());
-        self.resource_manager.get(or).ok_or_else(|| {
-            anyhow!(
-                "Identity provider \"{}\" not found in namespace: {:?}",
-                provider,
-                self.resource_manager.namespace()
-            )
-        })
+        self.resource_manager.get(or)
     }
 
     async fn overwrite(&self, provider: &str, updated_data: &mut IdentityProvider) -> Result<(), anyhow::Error> {
@@ -61,14 +55,16 @@ impl UpsertRepository<String, IdentityProviderRegistration> for KubernetesIdenti
     type Error = anyhow::Error;
 
     async fn upsert(&self, key: String, entity: IdentityProviderRegistration) -> Result<(), Self::Error> {
-        let mut ip = self.get_identities(&key).await?;
+        let mut ip = self.get_identities(&key).await.unwrap_or_default();
         let ip = Arc::make_mut(&mut ip);
+        ip.metadata.name = Some(key.clone());
+        ip.metadata.namespace = Some(self.resource_manager.namespace().clone());
         ip.spec.oidc = Some(entity.oidc);
         self.overwrite(&key, ip).await
     }
 
     async fn exists(&self, key: String) -> Result<bool, Self::Error> {
-        let contains = self.get_identities(&key).await.is_ok();
+        let contains = self.get_identities(&key).await.is_some();
         Ok(contains)
     }
 }
@@ -78,7 +74,10 @@ impl ReadOnlyRepository<String, IdentityProviderRegistration> for KubernetesIden
     type ReadError = anyhow::Error;
 
     async fn get(&self, key: String) -> Result<IdentityProviderRegistration, Self::ReadError> {
-        let ip = self.get_identities(&key).await?;
+        let ip = self
+            .get_identities(&key)
+            .await
+            .ok_or(anyhow!("Identity provider not found"))?;
         match ip.spec.oidc.clone() {
             Some(oidc) => Ok(IdentityProviderRegistration { name: key, oidc }),
             None => bail!("Identity provider {:?} does not have OIDC settings", key),

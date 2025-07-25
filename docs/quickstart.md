@@ -1,6 +1,7 @@
 # Setting up the test environment
 
 ## How to start dependencies
+
 The default test environment for the boxer requires Docker and Docker Compose.
 To launch the test environment, run the following command:
 
@@ -9,28 +10,25 @@ $ docker-compose up -d
 ```
 
 ## How to setup boxer for testing
+
 To set up the boxer entities, you can do the following steps:
 
-### Add a custom policy
+### Register an identity provider
 
-Create a policy
-```shell
-$ curl -X POST 'http://localhost:8888/policy/test-policy' \
---header 'Content-Type: text/plain' \
---data '// Only the owner can access any resource tagged "private"
-forbid ( principal, action, resource )
-when { resource.tags.contains("private") }    // assumes that resource has "tags"
-unless { resource in principal.account };     // assumes that principal has "account"'
-```
+Create an identity
 
-Validate that the policy is created
 ```shell
-curl -X GET 'http://localhost:8888/policy/test-policy'
+curl -X POST 'http://localhost:8888/identity_provider/oidc/provider' \
+--header 'Content-Type: application/json' \
+--data '
+{}
+'
 ```
 
 ### Register an identity
 
 Create an identity
+
 ```shell
 curl -X POST 'http://localhost:8888/identity/provider/test_user'
 ```
@@ -85,6 +83,7 @@ $ curl -X POST 'http://localhost:8888/schema/test' \
 ```
 
 ### Validate that the schema is created
+
 ```shell
 $ curl -X GET 'http://localhost:8888/schema/test'
 ```
@@ -148,6 +147,7 @@ export EXTERNAL_TOKEN=$(curl \
 ```
 
 ### Getting the boxer token
+
 ```shell
 curl -X GET 'http://localhost:8888/token/provider' --header "Authorization: Bearer $EXTERNAL_TOKEN"
 ```

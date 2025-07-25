@@ -1,36 +1,53 @@
 use crate::http::errors::*;
+use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
 use crate::models::identity_provider_registration::IdentityProviderRegistration;
 use crate::services::base::upsert_repository::IdentityProviderRepository;
 use actix_web::dev::HttpServiceFactory;
-use actix_web::web::Data;
+use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
-use anyhow::anyhow;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::ToSchema;
 
-#[utoipa::path(context_path = "/identity_provider/", responses((status = OK)))]
-#[post("identity_provider/{id}")]
-pub async fn post(
-    id: String,
-    identity_provider_json: String,
-    data: Data<Arc<IdentityProviderRepository>>,
-) -> Result<HttpResponse> {
-    let registration: IdentityProviderRegistration =
-        serde_json::from_str(&identity_provider_json).map_err(|e| anyhow!("Failed to parse registration. {}", e))?;
-    data.upsert(id, registration).await?;
-    Ok(HttpResponse::Ok().finish())
+#[derive(ToSchema, Serialize, Deserialize)]
+struct OidcIdentityProviderRegistration {
+    pub user_id_claim: String,
+    pub discovery_url: String,
+    pub issuers: Vec<String>,
+    pub audiences: Vec<String>,
 }
 
 #[utoipa::path(context_path = "/identity_provider/", responses((status = OK)))]
-#[get("identity_provider/{id}")]
-pub async fn get(id: String, data: Data<Arc<IdentityProviderRepository>>) -> Result<impl Responder> {
-    let eid = data.get(id).await?;
+#[post("oidc/{id}")]
+pub async fn post(
+    id: Path<String>,
+    registration: Json<OidcIdentityProviderRegistration>,
+    data: Data<Arc<IdentityProviderRepository>>,
+) -> Result<HttpResponse> {
+    let registration = IdentityProviderRegistration {
+        name: id.clone(),
+        oidc: OidcExternalIdentityProviderSettings {
+            user_id_claim: registration.user_id_claim.clone(),
+            discovery_url: registration.discovery_url.clone(),
+            issuers: registration.issuers.clone(),
+            audiences: registration.audiences.clone(),
+        },
+    };
+    data.upsert(id.into_inner(), registration).await?;
+    Ok(HttpResponse::Ok().finish())
+}
+
+#[utoipa::path(context_path = "/identity_provider/", responses((status = OK, body = OidcIdentityProviderRegistration)))]
+#[get("oidc/{id}")]
+pub async fn get(id: Path<String>, data: Data<Arc<IdentityProviderRepository>>) -> Result<impl Responder> {
+    let eid = data.get(id.into_inner()).await?;
     Ok(web::Json(eid))
 }
 
 #[utoipa::path(context_path = "/identity_provider/", responses((status = OK)))]
-#[delete("identity_provider/{id}")]
-pub async fn delete(id: String, data: Data<Arc<IdentityProviderRepository>>) -> Result<HttpResponse> {
-    data.delete(id).await?;
+#[delete("oidc/{id}")]
+pub async fn delete(id: Path<String>, data: Data<Arc<IdentityProviderRepository>>) -> Result<HttpResponse> {
+    data.delete(id.into_inner()).await?;
     Ok(HttpResponse::Ok().finish())
 }
 

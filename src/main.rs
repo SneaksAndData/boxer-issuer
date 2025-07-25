@@ -2,7 +2,7 @@ mod http;
 mod models;
 mod services;
 
-use crate::http::controllers::{association, identity, principal, schema, token::token};
+use crate::http::controllers::{association, identity, identity_provider, principal, schema, token::token};
 use crate::services::base::upsert_repository::{
     IdentityRepository, PrincipalAssociationRepository, PrincipalRepository,
 };
@@ -44,6 +44,7 @@ async fn main() -> Result<()> {
     let principal_association_repository: Arc<PrincipalAssociationRepository> =
         current_backend.get_principal_association_repository();
     let identity_repository: Arc<IdentityRepository> = current_backend.get_identity_repository();
+    let identity_provider_repository = current_backend.get_identity_provider_repository();
 
     let principal_service = Arc::new(PrincipalService::new(
         identity_repository.clone(),
@@ -67,11 +68,13 @@ async fn main() -> Result<()> {
             .app_data(Data::new(schemas_repository.clone()))
             .app_data(Data::new(entities_repository.clone()))
             .app_data(Data::new(principal_association_repository.clone()))
+            .app_data(Data::new(identity_provider_repository.clone()))
             .service(token)
             .service(identity::crud())
             .service(schema::crud())
             .service(principal::crud())
             .service(association::crud())
+            .service(identity_provider::crud())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
     .bind(addr)?
