@@ -3,6 +3,9 @@ use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(paths(
+    controllers::provider::post,
+    controllers::provider::get,
+    controllers::provider::delete,
     controllers::identity::post,
     controllers::identity::get,
     controllers::identity::delete,
@@ -13,10 +16,7 @@ use utoipa::OpenApi;
     controllers::principal::post,
     controllers::principal::get,
     controllers::principal::delete,
-    // controllers::association::post,
+    controllers::association::post,
     controllers::association::get,
-    controllers::identity_provider::post,
-    controllers::identity_provider::get,
-    controllers::identity_provider::delete,
 ))]
 pub struct ApiDoc;

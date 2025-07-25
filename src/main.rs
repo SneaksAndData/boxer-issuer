@@ -2,7 +2,7 @@ mod http;
 mod models;
 mod services;
 
-use crate::http::controllers::{association, identity, identity_provider, principal, schema, token::token};
+use crate::http::controllers::{association, identity, principal, provider, schema, token::token};
 use crate::services::base::upsert_repository::{
     IdentityRepository, PrincipalAssociationRepository, PrincipalRepository,
 };
@@ -74,7 +74,7 @@ async fn main() -> Result<()> {
             .service(schema::crud())
             .service(principal::crud())
             .service(association::crud())
-            .service(identity_provider::crud())
+            .service(provider::crud())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
     .bind(addr)?
