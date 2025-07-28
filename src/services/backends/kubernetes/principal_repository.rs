@@ -19,9 +19,7 @@ use crate::services::base::upsert_repository::PrincipalIdentity;
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
-use boxer_core::services::base::upsert_repository::{
-    CanDelete, ReadOnlyRepository, UpsertRepository, UpsertRepositoryWithDelete,
-};
+use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRepository};
 use cedar_policy::{Entities, EntityUid};
 use futures::future;
 use futures::future::Ready;
@@ -243,37 +241,3 @@ impl ReadOnlyRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRep
         Ok(Principal::new(entity.clone(), key.schema_id().clone()))
     }
 }
-
-#[async_trait]
-impl CanDelete<PrincipalIdentity, Principal> for KubernetesPrincipalRepository {
-    type DeleteError = anyhow::Error;
-
-    async fn delete(&self, key: PrincipalIdentity) -> Result<(), Self::DeleteError> {
-        let entity_uid: EntityUid = (&key).try_into()?;
-        let mut resource = self
-            .get_entities(key.schema_id())
-            .await
-            .ok_or(anyhow!("Cannot find entities for schema {}", key.schema_id()))?;
-        let resource = Arc::make_mut(&mut resource);
-
-        let active_entities = resource.spec.entities.get_active_entities()?;
-
-        let to_delete = active_entities
-            .get(&entity_uid)
-            .ok_or(anyhow!("Entity with UID {} not found in active entities", entity_uid))?;
-
-        let active_entities = active_entities.clone().remove_entities(Some(entity_uid))?;
-        let inactive_entities = resource
-            .spec
-            .entities
-            .get_inactive_entities()?
-            .add_entities(Some(to_delete.clone()), None)?;
-
-        resource.spec.entities.active = serialize_entities(&active_entities)?;
-        resource.spec.entities.inactive = serialize_entities(&inactive_entities)?;
-        self.overwrite(key, resource).await?;
-        Ok(())
-    }
-}
-
-impl UpsertRepositoryWithDelete<PrincipalIdentity, Principal> for KubernetesPrincipalRepository {}

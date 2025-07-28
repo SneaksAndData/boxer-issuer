@@ -3,14 +3,14 @@ use crate::models::principal::Principal;
 use crate::services::base::upsert_repository::{PrincipalIdentity, PrincipalRepository};
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Path};
-use actix_web::{delete, get, post, web, HttpResponse};
+use actix_web::{get, post, web, HttpResponse};
 use boxer_core::services::base::types::SchemaRepository;
 use cedar_policy::{Entity, Schema};
 use std::sync::Arc;
 
 #[utoipa::path(context_path = "/principal/", responses((status = OK)))]
 #[post("{schema}")]
-async fn post(
+async fn post_principal(
     schema_id: Path<String>,
     principal_json: String,
     schemas_repository: Data<Arc<SchemaRepository>>,
@@ -30,21 +30,13 @@ async fn post(
 
 #[utoipa::path(context_path = "/principal/", responses((status = OK)))]
 #[get("{schema}/{id}")]
-async fn get(path: Path<(String, String)>, data: Data<Arc<PrincipalRepository>>) -> Result<String> {
+async fn get_principal(path: Path<(String, String)>, data: Data<Arc<PrincipalRepository>>) -> Result<String> {
     let (schema, id) = path.into_inner();
     let principal = data.get(PrincipalIdentity::from((schema, id))).await?;
     let json = principal.get_entity().to_json_string()?;
     Ok(json)
 }
 
-#[utoipa::path(context_path = "/principal/", responses((status = OK)))]
-#[delete("{schema}/{id}")]
-async fn delete(path: Path<(String, String)>, data: Data<Arc<PrincipalRepository>>) -> Result<HttpResponse> {
-    let (schema, id) = path.into_inner();
-    data.delete(PrincipalIdentity::from((schema, id))).await?;
-    Ok(HttpResponse::Ok().finish())
-}
-
 pub fn crud() -> impl HttpServiceFactory {
-    web::scope("/principal").service(post).service(get).service(delete)
+    web::scope("/principal").service(post_principal).service(get_principal)
 }

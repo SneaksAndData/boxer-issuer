@@ -109,32 +109,6 @@ async fn test_create_principal(ctx: &mut KubernetesPrincipalRepositoryTest) {
 
 #[test_context(KubernetesPrincipalRepositoryTest)]
 #[tokio::test]
-async fn test_delete_principal(ctx: &mut KubernetesPrincipalRepositoryTest) {
-    // Arrange
-    let name = "test-schema-entities";
-    let principal_id = PrincipalIdentity::new(name.to_string(), "PhotoApp::User::\"alice\"".to_string());
-    sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
-
-    ctx.repository
-        .upsert(principal_id.clone(), principal(name.to_string()))
-        .await
-        .expect("Failed to upsert principal");
-
-    // Act
-    ctx.repository
-        .delete(principal_id.clone())
-        .await
-        .expect("Failed to delete principal");
-
-    sleep(Duration::from_secs(1)).await; // Ensure the schema is created before retrieving it
-
-    // Assert
-    let principal_result = ctx.repository.get(principal_id).await;
-    assert!(principal_result.is_err(), "Principal should not exist after deletion");
-}
-
-#[test_context(KubernetesPrincipalRepositoryTest)]
-#[tokio::test]
 async fn test_update_schema(ctx: &mut KubernetesPrincipalRepositoryTest) {
     // Arrange
     let name = "test-schema-entities";

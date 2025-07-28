@@ -19,7 +19,7 @@ struct IdentityAssociation {
 
 #[utoipa::path(context_path = "/association", responses((status = OK)))]
 #[post("/")]
-async fn post(
+async fn post_association(
     request: Json<IdentityAssociation>,
     principal_service: Data<Arc<PrincipalService>>,
 ) -> Result<HttpResponse> {
@@ -38,7 +38,10 @@ async fn post(
     )
 )]
 #[get("/identities/{identity_provider}/{id}")]
-async fn get(path: Path<(String, String)>, data: Data<Arc<PrincipalAssociationRepository>>) -> Result<impl Responder> {
+async fn get_association(
+    path: Path<(String, String)>,
+    data: Data<Arc<PrincipalAssociationRepository>>,
+) -> Result<impl Responder> {
     let external_identity = ExternalIdentity::from(path.into_inner());
     let principal_id = data.get(external_identity.clone()).await?;
     Ok(Json(IdentityAssociation {
@@ -50,5 +53,7 @@ async fn get(path: Path<(String, String)>, data: Data<Arc<PrincipalAssociationRe
 }
 
 pub fn crud() -> impl HttpServiceFactory {
-    web::scope("/association").service(post).service(get)
+    web::scope("/association")
+        .service(post_association)
+        .service(get_association)
 }

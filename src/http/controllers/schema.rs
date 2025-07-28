@@ -11,7 +11,11 @@ const MAX_SCHEMA_SIZE: usize = 262_144; // max payload size is 256k
 
 #[utoipa::path(context_path = "/schema/", responses((status = OK)))]
 #[post("{id}")]
-async fn post(id: Path<String>, mut payload: Payload, data: Data<Arc<SchemaRepository>>) -> Result<HttpResponse> {
+async fn post_schema(
+    id: Path<String>,
+    mut payload: Payload,
+    data: Data<Arc<SchemaRepository>>,
+) -> Result<HttpResponse> {
     let mut body = BytesMut::new();
     while let Some(chunk) = payload.next().await {
         let chunk = chunk?;
@@ -29,7 +33,7 @@ async fn post(id: Path<String>, mut payload: Payload, data: Data<Arc<SchemaRepos
 
 #[utoipa::path(context_path = "/schema/", responses((status = OK)))]
 #[get("{id}")]
-async fn get(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Result<String> {
+async fn get_schema(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Result<String> {
     let schema = data.get(id.to_string()).await?;
     let result = schema.to_json_string()?;
     Ok(result)
@@ -37,11 +41,14 @@ async fn get(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Result<Stri
 
 #[utoipa::path(context_path = "/schema/", responses((status = OK)))]
 #[delete("{id}")]
-async fn delete(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Result<HttpResponse> {
+async fn delete_schema(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Result<HttpResponse> {
     data.delete(id.to_string()).await?;
     Ok(HttpResponse::Ok().finish())
 }
 
 pub fn crud() -> impl HttpServiceFactory {
-    web::scope("/schema").service(post).service(get).service(delete)
+    web::scope("/schema")
+        .service(post_schema)
+        .service(get_schema)
+        .service(delete_schema)
 }

@@ -22,13 +22,8 @@ pub type IdentityRepository = dyn UpsertRepositoryWithDelete<
     DeleteError = anyhow::Error,
 >;
 
-pub type PrincipalRepository = dyn UpsertRepositoryWithDelete<
-    PrincipalIdentity,
-    Principal,
-    Error = anyhow::Error,
-    ReadError = anyhow::Error,
-    DeleteError = anyhow::Error,
->;
+pub type PrincipalRepository =
+    dyn UpsertRepository<PrincipalIdentity, Principal, Error = anyhow::Error, ReadError = anyhow::Error>;
 
 pub type PrincipalAssociationRepository =
     dyn UpsertRepository<ExternalIdentity, PrincipalIdentity, Error = anyhow::Error, ReadError = anyhow::Error>;

@@ -19,7 +19,7 @@ struct OidcIdentityProviderRegistration {
 
 #[utoipa::path(context_path = "/identity_provider/", responses((status = OK)))]
 #[post("oidc/{id}")]
-pub async fn post(
+pub async fn post_provider(
     id: Path<String>,
     registration: Json<OidcIdentityProviderRegistration>,
     data: Data<Arc<IdentityProviderRepository>>,
@@ -39,21 +39,21 @@ pub async fn post(
 
 #[utoipa::path(context_path = "/identity_provider/", responses((status = OK, body = OidcIdentityProviderRegistration)))]
 #[get("oidc/{id}")]
-pub async fn get(id: Path<String>, data: Data<Arc<IdentityProviderRepository>>) -> Result<impl Responder> {
+pub async fn get_provider(id: Path<String>, data: Data<Arc<IdentityProviderRepository>>) -> Result<impl Responder> {
     let eid = data.get(id.into_inner()).await?;
     Ok(web::Json(eid))
 }
 
 #[utoipa::path(context_path = "/identity_provider/", responses((status = OK)))]
 #[delete("oidc/{id}")]
-pub async fn delete(id: Path<String>, data: Data<Arc<IdentityProviderRepository>>) -> Result<HttpResponse> {
+pub async fn delete_provider(id: Path<String>, data: Data<Arc<IdentityProviderRepository>>) -> Result<HttpResponse> {
     data.delete(id.into_inner()).await?;
     Ok(HttpResponse::Ok().finish())
 }
 
 pub fn crud() -> impl HttpServiceFactory {
     web::scope("/identity_provider")
-        .service(post)
-        .service(get)
-        .service(delete)
+        .service(post_provider)
+        .service(get_provider)
+        .service(delete_provider)
 }
