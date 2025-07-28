@@ -182,7 +182,11 @@ impl BackendConfiguration for KubernetesBackend {
             .await?;
 
         let identity_provider_repository =
-            KubernetesIdentityProviderRepository::start(repository_config.clone()).await?;
+            KubernetesIdentityProviderRepository::start(repository_config.clone_with_label_selector(
+                settings.identity_provider_repository.label_selector_key.clone(),
+                settings.identity_provider_repository.label_selector_value.clone(),
+            ))
+            .await?;
 
         let identity_provider_repository = Arc::new(identity_provider_repository);
 

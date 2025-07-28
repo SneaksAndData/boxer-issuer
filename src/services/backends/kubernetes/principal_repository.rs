@@ -216,6 +216,9 @@ impl UpsertRepository<PrincipalIdentity, Principal> for KubernetesPrincipalRepos
             .await
             .ok_or(anyhow!("Cannot fin entities for schema {}", key.schema_id()))?;
         let active = active.spec.entities.get_active_entities()?;
+        for entity in active.iter() {
+            debug!("Found active entity: {:?}", entity.uid());
+        }
         Ok(active.get(&entity_uid).is_some())
     }
 }

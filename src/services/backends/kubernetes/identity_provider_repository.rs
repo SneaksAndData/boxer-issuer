@@ -19,17 +19,26 @@ use boxer_core::services::base::upsert_repository::{
 };
 #[cfg(not(test))]
 use log::warn;
+use maplit::btreemap;
 #[cfg(test)]
 use std::println as warn;
 
 pub struct KubernetesIdentityProviderRepository {
+    label_selector_key: String,
+    label_selector_value: String,
     resource_manager: SynchronizedKubernetesResourceManager<IdentityProvider>,
 }
 
 impl KubernetesIdentityProviderRepository {
     pub async fn start(config: KubernetesResourceManagerConfig) -> Result<Self> {
+        let label_selector_key = config.label_selector_key.clone();
+        let label_selector_value = config.label_selector_value.clone();
         let resource_manager = SynchronizedKubernetesResourceManager::start(config, Arc::new(UpdateHandler)).await?;
-        Ok(KubernetesIdentityProviderRepository { resource_manager })
+        Ok(KubernetesIdentityProviderRepository {
+            resource_manager,
+            label_selector_key,
+            label_selector_value,
+        })
     }
 
     async fn get_identities(&self, provider: &str) -> Option<Arc<IdentityProvider>> {
@@ -58,6 +67,9 @@ impl UpsertRepository<String, IdentityProviderRegistration> for KubernetesIdenti
         let mut ip = self.get_identities(&key).await.unwrap_or_default();
         let ip = Arc::make_mut(&mut ip);
         ip.metadata.name = Some(key.clone());
+        ip.metadata.labels = Some(btreemap! {
+            self.label_selector_key.clone() => self.label_selector_value.clone(),
+        });
         ip.metadata.namespace = Some(self.resource_manager.namespace().clone());
         ip.spec.oidc = Some(entity.oidc);
         self.overwrite(&key, ip).await

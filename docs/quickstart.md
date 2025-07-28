@@ -20,9 +20,12 @@ Create an identity
 ```shell
 curl -X POST 'http://localhost:8888/identity_provider/oidc/provider' \
 --header 'Content-Type: application/json' \
---data '
-{}
-'
+--data '{
+  "user_id_claim": "preferred_username",
+  "discovery_url": "http://localhost:8080/realms/master/",
+  "issuers": [ "http://localhost:8080/realms/master" ],
+  "audiences": [ "account" ]
+}'
 ```
 
 ### Register an identity
@@ -36,9 +39,8 @@ curl -X POST 'http://localhost:8888/identity/provider/test_user'
 ### Create a schema
 
 ```shell
-$ curl -X POST 'http://localhost:8888/schema/test' \
---header 'Content-Type: application/json' \
---data '{
+SCHEMA_DOCUMENT=$(cat << 'EOF'
+{
     "PhotoApp": {
         "commonTypes": {
             "PersonType": {
@@ -79,7 +81,12 @@ $ curl -X POST 'http://localhost:8888/schema/test' \
         },
         "actions": {}
     }
-}'
+}
+EOF
+)
+curl -X POST 'http://localhost:8888/schema/test' \
+--header 'Content-Type: application/json' \
+--data $SCHEMA_DOCUMENT
 ```
 
 ### Validate that the schema is created
@@ -91,9 +98,9 @@ $ curl -X GET 'http://localhost:8888/schema/test'
 ### Create a principal
 
 ```shell
-curl -X POST 'http://localhost:8888/principal/test' \
---header 'Content-Type: application/json' \
---data '{
+
+PRINCIPAL=$(cat << 'EOF'
+{
         "uid": {
             "type": "PhotoApp::User",
             "id": "alice"
@@ -115,8 +122,14 @@ curl -X POST 'http://localhost:8888/principal/test' \
                 "id": "AVTeam"
             }
         ]
-    }
-'
+}
+EOF
+)
+
+curl -X POST 'http://localhost:8888/principal/test' \
+--header 'Content-Type: application/json' \
+--data $PRINCIPAL
+
 ```
 
 ### Create a principal association
@@ -125,7 +138,7 @@ curl -X POST 'http://localhost:8888/principal/test' \
 curl -X POST 'http://localhost:8888/association/' \
 --header 'Content-Type: application/json' \
 --data '{
-    "identity_provider": "test",
+    "identity_provider": "provider",
     "identity": "test_user",
     "principal_schema": "test",
     "principal_id": "User::\"alice\""

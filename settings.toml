@@ -34,4 +34,9 @@ label_selector_value = "schema"
 # Repository settings for principal associations
 [backend.kubernetes.principal_association_repository]
 label_selector_key = "app.kubernetes.io/component"
-label_selector_value = "principal-association"
+label_selector_value = "identity"
+
+# Repository settings for principal associations
+[backend.kubernetes.identity_provider_repository]
+label_selector_key = "app.kubernetes.io/component"
+label_selector_value = "identity"
