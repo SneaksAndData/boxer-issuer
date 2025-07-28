@@ -1,11 +1,12 @@
 use crate::services::backends::base::{
-    EntitiesRepositorySource, IdentityProviderBackend, IdentityProviderRepositorySource, IdentityRepositorySource,
-    IssuerBackend, PrincipalAssociationRepositorySource,
+    EntitiesRepositorySource, ExternalIdentityValidatorProviderSource, IdentityProviderRepositorySource,
+    IdentityRepositorySource, IssuerBackend, PrincipalAssociationRepositorySource,
 };
 use crate::services::base::upsert_repository::{
     IdentityProviderRepository, IdentityRepository, PrincipalAssociationRepository, PrincipalRepository,
 };
 use crate::services::configuration::models::BackendSettings;
+use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use async_trait::async_trait;
 use boxer_core::services::backends::{Backend, BackendConfiguration, SchemaRepositorySource};
 use boxer_core::services::base::types::SchemaRepository;
@@ -68,11 +69,9 @@ impl IdentityProviderRepositorySource for InMemoryBackend {
     }
 }
 
-#[async_trait]
-impl IdentityProviderBackend for InMemoryBackend {
-    async fn register_identity_provider(&self, _: String) -> anyhow::Result<()> {
-        // In-memory backend does not require registration logic
-        Ok(())
+impl ExternalIdentityValidatorProviderSource for InMemoryBackend {
+    fn get_external_identity_validator_provider(&self) -> Arc<dyn ExternalIdentityValidatorProvider> {
+        todo!()
     }
 }
 

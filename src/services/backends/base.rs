@@ -4,8 +4,8 @@ use crate::services::base::upsert_repository::PrincipalAssociationRepository;
 use crate::services::base::upsert_repository::PrincipalRepository;
 use crate::services::base::upsert_repository::{IdentityProviderRepository, IdentityRepository};
 use crate::services::configuration::models::AppSettings;
+use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use anyhow::Result;
-use async_trait::async_trait;
 use boxer_core::services::backends::{Backend, BackendConfiguration};
 use serde::Deserialize;
 use std::sync::Arc;
@@ -36,9 +36,9 @@ pub trait IdentityProviderRepositorySource {
     fn get_identity_provider_repository(&self) -> Arc<IdentityProviderRepository>;
 }
 
-#[async_trait]
-pub trait IdentityProviderBackend {
-    async fn register_identity_provider(&self, provider: String) -> Result<()>;
+pub trait ExternalIdentityValidatorProviderSource {
+    #[allow(dead_code)]
+    fn get_external_identity_validator_provider(&self) -> Arc<dyn ExternalIdentityValidatorProvider>;
 }
 
 pub trait IssuerBackend:
@@ -48,8 +48,8 @@ pub trait IssuerBackend:
     + EntitiesRepositorySource
     + PrincipalAssociationRepositorySource
     + IdentityRepositorySource
-    + IdentityProviderBackend
     + IdentityProviderRepositorySource
+    + ExternalIdentityValidatorProviderSource
 {
 }
 

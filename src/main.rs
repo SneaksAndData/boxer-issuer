@@ -7,7 +7,6 @@ use crate::services::base::upsert_repository::{
     IdentityRepository, PrincipalAssociationRepository, PrincipalRepository,
 };
 use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
-use crate::services::identity_validator_provider;
 use crate::services::token_service::TokenService;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
@@ -19,7 +18,6 @@ use utoipa_swagger_ui::SwaggerUi;
 use crate::http::openapi::ApiDoc;
 use crate::services::backends::base::load_backend;
 use crate::services::configuration::models::AppSettings;
-use crate::services::identity_validator_provider::ExternalIdentityWatcher;
 use crate::services::principal_service::PrincipalService;
 use anyhow::Result;
 use boxer_core::services::base::types::SchemaRepository;
@@ -33,10 +31,8 @@ async fn main() -> Result<()> {
     let cm = AppSettings::new()?;
     let current_backend = load_backend(cm.get_backend_type(), &cm).await?;
 
-    let validator_provider = Arc::new(identity_validator_provider::new(current_backend.clone()));
+    let validator_provider = current_backend.get_external_identity_validator_provider().clone();
 
-    let configuration_watcher = validator_provider.clone();
-    let _ = tokio::spawn(configuration_watcher.watch_for_identity_providers());
     info!("Configuration manager started");
 
     let schemas_repository: Arc<SchemaRepository> = current_backend.get_schemas_repository();

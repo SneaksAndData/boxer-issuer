@@ -5,9 +5,11 @@ pub mod models;
 mod principal_association_repository;
 mod principal_repository;
 
+mod kubernetes_validator_provider;
+
 use crate::services::backends::base::{
-    EntitiesRepositorySource, IdentityProviderBackend, IdentityProviderRepositorySource, IdentityRepositorySource,
-    IssuerBackend, PrincipalAssociationRepositorySource,
+    EntitiesRepositorySource, ExternalIdentityValidatorProviderSource, IdentityProviderRepositorySource,
+    IdentityRepositorySource, IssuerBackend, PrincipalAssociationRepositorySource,
 };
 use crate::services::backends::kubernetes::identity_provider_repository::KubernetesIdentityProviderRepository;
 use crate::services::backends::kubernetes::identity_repository::KubernetesIdentityRepository;
@@ -17,6 +19,7 @@ use crate::services::base::upsert_repository::{
     IdentityProviderRepository, IdentityRepository, PrincipalAssociationRepository, PrincipalRepository,
 };
 use crate::services::configuration::models::{BackendSettings, KubernetesBackendSettings};
+use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::from_cluster;
@@ -26,6 +29,7 @@ use boxer_core::services::backends::{Backend, BackendConfiguration, SchemaReposi
 use boxer_core::services::base::types::SchemaRepository;
 use kube::config::Kubeconfig;
 use kube::Config;
+use kubernetes_validator_provider::KubernetesValidatorProvider;
 use log::{debug, info};
 use std::process::Command;
 use std::sync::Arc;
@@ -36,6 +40,7 @@ pub struct KubernetesBackend {
     pub principal_association_repository: Option<Arc<PrincipalAssociationRepository>>,
     pub identity_repository: Option<Arc<KubernetesIdentityRepository>>,
     pub identity_provider_repository: Option<Arc<KubernetesIdentityProviderRepository>>,
+    pub validator_provider: Option<Arc<KubernetesValidatorProvider>>,
 }
 
 impl KubernetesBackend {
@@ -46,6 +51,7 @@ impl KubernetesBackend {
             principal_association_repository: None,
             identity_repository: None,
             identity_provider_repository: None,
+            validator_provider: None,
         }
     }
 }
@@ -77,6 +83,15 @@ impl PrincipalAssociationRepositorySource for KubernetesBackend {
     }
 }
 
+impl ExternalIdentityValidatorProviderSource for KubernetesBackend {
+    fn get_external_identity_validator_provider(&self) -> Arc<dyn ExternalIdentityValidatorProvider> {
+        self.validator_provider
+            .as_ref()
+            .expect("Backend is not started")
+            .clone()
+    }
+}
+
 impl IdentityProviderRepositorySource for KubernetesBackend {
     fn get_identity_provider_repository(&self) -> Arc<IdentityProviderRepository> {
         self.identity_provider_repository
@@ -88,14 +103,6 @@ impl IdentityProviderRepositorySource for KubernetesBackend {
 
 impl Backend for KubernetesBackend {
     // Nothing here, as this is a marker trait
-}
-
-#[async_trait]
-impl IdentityProviderBackend for KubernetesBackend {
-    async fn register_identity_provider(&self, provider: String) -> anyhow::Result<()> {
-        info!("Registering identity provider: {}", provider);
-        Ok(())
-    }
 }
 
 impl IssuerBackend for KubernetesBackend {
@@ -177,11 +184,16 @@ impl BackendConfiguration for KubernetesBackend {
         let identity_provider_repository =
             KubernetesIdentityProviderRepository::start(repository_config.clone()).await?;
 
+        let identity_provider_repository = Arc::new(identity_provider_repository);
+
+        let validator_provider = KubernetesValidatorProvider::new(identity_provider_repository.clone());
+
         self.schemas_repository = Some(Arc::new(schemas_repository));
         self.entities_repository = Some(Arc::new(entities_repository));
         self.principal_association_repository = Some(Arc::new(principal_association_repository));
         self.identity_repository = Some(Arc::new(identity_repository));
-        self.identity_provider_repository = Some(Arc::new(identity_provider_repository));
+        self.identity_provider_repository = Some(identity_provider_repository);
+        self.validator_provider = Some(Arc::new(validator_provider));
         info!("Kubernetes backend configured successfully");
         Ok(Arc::new(self))
     }
