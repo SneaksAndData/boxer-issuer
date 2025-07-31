@@ -1,5 +1,6 @@
 use crate::http::controllers;
-use utoipa::OpenApi;
+use utoipa::openapi::security::{Http, HttpAuthScheme, SecurityScheme};
+use utoipa::{Modify, OpenApi};
 
 #[derive(OpenApi)]
 #[openapi(paths(
@@ -13,8 +14,19 @@ use utoipa::OpenApi;
     controllers::principal::get_principal,
     controllers::provider::post_provider,
     controllers::provider::get_provider,
+    controllers::provider::delete_provider,
     controllers::token::token,
     controllers::association::post_association,
     controllers::association::get_association,
-))]
+),
+    modifiers(&SecurityAddon))]
 pub struct ApiDoc;
+
+struct SecurityAddon;
+
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        let components = openapi.components.as_mut().unwrap(); // we can unwrap safely since there already is components registered.
+        components.add_security_scheme("external", SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)))
+    }
+}

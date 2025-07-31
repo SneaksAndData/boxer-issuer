@@ -6,7 +6,12 @@ use actix_web::web::{Data, Path};
 use actix_web::{get, HttpRequest};
 use std::sync::Arc;
 
-#[utoipa::path(responses((status = OK)))]
+#[utoipa::path(
+    responses((status = OK, body = String)),
+    security(
+        ("external" = [])
+    )
+)]
 #[get("/token/{identity_provider}")]
 pub async fn token(data: Data<Arc<TokenService>>, identity_provider: Path<String>, req: HttpRequest) -> Result<String> {
     let ip = ExternalIdentityProvider::from(identity_provider.to_string());

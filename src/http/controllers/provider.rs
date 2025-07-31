@@ -7,9 +7,11 @@ use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use utoipa::ToSchema;
+use utoipa::{schema, ToSchema};
 
 #[derive(ToSchema, Serialize, Deserialize)]
+#[schema(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 struct OidcIdentityProviderRegistration {
     pub user_id_claim: String,
     pub discovery_url: String,
@@ -41,7 +43,7 @@ pub async fn post_provider(
 #[get("oidc/{id}")]
 pub async fn get_provider(id: Path<String>, data: Data<Arc<IdentityProviderRepository>>) -> Result<impl Responder> {
     let eid = data.get(id.into_inner()).await?;
-    Ok(web::Json(eid))
+    Ok(Json(eid.oidc))
 }
 
 #[utoipa::path(context_path = "/identity_provider/", responses((status = OK)))]
