@@ -30,7 +30,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Install just, cargo-llvm-cov, cargo-nextest
-        uses: taiki-e/install-action@v2.56.13
+        uses: taiki-e/install-action@v2.57.6
         with:
           tool: cargo-llvm-cov
 
