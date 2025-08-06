@@ -1,0 +1,10 @@
+apiVersion: v2
+name: integration_tests
+description: A Helm chart for the Boxer project integration tests
+type: application
+version: 0.0.0
+appVersion: "0.0.0"
+dependencies:
+  - name: boxer-crd
+    version: "v0.0.0-5-g054dcff"
+    repository: "oci://ghcr.io/sneaksanddata/helm"

@@ -1,0 +1,4 @@
+IMPORTANT NOTE:
+This chart is designed to be used in integration tests and is not intended for production use.
+If you want to install the Boxer Issuer application, please use the Boxer Issuer chart instead.
+The boxer issuer chart can be found at: https://github.com/SneaksAndData/boxer-crd/pkgs/container/helm%2Fboxer-crd

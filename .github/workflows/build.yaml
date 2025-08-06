@@ -38,24 +38,26 @@ jobs:
         uses: actions-rust-lang/rustfmt@v1
 
       - name: Create k8s Kind Cluster
-        if: ${{ false }}
         uses: helm/kind-action@v1
         with:
           cluster_name: 'kind'
 
       - name: Check kind cluster
-        if: ${{ false }}
         run: |
           kubectl cluster-info
           kubectl get nodes
           kind get kubeconfig --name kind
 
+      - name: Install integration test dependencies
+        run: |
+          helm dependency build ./integration-tests/helm/integration_tests \
+          && helm install integration-tests ./integration-tests/helm/integration_tests 
+
+
       - name: Generate code coverage
-        if: ${{ false }}
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
-        if: ${{ false }}
         uses: romeovs/lcov-reporter-action@v0.4.0
         with:
           lcov-file: ./lcov.info
