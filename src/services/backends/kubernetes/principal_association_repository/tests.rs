@@ -153,7 +153,7 @@ async fn test_delete_principal(ctx: &mut KubernetesPrincipalAssociationRepositor
 #[tokio::test]
 async fn test_update_schema(ctx: &mut KubernetesPrincipalAssociationRepositoryTest) {
     // Arrange
-    let external_identity = ExternalIdentity::new("identity-provider".to_string(), "external_id".to_string());
+    let external_identity = ExternalIdentity::new("identity-provider-1".to_string(), "user1".to_string());
     let principal_identity = PrincipalIdentity::new(
         "test-schema-entities".to_string(),
         "PhotoApp::User::\"alice\"".to_string(),
