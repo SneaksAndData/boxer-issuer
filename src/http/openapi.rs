@@ -16,8 +16,6 @@ use utoipa::{Modify, OpenApi};
     controllers::provider::get_provider,
     controllers::provider::delete_provider,
     controllers::token::token,
-    controllers::association::post_association,
-    controllers::association::get_association,
 ),
     modifiers(&SecurityAddon))]
 pub struct ApiDoc;

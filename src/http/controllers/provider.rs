@@ -1,23 +1,13 @@
-use crate::http::errors::*;
+mod oidc_provider_registration;
+
+use crate::http::controllers::provider::oidc_provider_registration::OidcIdentityProviderRegistration;
 use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
 use crate::models::identity_provider_registration::IdentityProviderRegistration;
-use crate::services::base::upsert_repository::IdentityProviderRepository;
+use crate::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
-use actix_web::{delete, get, post, web, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
+use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
 use std::sync::Arc;
-use utoipa::{schema, ToSchema};
-
-#[derive(ToSchema, Serialize, Deserialize)]
-#[schema(rename_all = "camelCase")]
-#[serde(rename_all = "camelCase")]
-struct OidcIdentityProviderRegistration {
-    pub user_id_claim: String,
-    pub discovery_url: String,
-    pub issuers: Vec<String>,
-    pub audiences: Vec<String>,
-}
 
 #[utoipa::path(context_path = "/identity_provider/", responses((status = OK)))]
 #[post("oidc/{id}")]
@@ -28,12 +18,12 @@ pub async fn post_provider(
 ) -> Result<HttpResponse> {
     let registration = IdentityProviderRegistration {
         name: id.clone(),
-        oidc: OidcExternalIdentityProviderSettings {
+        oidc: Some(OidcExternalIdentityProviderSettings {
             user_id_claim: registration.user_id_claim.clone(),
             discovery_url: registration.discovery_url.clone(),
             issuers: registration.issuers.clone(),
             audiences: registration.audiences.clone(),
-        },
+        }),
     };
     data.upsert(id.into_inner(), registration).await?;
     Ok(HttpResponse::Ok().finish())

@@ -1,12 +1,6 @@
 use crate::services::backends::base::BackendType;
-use duration_string::DurationString;
+use boxer_core::configuration::models::repository_settings::RepositorySettings;
 use serde::Deserialize;
-
-#[derive(Debug, Deserialize)]
-pub struct KubernetesRepositorySettings {
-    pub label_selector_key: String,
-    pub label_selector_value: String,
-}
 
 #[derive(Debug, Deserialize)]
 pub struct KubernetesBackendSettings {
@@ -15,15 +9,10 @@ pub struct KubernetesBackendSettings {
     pub in_cluster: bool,
     pub namespace: String,
 
-    pub lease_name: String,
-    pub lease_duration: DurationString,
-    pub lease_renew_duration: DurationString,
-
-    pub identity_repository: KubernetesRepositorySettings,
-    pub principal_repository: KubernetesRepositorySettings,
-    pub schema_repository: KubernetesRepositorySettings,
-    pub principal_association_repository: KubernetesRepositorySettings,
-    pub identity_provider_repository: KubernetesRepositorySettings,
+    pub identity_repository: RepositorySettings,
+    pub principal_repository: RepositorySettings,
+    pub schema_repository: RepositorySettings,
+    pub identity_provider_repository: RepositorySettings,
 }
 
 #[derive(Debug, Deserialize)]

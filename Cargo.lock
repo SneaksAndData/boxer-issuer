@@ -345,6 +345,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "assert_matches"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
+
+[[package]]
 name = "async-broadcast"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -580,20 +586,23 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git#e57af330573bb535b8b8a5b2dd3ef47542da514a"
 dependencies = [
+ "actix-web",
  "anyhow",
+ "assert_matches",
  "async-trait",
  "cedar-policy",
+ "duration-string",
  "futures",
  "k8s-openapi",
  "kube",
- "kubert",
  "log",
  "maplit",
+ "schemars 0.8.22",
  "serde",
  "serde_json",
  "serde_yml",
+ "test-context",
  "tokio",
  "uuid",
 ]

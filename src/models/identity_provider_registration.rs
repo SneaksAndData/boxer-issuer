@@ -4,5 +4,5 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct IdentityProviderRegistration {
     pub name: String,
-    pub oidc: OidcExternalIdentityProviderSettings,
+    pub oidc: Option<OidcExternalIdentityProviderSettings>,
 }

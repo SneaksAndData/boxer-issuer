@@ -53,7 +53,6 @@ jobs:
           helm dependency build ./integration-tests/helm/integration_tests \
           && helm install integration-tests ./integration-tests/helm/integration_tests 
 
-
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 

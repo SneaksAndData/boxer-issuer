@@ -1,22 +1,16 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::models::principal::Principal;
-use crate::services::base::upsert_repository::{
-    IdentityRepository, PrincipalAssociationRepository, PrincipalIdentity, PrincipalRepository,
-};
-use anyhow::bail;
-use boxer_core::services::base::types::SchemaRepository;
-use cedar_policy::SchemaFragment;
+use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
+use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
+use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
+use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
+use cedar_policy::{EntityUid, SchemaFragment};
+use std::str::FromStr;
 use std::sync::Arc;
-
-pub struct IdentityAssociationRequest {
-    pub external_identity_info: (String, String),
-    pub principal_id: PrincipalIdentity,
-}
 
 pub struct PrincipalService {
     identities: Arc<IdentityRepository>,
     principals: Arc<PrincipalRepository>,
-    associations: Arc<PrincipalAssociationRepository>,
     schema_repository: Arc<SchemaRepository>,
 }
 
@@ -31,31 +25,24 @@ impl PrincipalService {
     pub fn new(
         identities: Arc<IdentityRepository>,
         principals: Arc<PrincipalRepository>,
-        associations: Arc<PrincipalAssociationRepository>,
         schema_repository: Arc<SchemaRepository>,
     ) -> Self {
         Self {
             identities,
             principals,
-            associations,
             schema_repository,
         }
     }
 
-    pub async fn associate(&self, request: IdentityAssociationRequest) -> Result<(), anyhow::Error> {
-        let external_identity = self.identities.get(request.external_identity_info).await?;
-        let exists = self.principals.exists(request.principal_id.clone()).await?;
-        if !exists {
-            bail!("Principal not found: {}", request.principal_id);
-        }
-        self.associations
-            .upsert(external_identity.clone(), request.principal_id)
-            .await
-    }
-
     pub async fn get_principal(&self, external_identity: ExternalIdentity) -> Result<Principal, anyhow::Error> {
-        let principal_id = self.associations.get(external_identity.clone()).await?;
-        let principal = self.principals.get(principal_id).await?;
-        Ok(principal)
+        let registration = self
+            .identities
+            .get((external_identity.identity_provider, external_identity.user_id))
+            .await?;
+        let uid = EntityUid::from_str(registration.principal_id.as_str())?;
+        let schema_id = registration.principal_schema.clone();
+        let pid = PrincipalIdentity::new(registration.principal_schema, uid);
+        let entity = self.principals.get(pid).await?;
+        Ok(Principal::new(entity, schema_id))
     }
 }
