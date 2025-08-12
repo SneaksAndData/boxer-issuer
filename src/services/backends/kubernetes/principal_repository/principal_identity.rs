@@ -19,6 +19,10 @@ impl IntoObjectRef<CedarEntityDocument> for PrincipalIdentity {
     fn into_object_ref(self, namespace: String) -> ObjectRef<CedarEntityDocument> {
         let mut components: Vec<&str> = vec![&self.schema_id, self.entity_uid.id().unescaped()];
         components.extend(self.entity_uid.type_name().namespace_components());
-        components.join("-").into_object_ref(namespace)
+        components
+            .join("-")
+            .to_ascii_lowercase()
+            .replace("_", "-")
+            .into_object_ref(namespace)
     }
 }

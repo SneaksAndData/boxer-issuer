@@ -10,7 +10,7 @@ use kube::runtime::reflector::ObjectRef;
 
 impl IntoObjectRef<ExternalIdentityDocument> for (String, String) {
     fn into_object_ref(self, namespace: String) -> ObjectRef<ExternalIdentityDocument> {
-        let name = format!("{}-{}", self.0, self.1);
+        let name = format!("{}-{}", self.0, self.1).replace("_", "-");
         let mut or = ObjectRef::new(&name);
         or.namespace = Some(namespace);
         or

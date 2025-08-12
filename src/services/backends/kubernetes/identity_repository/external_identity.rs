@@ -23,11 +23,12 @@ pub struct PrincipalReference {
     singular = "external-identity",
     namespaced
 )]
+#[serde(rename_all = "camelCase")]
 pub struct ExternalIdentityDocumentSpec {
     pub active: bool,
     pub id: String,
     pub identity_provider: String,
-    pub principal_id: PrincipalReference,
+    pub principal_ref: PrincipalReference,
 }
 
 impl UpdateLabels for ExternalIdentityDocument {
@@ -42,10 +43,10 @@ impl UpdateLabels for ExternalIdentityDocument {
 impl Into<ExternalIdentityRegistration> for ExternalIdentityDocumentSpec {
     fn into(self) -> ExternalIdentityRegistration {
         ExternalIdentityRegistration {
-            user_id: self.id,
+            id: self.id,
             identity_provider: self.identity_provider,
-            principal_id: self.principal_id.principal,
-            principal_schema: self.principal_id.schema,
+            principal_id: self.principal_ref.principal,
+            principal_schema: self.principal_ref.schema,
         }
     }
 }
@@ -84,9 +85,9 @@ impl ToResource<ExternalIdentityDocument> for ExternalIdentityRegistration {
             metadata: object_meta.clone(),
             spec: ExternalIdentityDocumentSpec {
                 active: true,
-                id: self.user_id.clone(),
+                id: self.id.clone(),
                 identity_provider: self.identity_provider.clone(),
-                principal_id: PrincipalReference {
+                principal_ref: PrincipalReference {
                     principal: self.principal_id.clone(),
                     schema: self.principal_schema.clone(),
                 },
@@ -100,10 +101,10 @@ impl TryFromResource<ExternalIdentityDocument> for ExternalIdentityRegistration 
 
     fn try_into_resource(resource: Arc<ExternalIdentityDocument>) -> Result<Self, Self::Error> {
         Ok(ExternalIdentityRegistration {
-            user_id: resource.spec.id.clone(),
+            id: resource.spec.id.clone(),
             identity_provider: resource.spec.identity_provider.clone(),
-            principal_id: resource.spec.principal_id.principal.clone(),
-            principal_schema: resource.spec.principal_id.schema.clone(),
+            principal_id: resource.spec.principal_ref.principal.clone(),
+            principal_schema: resource.spec.principal_ref.schema.clone(),
         })
     }
 }

@@ -1,20 +1,25 @@
 pub mod external_identity_registration;
+mod external_identity_registration_request;
 
 use crate::http::controllers::identity::external_identity_registration::ExternalIdentityRegistration;
+use crate::http::controllers::identity::external_identity_registration_request::ExternalIdentityRegistrationRequest;
 use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/identity/", responses((status = OK)))]
-#[post("")]
+#[utoipa::path(context_path = "/identity/", request_body = ExternalIdentityRegistrationRequest, responses((status = OK)))]
+#[post("{identity_provider}/{id}")]
 pub async fn post_identity(
-    request: Json<ExternalIdentityRegistration>,
+    params: Path<(String, String)>,
+    request: Json<ExternalIdentityRegistrationRequest>,
     data: Data<Arc<IdentityRepository>>,
 ) -> Result<HttpResponse> {
-    let key = (request.identity_provider.clone(), request.user_id.clone());
-    data.upsert(key, request.into_inner()).await?;
+    let (identity_provider, id) = params.into_inner();
+    let key = (identity_provider.clone(), id.clone());
+    let registration = ExternalIdentityRegistration::from_request(identity_provider, id, request.into_inner());
+    data.upsert(key, registration).await?;
     Ok(HttpResponse::Ok().finish())
 }
 

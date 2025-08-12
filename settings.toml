@@ -12,31 +12,33 @@ backend_type = "Kubernetes"
 exec = "kind get kubeconfig --name kind" # Command to get kubeconfig for the Kind cluster
 in_cluster = false                       # Whether to run in-cluster or not
 namespace = "default"                    # Kubernetes namespace
-lease_name = "boxer"                     # Name for the lease object
-lease_duration = "60s"                   # Duration string for lease lifetime
-lease_renew_duration = "15s"             # Duration string for lease renewal interval
 
 # Repository settings for identities
 [backend.kubernetes.identity_repository]
 label_selector_key = "app.kubernetes.io/component"
 label_selector_value = "identity"
+operation_timeout = "30s" # Timeout for operations on the actions repository
 
 # Repository settings for principals
 [backend.kubernetes.principal_repository]
 label_selector_key = "app.kubernetes.io/component"
 label_selector_value = "principal"
+operation_timeout = "30s" # Timeout for operations on the actions repository
 
 # Repository settings for schemas
 [backend.kubernetes.schema_repository]
 label_selector_key = "app.kubernetes.io/component"
 label_selector_value = "schema"
+operation_timeout = "30s" # Timeout for operations on the actions repository
 
 # Repository settings for principal associations
 [backend.kubernetes.principal_association_repository]
 label_selector_key = "app.kubernetes.io/component"
 label_selector_value = "identity"
+operation_timeout = "30s" # Timeout for operations on the actions repository
 
 # Repository settings for principal associations
 [backend.kubernetes.identity_provider_repository]
 label_selector_key = "app.kubernetes.io/component"
 label_selector_value = "identity"
+operation_timeout = "30s" # Timeout for operations on the actions repository
