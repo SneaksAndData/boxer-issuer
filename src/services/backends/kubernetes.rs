@@ -137,11 +137,12 @@ impl BackendConfiguration for KubernetesBackend {
             }
         };
 
+        let owner_mark = ObjectOwnerMark::new(&instance_name, &settings.resource_owner_label);
+
         let identity_repository = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
-            &instance_name,
-            &settings.resource_owner_label,
+            owner_mark.clone(),
             settings.identity_repository.operation_timeout.into(),
         )
         .await?;
@@ -149,8 +150,7 @@ impl BackendConfiguration for KubernetesBackend {
         let principal_repository = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
-            &instance_name,
-            &settings.resource_owner_label,
+            owner_mark.clone(),
             settings.principal_repository.operation_timeout.into(),
         )
         .await?;
@@ -158,8 +158,7 @@ impl BackendConfiguration for KubernetesBackend {
         let schemas_repository = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
-            &instance_name,
-            &settings.resource_owner_label,
+            owner_mark.clone(),
             settings.schema_repository.operation_timeout.into(),
         )
         .await?;
@@ -167,8 +166,7 @@ impl BackendConfiguration for KubernetesBackend {
         let identity_provider_repository = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
-            &instance_name,
-            &settings.resource_owner_label,
+            owner_mark.clone(),
             settings.identity_provider_repository.operation_timeout.into(),
         )
         .await?;
@@ -212,8 +210,7 @@ impl KubernetesBackend {
     pub async fn create_repository<R>(
         namespace: &str,
         kubeconfig: Config,
-        instance_name: &str,
-        resource_owner_label: &str,
+        owner_mark: ObjectOwnerMark,
         operation_timeout: Duration,
     ) -> anyhow::Result<Arc<KubernetesRepository<R>>>
     where
@@ -229,7 +226,7 @@ impl KubernetesBackend {
         let config = KubernetesResourceManagerConfig {
             namespace: namespace.to_string(),
             kubeconfig: kubeconfig.clone(),
-            owner_mark: ObjectOwnerMark::new(resource_owner_label, instance_name),
+            owner_mark,
             operation_timeout,
         };
         KubernetesRepository::<R>::start(config)
