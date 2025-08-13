@@ -1,5 +1,5 @@
 use crate::services::backends::kubernetes::principal_repository::cedar_entity_document::CedarEntityDocument;
-use boxer_core::services::backends::kubernetes::repositories::IntoObjectRef;
+use boxer_core::services::backends::kubernetes::repositories::TryIntoObjectRef;
 use cedar_policy::EntityUid;
 use kube::runtime::reflector::ObjectRef;
 
@@ -15,14 +15,12 @@ impl PrincipalIdentity {
     }
 }
 
-impl IntoObjectRef<CedarEntityDocument> for PrincipalIdentity {
-    fn into_object_ref(self, namespace: String) -> ObjectRef<CedarEntityDocument> {
+impl TryIntoObjectRef<CedarEntityDocument> for PrincipalIdentity {
+    type Error = anyhow::Error;
+
+    fn try_into_object_ref(self, namespace: String) -> Result<ObjectRef<CedarEntityDocument>, Self::Error> {
         let mut components: Vec<&str> = vec![&self.schema_id, self.entity_uid.id().unescaped()];
         components.extend(self.entity_uid.type_name().namespace_components());
-        components
-            .join("-")
-            .to_ascii_lowercase()
-            .replace("_", "-")
-            .into_object_ref(namespace)
+        components.join("-").try_into_object_ref(namespace)
     }
 }

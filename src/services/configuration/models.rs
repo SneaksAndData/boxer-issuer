@@ -13,6 +13,8 @@ pub struct KubernetesBackendSettings {
     pub principal_repository: RepositorySettings,
     pub schema_repository: RepositorySettings,
     pub identity_provider_repository: RepositorySettings,
+
+    pub resource_owner_label: String,
 }
 
 #[derive(Debug, Deserialize)]

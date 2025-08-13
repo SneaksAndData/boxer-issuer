@@ -559,34 +559,27 @@ dependencies = [
  "boxer_core",
  "cedar-policy",
  "config",
- "duration-string",
  "env_logger",
- "futures",
  "hmac",
  "jwt",
  "jwt-authorizer",
  "k8s-openapi",
  "kube",
- "kubert",
  "log",
- "maplit",
  "rstest",
  "schemars 0.8.22",
  "serde",
  "serde_json",
  "serde_yml",
  "sha2",
- "test-context",
- "tokio",
  "utoipa",
  "utoipa-swagger-ui",
- "uuid",
 ]
 
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.3#712d373b1d3f31c83562a48b82fabfe75461efec"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.5#e942d5e242d89def722acf20b65e4b84984da249"
 dependencies = [
  "actix-web",
  "anyhow",
@@ -599,6 +592,7 @@ dependencies = [
  "kube",
  "log",
  "maplit",
+ "regex",
  "schemars 0.8.22",
  "serde",
  "serde_json",
@@ -2112,26 +2106,6 @@ dependencies = [
  "thiserror 2.0.12",
  "tokio",
  "tokio-util",
- "tracing",
-]
-
-[[package]]
-name = "kubert"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a92cbeb0adfdf2706c4f85f0d63e01b6535d44e150f5963289cd4b8bc0115fe5"
-dependencies = [
- "backon",
- "chrono",
- "futures-util",
- "hyper",
- "k8s-openapi",
- "kube-client",
- "kube-core",
- "serde",
- "serde_json",
- "thiserror 2.0.12",
- "tokio",
  "tracing",
 ]
 

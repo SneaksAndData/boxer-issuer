@@ -4,6 +4,7 @@ mod services;
 
 use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
 use crate::services::token_service::TokenService;
+use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::info;
@@ -57,6 +58,7 @@ async fn main() -> Result<()> {
     info!("listening on {}:{}", &addr.0, &addr.1);
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(Data::new(token_provider.clone()))
             .app_data(Data::new(principal_service.clone()))
             .app_data(Data::new(identity_repository.clone()))

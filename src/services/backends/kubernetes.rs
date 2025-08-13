@@ -14,8 +14,9 @@ use crate::services::identity_validator_provider::ExternalIdentityValidatorProvi
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::from_cluster;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::object_owner_mark::ObjectOwnerMark;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
-    KubernetesResourceManagerConfig, ListenerConfig, UpdateLabels,
+    KubernetesResourceManagerConfig, UpdateLabels,
 };
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use boxer_core::services::backends::kubernetes::repositories::{KubernetesRepository, SoftDeleteResource};
@@ -29,6 +30,7 @@ use log::{debug, info};
 use std::hash::Hash;
 use std::process::Command;
 use std::sync::Arc;
+use std::time::Duration;
 
 pub struct KubernetesBackend {
     pub schemas_repository: Option<Arc<SchemaRepository>>,
@@ -138,32 +140,36 @@ impl BackendConfiguration for KubernetesBackend {
         let identity_repository = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
-            instance_name.clone(),
-            (&settings.identity_repository).into(),
+            &instance_name,
+            &settings.resource_owner_label,
+            settings.identity_repository.operation_timeout.into(),
         )
         .await?;
 
         let principal_repository = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
-            instance_name.clone(),
-            (&settings.principal_repository).into(),
+            &instance_name,
+            &settings.resource_owner_label,
+            settings.principal_repository.operation_timeout.into(),
         )
         .await?;
 
         let schemas_repository = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
-            instance_name.clone(),
-            (&settings.schema_repository).into(),
+            &instance_name,
+            &settings.resource_owner_label,
+            settings.schema_repository.operation_timeout.into(),
         )
         .await?;
 
         let identity_provider_repository = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
-            instance_name.clone(),
-            (&settings.identity_provider_repository).into(),
+            &instance_name,
+            &settings.resource_owner_label,
+            settings.identity_provider_repository.operation_timeout.into(),
         )
         .await?;
 
@@ -206,8 +212,9 @@ impl KubernetesBackend {
     pub async fn create_repository<R>(
         namespace: &str,
         kubeconfig: Config,
-        instance_name: String,
-        settings: ListenerConfig,
+        instance_name: &str,
+        resource_owner_label: &str,
+        operation_timeout: Duration,
     ) -> anyhow::Result<Arc<KubernetesRepository<R>>>
     where
         R: kube::Resource<Scope = NamespaceResourceScope>
@@ -222,8 +229,8 @@ impl KubernetesBackend {
         let config = KubernetesResourceManagerConfig {
             namespace: namespace.to_string(),
             kubeconfig: kubeconfig.clone(),
-            field_manager: instance_name.clone(),
-            listener_config: settings,
+            owner_mark: ObjectOwnerMark::new(resource_owner_label, instance_name),
+            operation_timeout,
         };
         KubernetesRepository::<R>::start(config)
             .await

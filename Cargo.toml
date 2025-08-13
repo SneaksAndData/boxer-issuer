@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1", features = ["full"] }
 actix-web = "4.9.0"
 jwt = "0.16.0"
 async-trait = "0.1.81"
@@ -20,23 +19,17 @@ serde = { version = "1.0.207", features = ["derive"] }
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 utoipa = { version = "5.3.1", features = ["actix_extras"] }
 cedar-policy = "4.4.0"
-futures = "0.3.31"
 config = "0.15.11"
-uuid = { version = "1.17.0", features = ["v4"] }
 serde_yml = "0.0.12"
-maplit = "1.0.2"
-duration-string = { version = "0.5.2", features = ["serde"] }
 #boxer_core = { path = "../boxer-core/" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.3" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.5" }
 schemars = "0.8.6"
 
 # Kubernetes dependencies
 kube = { version = "0.99.0", features = ["config", "client", "runtime", "derive"] }
 k8s-openapi = { version = "0.24.0", features = ["latest"] }
-kubert = { version = "0.24.0", features = ["lease"] }
 
 [dev-dependencies]
-test-context = "0.4.1"
 rstest = "0.25.0"
 #boxer_core = { path = "../boxer-core/", features = ["testing"] }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", features = ["testing"], tag = "v0.0.3" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", features = ["testing"], tag = "v0.0.5" }
