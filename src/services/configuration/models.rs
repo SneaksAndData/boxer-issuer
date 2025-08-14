@@ -1,5 +1,5 @@
 use crate::services::backends::base::BackendType;
-use boxer_core::configuration::models::repository_settings::RepositorySettings;
+use duration_string::DurationString;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -8,12 +8,7 @@ pub struct KubernetesBackendSettings {
     pub exec: Option<String>,
     pub in_cluster: bool,
     pub namespace: String,
-
-    pub identity_repository: RepositorySettings,
-    pub principal_repository: RepositorySettings,
-    pub schema_repository: RepositorySettings,
-    pub identity_provider_repository: RepositorySettings,
-
+    pub operation_timeout: DurationString,
     pub resource_owner_label: String,
 }
 

@@ -143,7 +143,7 @@ impl BackendConfiguration for KubernetesBackend {
             &settings.namespace,
             kubeconfig.clone(),
             owner_mark.clone(),
-            settings.identity_repository.operation_timeout.into(),
+            settings.operation_timeout.into(),
         )
         .await?;
 
@@ -151,7 +151,7 @@ impl BackendConfiguration for KubernetesBackend {
             &settings.namespace,
             kubeconfig.clone(),
             owner_mark.clone(),
-            settings.principal_repository.operation_timeout.into(),
+            settings.operation_timeout.into(),
         )
         .await?;
 
@@ -159,7 +159,7 @@ impl BackendConfiguration for KubernetesBackend {
             &settings.namespace,
             kubeconfig.clone(),
             owner_mark.clone(),
-            settings.schema_repository.operation_timeout.into(),
+            settings.operation_timeout.into(),
         )
         .await?;
 
@@ -167,7 +167,7 @@ impl BackendConfiguration for KubernetesBackend {
             &settings.namespace,
             kubeconfig.clone(),
             owner_mark.clone(),
-            settings.identity_provider_repository.operation_timeout.into(),
+            settings.operation_timeout.into(),
         )
         .await?;
 

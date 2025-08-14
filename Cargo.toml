@@ -24,6 +24,7 @@ serde_yml = "0.0.12"
 #boxer_core = { path = "../boxer-core/" }
 boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.5" }
 schemars = "0.8.6"
+duration-string = "0.5.2"
 
 # Kubernetes dependencies
 kube = { version = "0.99.0", features = ["config", "client", "runtime", "derive"] }
