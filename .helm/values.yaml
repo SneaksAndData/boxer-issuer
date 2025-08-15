@@ -111,7 +111,6 @@ rbac:
   # This parameter determines whether role binding resources need to be created.
   # If you have any roles in your configuration set to 'true', then this parameter for creating role binding resources
   # should also be set to 'true'.
-  rbac-Viewer:
   clusterRoleBindings:
 
     schemaViewer:
