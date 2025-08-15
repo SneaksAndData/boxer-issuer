@@ -52,7 +52,7 @@ async fn main() -> Result<()> {
         cm.get_signing_key(),
     ));
 
-    info!("listening on {}:{}", &cm.listen_address.port(), &cm.listen_address.ip());
+    info!("listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())

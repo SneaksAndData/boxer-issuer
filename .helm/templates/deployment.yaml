@@ -51,6 +51,8 @@ spec:
             - name: APPLICATION_VERSION
               value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}"
           {{- if .Values.issuer.config.enabled }}
+            - name: RUST_LOG
+              value: {{ .Values.issuer.config.logLevel | default "info" | quote }}
             - name: BOXER__INSTANCE_NAME
               value: {{ .Values.issuer.config.instanceName | default .Release.Name | lower }}
             - name: BOXER__LISTEN_ADDRESS
