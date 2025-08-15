@@ -108,32 +108,108 @@ securityContext:
 
 ### Role Based Access Control configuration
 rbac:
-
-  # Specifies whether RBAC resources should be created
-  clusterRole:
-
-    # Allows Boxer to manage configmaps in the cluster
-    configMapEditor:
-      additionalLabels: { }
-      additionalAnnotations: { }
-      create: true
-      nameOverride: ""
-
-    # Allows Boxer to manage leases in the cluster
-    leaseEditor:
-      additionalLabels: { }
-      additionalAnnotations: { }
-      create: true
-      nameOverride: ""
-
   # This parameter determines whether role binding resources need to be created.
   # If you have any roles in your configuration set to 'true', then this parameter for creating role binding resources
   # should also be set to 'true'.
+  rbac-Viewer:
   clusterRoleBindings:
-    additionalLabels: { }
-    additionalAnnotations: { }
-    create: true
 
+    schemaViewer:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    schemaEditor:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    identityProviderViewer:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    identityProviderEditor:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      roleNameOverride: ""
+
+    externalIdentityViewer:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    externalIdentityEditor:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    cedarEntityViewer:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    cedarEntityEditor:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    actionDiscoveryViewer:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    actionDiscoveryEditor:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    resourceDiscoveryViewer:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    resourceDiscoveryEditor:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    policySetViewer:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
+
+    policySetEditor:
+      create: true
+      additionalLabels: { }
+      additionalAnnotations: { }
+      nameOverride: ""
+      roleNameOverride: ""
 
 # The Boxer Issuer configuration
 issuer:
@@ -172,6 +248,13 @@ issuer:
   config:
     enabled: true
 
+    # Override with RUST_LOG
+    logLevel: "info"
+
+    # The Ip address on which the application listens for HTTP requests
+    # Defaults to the loopback interface
+    listenIp: ""
+
     # The port on which the application listens for HTTP requests
     port: 8080
 
@@ -207,50 +290,11 @@ issuer:
           # The executable to use for kubeconfig
           exec: ""
 
-        # Coordination settings for the backend
-        coordination:
+        # The operation timeout in seconds
+        operationTimeout: "30s"
 
-          # The Kubernetes lease object used for coordination
-          # Defaults to Release name + "-issuer"
-          leaseName: ""
-
-          # The lease duration in seconds
-          leaseDuration: 60s
-
-          # The renewal deadline in seconds
-          renewDeadline: 15s
-
-        # Identities storage configuration
-        identities:
-          # The label selector for the identities discovery documents
-          labelSelectorKey: "app.kubernetes.io/component"
-
-          # The label selector value for the identities discovery documents
-          labelSelectorValue: "identity-document"
-
-        # Principals storage configuration
-        principals:
-          # The label selector for the identities discovery documents
-          labelSelectorKey: "app.kubernetes.io/component"
-
-          # The label selector value for the identities discovery documents
-          labelSelectorValue: "principal-document"
-
-        # Schemas storage configuration
-        schemas:
-          # The label selector for the actions discovery documents
-          labelSelectorKey: "app.kubernetes.io/component"
-
-          # The label selector value for the actions discovery documents
-          labelSelectorValue: "schema-document"
-
-        # Principal associations storage configuration
-        principalAssociations:
-          # The label selector for the identities discovery documents
-          labelSelectorKey: "app.kubernetes.io/component"
-
-          # The label selector value for the identities discovery documents
-          labelSelectorValue: "principal-association-document"
+        # The operation timeout in seconds
+        resourceOwnerLabel: ""
 
 # Observability settings for Datadog
 datadog:

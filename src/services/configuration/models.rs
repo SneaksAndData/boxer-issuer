@@ -1,6 +1,7 @@
 use crate::services::backends::base::BackendType;
 use duration_string::DurationString;
 use serde::Deserialize;
+use std::net::SocketAddr;
 
 #[derive(Debug, Deserialize)]
 pub struct KubernetesBackendSettings {
@@ -25,6 +26,7 @@ pub struct BackendSettings {
 #[derive(Debug, Deserialize)]
 pub struct AppSettings {
     pub instance_name: String,
+    pub listen_address: SocketAddr,
     pub init: InitializationSettings,
     pub backend: BackendSettings,
 }

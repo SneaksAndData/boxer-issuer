@@ -27,16 +27,13 @@ use boxer_core::services::backends::kubernetes::repositories::schema_repository:
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
-    let addr = ("127.0.0.1", 8888);
-
     let cm = AppSettings::new()?;
+    info!("Configuration manager started");
+
     let current_backend = load_backend(cm.get_backend_type(), &cm).await?;
 
     let validator_provider: Arc<dyn ExternalIdentityValidatorProvider + Send + Sync> = current_backend.get();
-
-    info!("Configuration manager started");
 
     let schemas_repository: Arc<SchemaRepository> = current_backend.get();
     let entities_repository: Arc<PrincipalRepository> = current_backend.get();
@@ -55,7 +52,7 @@ async fn main() -> Result<()> {
         cm.get_signing_key(),
     ));
 
-    info!("listening on {}:{}", &addr.0, &addr.1);
+    info!("listening on {}:{}", &cm.listen_address.port(), &cm.listen_address.ip());
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
@@ -72,7 +69,7 @@ async fn main() -> Result<()> {
             .service(provider::crud())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
-    .bind(addr)?
+    .bind(cm.listen_address.clone())?
     .run()
     .await
     .map_err(anyhow::Error::from)

@@ -1,6 +1,13 @@
 {{/*
 Expand the name of the chart.
 */}}
+{{- define "service.name" -}}
+{{- default "boxer" .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Expand the name of the chart.
+*/}}
 {{- define "app.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
@@ -68,50 +75,5 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- with .Values.additionalLabels }}
 {{ toYaml . }}
-{{- end }}
-{{- end }}
-
-{{/*
-Generate lease name
-*/}}
-{{- define "app.leaseName" -}}
-{{- if .Values.issuer.config.backend.kubernetes.coordination.leaseName }}
-{{- printf "%s" .Values.issuer.config.backend.kubernetes.coordination.leaseName }}
-{{- else }}
-{{- printf "%s-%s" (include "app.fullname" .) "lease" | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Generate lease name
-*/}}
-{{- define "app.chemaObjectName" -}}
-{{- if .Values.issuer.config.backend.kubernetes.schemas.objectName }}
-{{- printf "%s" .Values.issuer.config.backend.kubernetes.schemas.objectName }}
-{{- else }}
-{{- printf "%s-%s" (include "app.fullname" .) "lease" | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
-
-
-{{/*
-Generate the Template editor cluster role name
-*/}}
-{{- define "app.clusteRole.configMapEditor" -}}
-{{- if .Values.rbac.clusterRole.configMapEditor.nameOverride }}
-{{- .Values.rbac.clusterRole.configMapEditor.nameOverride }}
-{{- else }}
-{{- printf "%s-configmap-editor" (include "app.fullname" .) }}
-{{- end }}
-{{- end }}
-
-{{/*
-Generate the Template editor cluster role name
-*/}}
-{{- define "app.clusteRole.leaseEditor" -}}
-{{- if .Values.rbac.clusterRole.leaseEditor.nameOverride }}
-{{- .Values.rbac.clusterRole.leaseEditor.nameOverride }}
-{{- else }}
-{{- printf "%s-lease-editor" (include "app.fullname" .) }}
 {{- end }}
 {{- end }}

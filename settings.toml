@@ -1,6 +1,8 @@
 # Application settings
 instance_name = "integration-tests"
 
+listen_address = "127.0.0.1:8080" # Address to listen on
+
 # Initialization settings
 [init]
 backend_type = "Kubernetes"
@@ -12,4 +14,5 @@ backend_type = "Kubernetes"
 exec = "kind get kubeconfig --name kind" # Command to get kubeconfig for the Kind cluster
 in_cluster = false                       # Whether to run in-cluster or not
 namespace = "default"                    # Kubernetes namespace
-operation_timeout = "30s" # Timeout for operations on the actions repository
+operation_timeout = "30s"                # Timeout for operations on the actions repository
+resource_owner_label = "local.debug"     # Label to identify resources created by this instance

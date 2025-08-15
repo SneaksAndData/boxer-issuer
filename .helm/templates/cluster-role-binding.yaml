@@ -1,0 +1,29 @@
+{{- $dict := .Values.rbac.clusterRoleBindings }}
+{{- $dot := . }}
+{{- range $key := sortAlpha (keys $dict) }}
+---
+{{- $config := index $dict $key }}
+{{- if $config.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $config.nameOverride | default (printf "%s-%s" (include "app.fullname" $dot) $key ) | kebabcase }}
+  labels:
+    {{- include "app.labels" $dot | nindent 4 }}
+    {{- with $config.additionalLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $config.additionalAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "app.serviceAccountName" $ }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $config.roleNameOverride | default (printf "%s-%s" (include "service.name" $dot) $key ) | kebabcase }}
+{{- end }}
+{{- end }}

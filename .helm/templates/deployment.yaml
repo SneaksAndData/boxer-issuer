@@ -51,13 +51,12 @@ spec:
             - name: APPLICATION_VERSION
               value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}"
           {{- if .Values.issuer.config.enabled }}
-{{/*            global settings */}}
             - name: BOXER__INSTANCE_NAME
-              value: {{ .Values.issuer.config.instanceName | default .Release.Name | title }}
+              value: {{ .Values.issuer.config.instanceName | default .Release.Name | lower }}
+            - name: BOXER__LISTEN_ADDRESS
+              value: {{ (default "127.0.0.1" .Values.issuer.config.listenIp) }}:{{ .Values.issuer.config.port }}
             - name: BOXER__INIT__BACKEND_TYPE
               value: {{ .Values.issuer.config.backend.type | default .Release.Name }}
-
-{{/*            kubernetes backend settings*/}}
             - name: BOXER__BACKEND__KUBERNETES__EXEC
               value: {{ .Values.issuer.config.backend.kubernetes.kubeconfig.exec | quote }}
             - name: BOXER__BACKEND__KUBERNETES__KUBECONFIG
@@ -65,34 +64,11 @@ spec:
             - name: BOXER__BACKEND__KUBERNETES__IN_CLUSTER
               value: {{ .Values.issuer.config.backend.kubernetes.kubeconfig.inCluster | quote }}
             - name: BOXER__BACKEND__KUBERNETES__NAMESPACE
-              value: "{{ (default .Release.Namespace .Values.issuer.config.backend.kubernetes.namespace) }}"
-{{/*            coordination settings*/}}
-            - name: BOXER__BACKEND__KUBERNETES__LEASE_NAME
-              value: {{ include "app.leaseName" . | quote }}
-            - name: BOXER__BACKEND__KUBERNETES__LEASE_DURATION
-              value: {{ .Values.issuer.config.backend.kubernetes.coordination.leaseDuration }}
-            - name: BOXER__BACKEND__KUBERNETES__LEASE_RENEW_DURATION
-              value: {{ .Values.issuer.config.backend.kubernetes.coordination.renewDeadline }}
-{{/*            identity repository settings*/}}
-            - name: BOXER__BACKEND__KUBERNETES__IDENTITY_REPOSITORY__LABEL_SELECTOR_KEY
-              value: {{ .Values.issuer.config.backend.kubernetes.identities.labelSelectorKey }}
-            - name: BOXER__BACKEND__KUBERNETES__IDENTITY_REPOSITORY__LABEL_SELECTOR_VALUE
-              value: {{ .Values.issuer.config.backend.kubernetes.identities.labelSelectorValue }}
-{{/*            principal repository settings*/}}
-            - name: BOXER__BACKEND__KUBERNETES__PRINCIPAL_REPOSITORY__LABEL_SELECTOR_KEY
-              value: {{ .Values.issuer.config.backend.kubernetes.principals.labelSelectorKey }}
-            - name: BOXER__BACKEND__KUBERNETES__PRINCIPAL_REPOSITORY__LABEL_SELECTOR_VALUE
-              value: {{ .Values.issuer.config.backend.kubernetes.principals.labelSelectorValue }}
-{{/*            schema repository settings*/}}
-            - name: BOXER__BACKEND__KUBERNETES__SCHEMA_REPOSITORY__LABEL_SELECTOR_KEY
-              value: {{ .Values.issuer.config.backend.kubernetes.schemas.labelSelectorKey }}
-            - name: BOXER__BACKEND__KUBERNETES__SCHEMA_REPOSITORY__LABEL_SELECTOR_VALUE
-              value: {{ .Values.issuer.config.backend.kubernetes.schemas.labelSelectorValue }}
-{{/*            principal association repository settings*/}}
-            - name: BOXER__BACKEND__KUBERNETES__PRINCIPAL_ASSOCIATION_REPOSITORY__LABEL_SELECTOR_KEY
-              value: {{ .Values.issuer.config.backend.kubernetes.principalAssociations.labelSelectorKey }}
-            - name: BOXER__BACKEND__KUBERNETES__PRINCIPAL_ASSOCIATION_REPOSITORY__LABEL_SELECTOR_VALUE
-              value: {{ .Values.issuer.config.backend.kubernetes.principalAssociations.labelSelectorValue }}
+              value: {{ (default .Release.Namespace .Values.issuer.config.backend.kubernetes.namespace) | quote }}
+            - name: BOXER__BACKEND__KUBERNETES__OPERATION_TIMEOUT
+              value: {{ (default .Release.Namespace .Values.issuer.config.backend.kubernetes.operationTimeout) | quote }}
+            - name: BOXER__BACKEND__KUBERNETES__RESOURCE_OWNER_LABEL
+              value: {{ (default (include "app.fullname" .) .Values.issuer.config.backend.kubernetes.resourceOwnerLabel) | quote }}
           {{- end }}
         {{- if .Values.datadog.enabled }}
             - name: DATADOG__API_KEY
