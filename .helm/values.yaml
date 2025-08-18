@@ -214,7 +214,7 @@ issuer:
     listenIp: ""
 
     # The port on which the application listens for HTTP requests
-    port: 8080
+    port: 80
 
     # The instance name for the issuer
     # Used to generate the lease name and other instance-specific settings
