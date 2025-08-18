@@ -168,47 +168,6 @@ rbac:
       nameOverride: ""
       roleNameOverride: ""
 
-    actionDiscoveryViewer:
-      create: true
-      additionalLabels: { }
-      additionalAnnotations: { }
-      nameOverride: ""
-      roleNameOverride: ""
-
-    actionDiscoveryEditor:
-      create: true
-      additionalLabels: { }
-      additionalAnnotations: { }
-      nameOverride: ""
-      roleNameOverride: ""
-
-    resourceDiscoveryViewer:
-      create: true
-      additionalLabels: { }
-      additionalAnnotations: { }
-      nameOverride: ""
-      roleNameOverride: ""
-
-    resourceDiscoveryEditor:
-      create: true
-      additionalLabels: { }
-      additionalAnnotations: { }
-      nameOverride: ""
-      roleNameOverride: ""
-
-    policySetViewer:
-      create: true
-      additionalLabels: { }
-      additionalAnnotations: { }
-      nameOverride: ""
-      roleNameOverride: ""
-
-    policySetEditor:
-      create: true
-      additionalLabels: { }
-      additionalAnnotations: { }
-      nameOverride: ""
-      roleNameOverride: ""
 
 # The Boxer Issuer configuration
 issuer:
