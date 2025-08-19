@@ -9,7 +9,12 @@ use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/identity/", request_body = ExternalIdentityRegistrationRequest, responses((status = OK)))]
+#[utoipa::path(context_path = "/identity/",
+    request_body = ExternalIdentityRegistrationRequest,
+    responses(
+        (status = OK)
+    )
+)]
 #[post("{identity_provider}/{id}")]
 pub async fn post_identity(
     params: Path<(String, String)>,
@@ -23,7 +28,12 @@ pub async fn post_identity(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[utoipa::path(context_path = "/identity/", responses((status = OK, body = ExternalIdentityRegistration)))]
+#[utoipa::path(context_path = "/identity/",
+    responses(
+        (status = OK, body = ExternalIdentityRegistration),
+        (status = NOT_FOUND, description = "Identity does not exist")
+    )
+)]
 #[get("{identity_provider}/{id}")]
 pub async fn get_identity(
     params: Path<(String, String)>,
@@ -33,7 +43,11 @@ pub async fn get_identity(
     Ok(Json(eid))
 }
 
-#[utoipa::path(context_path = "/identity/", responses((status = OK)))]
+#[utoipa::path(context_path = "/identity/",
+    responses(
+        (status = OK)
+    )
+)]
 #[delete("{identity_provider}/{id}")]
 pub async fn delete_identity(
     params: Path<(String, String)>,

@@ -12,7 +12,12 @@ use serde_json::Value;
 use std::str::FromStr;
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/principal/", request_body = Value, responses((status = OK, body = PrincipalCreateResponse)))]
+#[utoipa::path(context_path = "/principal/",
+    request_body = Value,
+    responses(
+        (status = OK, body = PrincipalCreateResponse),
+    )
+)]
 #[post("{schema}")]
 async fn post_principal(
     schema_id: Path<String>,
@@ -34,7 +39,12 @@ async fn post_principal(
     Ok(Json(response))
 }
 
-#[utoipa::path(context_path = "/principal/", responses((status = OK, body = Value)))]
+#[utoipa::path(context_path = "/principal/",
+    responses(
+        (status = OK, body = Value),
+        (status = NOT_FOUND, description = "Principal does not exist")
+    )
+)]
 #[get("{schema}/{id}")]
 async fn get_principal(path: Path<(String, String)>, data: Data<Arc<PrincipalRepository>>) -> Result<impl Responder> {
     let (schema, id) = path.into_inner();

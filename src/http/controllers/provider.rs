@@ -9,7 +9,11 @@ use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/identity_provider/", responses((status = OK)))]
+#[utoipa::path(context_path = "/identity_provider/",
+    responses(
+        (status = OK),
+    )
+)]
 #[post("oidc/{id}")]
 pub async fn post_provider(
     id: Path<String>,
@@ -29,14 +33,22 @@ pub async fn post_provider(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[utoipa::path(context_path = "/identity_provider/", responses((status = OK, body = OidcIdentityProviderRegistration)))]
+#[utoipa::path(context_path = "/identity_provider/",
+    responses(
+        (status = OK, body = OidcIdentityProviderRegistration),
+        (status = NOT_FOUND, description = "Identity provider does not exist")
+    )
+)]
 #[get("oidc/{id}")]
 pub async fn get_provider(id: Path<String>, data: Data<Arc<IdentityProviderRepository>>) -> Result<impl Responder> {
     let eid = data.get(id.into_inner()).await?;
     Ok(Json(eid.oidc))
 }
-
-#[utoipa::path(context_path = "/identity_provider/", responses((status = OK)))]
+#[utoipa::path(context_path = "/identity_provider/",
+    responses(
+        (status = OK)
+    )
+)]
 #[delete("oidc/{id}")]
 pub async fn delete_provider(id: Path<String>, data: Data<Arc<IdentityProviderRepository>>) -> Result<HttpResponse> {
     data.delete(id.into_inner()).await?;

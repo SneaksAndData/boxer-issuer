@@ -1,7 +1,7 @@
 # Application settings
 instance_name = "integration-tests"
 
-listen_address = "127.0.0.1:8080" # Address to listen on
+listen_address = "127.0.0.1:8888" # Address to listen on
 
 # Initialization settings
 [init]

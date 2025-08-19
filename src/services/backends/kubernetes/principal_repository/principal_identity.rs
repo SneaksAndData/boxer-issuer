@@ -1,5 +1,5 @@
 use crate::services::backends::kubernetes::principal_repository::cedar_entity_document::CedarEntityDocument;
-use boxer_core::services::backends::kubernetes::repositories::TryIntoObjectRef;
+use boxer_core::services::backends::kubernetes::repositories::try_into_object_ref::TryIntoObjectRef;
 use cedar_policy::EntityUid;
 use kube::runtime::reflector::ObjectRef;
 

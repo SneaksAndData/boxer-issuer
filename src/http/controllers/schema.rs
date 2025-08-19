@@ -6,7 +6,12 @@ use cedar_policy::SchemaFragment;
 use serde_json::Value;
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/schema/", request_body = Value, responses((status = OK)))]
+#[utoipa::path(context_path = "/schema/",
+    request_body = Value,
+    responses(
+        (status = OK),
+    )
+)]
 #[post("{id}")]
 async fn post_schema(
     id: Path<String>,
@@ -19,7 +24,12 @@ async fn post_schema(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[utoipa::path(context_path = "/schema/", responses((status = OK, body = Value)))]
+#[utoipa::path(context_path = "/schema/",
+    responses(
+        (status = OK, body = Value),
+        (status = NOT_FOUND, description = "Schema does not exist")
+    )
+)]
 #[get("{id}")]
 async fn get_schema(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Result<impl Responder> {
     let schema = data.get(id.to_string()).await?;
@@ -29,7 +39,11 @@ async fn get_schema(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Resu
     Ok(Json(result))
 }
 
-#[utoipa::path(context_path = "/schema/", responses((status = OK)))]
+#[utoipa::path(context_path = "/schema/",
+    responses(
+        (status = OK)
+    )
+)]
 #[delete("{id}")]
 async fn delete_schema(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Result<HttpResponse> {
     data.delete(id.to_string()).await?;
