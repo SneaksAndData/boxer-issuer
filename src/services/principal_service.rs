@@ -45,4 +45,12 @@ impl PrincipalService {
         let entity = self.principals.get(pid).await?;
         Ok(Principal::new(entity, schema_id))
     }
+
+    pub async fn get_validator_schema(&self, external_identity: ExternalIdentity) -> Result<String, anyhow::Error> {
+        let registration = self
+            .identities
+            .get((external_identity.identity_provider, external_identity.user_id))
+            .await?;
+        Ok(registration.validator_schema)
+    }
 }

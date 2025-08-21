@@ -29,6 +29,7 @@ pub struct ExternalIdentityDocumentSpec {
     pub id: String,
     pub identity_provider: String,
     pub principal_ref: PrincipalReference,
+    pub validator_schema_id: String,
 }
 
 impl UpdateLabels for ExternalIdentityDocument {
@@ -47,6 +48,7 @@ impl Into<ExternalIdentityRegistration> for ExternalIdentityDocumentSpec {
             identity_provider: self.identity_provider,
             principal_id: self.principal_ref.principal,
             principal_schema: self.principal_ref.schema,
+            validator_schema: self.validator_schema_id,
         }
     }
 }
@@ -91,6 +93,7 @@ impl ToResource<ExternalIdentityDocument> for ExternalIdentityRegistration {
                     principal: self.principal_id.clone(),
                     schema: self.principal_schema.clone(),
                 },
+                validator_schema_id: self.validator_schema.clone(),
             },
         })
     }
@@ -105,6 +108,7 @@ impl TryFromResource<ExternalIdentityDocument> for ExternalIdentityRegistration 
             identity_provider: resource.spec.identity_provider.clone(),
             principal_id: resource.spec.principal_ref.principal.clone(),
             principal_schema: resource.spec.principal_ref.schema.clone(),
+            validator_schema: resource.spec.validator_schema_id.clone(),
         })
     }
 }

@@ -555,7 +555,6 @@ dependencies = [
  "actix-web",
  "anyhow",
  "async-trait",
- "base64 0.22.1",
  "boxer_core",
  "cedar-policy",
  "config",
@@ -580,15 +579,17 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.7#59075d328c980a32c3219b97aa3bc3818d761404"
 dependencies = [
  "actix-web",
  "anyhow",
  "assert_matches",
  "async-trait",
+ "base64 0.22.1",
  "cedar-policy",
  "duration-string",
  "futures",
+ "futures-util",
+ "jwt",
  "k8s-openapi",
  "kube",
  "log",

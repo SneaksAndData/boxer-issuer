@@ -11,4 +11,7 @@ pub struct ExternalIdentityRegistrationRequest {
 
     /// The schema of the principal associated with the external identity
     pub principal_schema: String,
+
+    /// The schema ID used fot token validation
+    pub validator_schema: String,
 }
