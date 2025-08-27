@@ -56,7 +56,7 @@ spec:
             - name: BOXER__INSTANCE_NAME
               value: {{ .Values.issuer.config.instanceName | default .Release.Name | lower }}
             - name: BOXER__LISTEN_ADDRESS
-              value: {{ (default "127.0.0.1" .Values.issuer.config.listenIp) }}:{{ .Values.issuer.config.port }}
+              value: "{{ (default "127.0.0.1" .Values.issuer.config.listenIp) }}:{{ .Values.issuer.config.port }}"
             - name: BOXER__INIT__BACKEND_TYPE
               value: {{ .Values.issuer.config.backend.type | default .Release.Name }}
             - name: BOXER__BACKEND__KUBERNETES__EXEC
