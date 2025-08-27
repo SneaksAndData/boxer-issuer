@@ -24,10 +24,17 @@ use crate::services::identity_validator_provider::ExternalIdentityValidatorProvi
 use crate::services::principal_service::PrincipalService;
 use anyhow::Result;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
+use boxer_core::services::observability::composed_logger::ComposedLogger;
+use boxer_core::services::observability::open_telemetry;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    env_logger::init();
+    ComposedLogger::new()
+        // .with_logger(open_telemetry::logging::init_logger()?)
+        .with_logger(Box::new(env_logger::Builder::from_default_env().build()))
+        .with_global_level(log::LevelFilter::Info)
+        .init()?;
+
     let cm = AppSettings::new()?;
     info!("Configuration manager started");
 
@@ -52,7 +59,7 @@ async fn main() -> Result<()> {
         cm.get_signing_key(),
     ));
 
-    info!("listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
+    info!(host:? = &cm.listen_address.ip(); "listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
