@@ -25,7 +25,6 @@ use crate::services::principal_service::PrincipalService;
 use anyhow::Result;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
-use boxer_core::services::observability::open_telemetry;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
