@@ -16,6 +16,9 @@ use std::sync::Arc;
     request_body = Value,
     responses(
         (status = OK, body = PrincipalCreateResponse),
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[post("{schema}")]
@@ -43,6 +46,9 @@ async fn post_principal(
     responses(
         (status = OK, body = Value),
         (status = NOT_FOUND, description = "Principal does not exist")
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[get("{schema}/{id}")]

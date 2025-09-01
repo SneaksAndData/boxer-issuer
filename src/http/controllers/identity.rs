@@ -13,6 +13,9 @@ use std::sync::Arc;
     request_body = ExternalIdentityRegistrationRequest,
     responses(
         (status = OK)
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[post("{identity_provider}/{id}")]
@@ -32,6 +35,9 @@ pub async fn post_identity(
     responses(
         (status = OK, body = ExternalIdentityRegistration),
         (status = NOT_FOUND, description = "Identity does not exist")
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[get("{identity_provider}/{id}")]
@@ -46,6 +52,9 @@ pub async fn get_identity(
 #[utoipa::path(context_path = "/identity/",
     responses(
         (status = OK)
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[delete("{identity_provider}/{id}")]

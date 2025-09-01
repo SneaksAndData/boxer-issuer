@@ -12,6 +12,9 @@ use std::sync::Arc;
 #[utoipa::path(context_path = "/identity_provider/",
     responses(
         (status = OK),
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[post("oidc/{id}")]
@@ -37,6 +40,9 @@ pub async fn post_provider(
     responses(
         (status = OK, body = OidcIdentityProviderRegistration),
         (status = NOT_FOUND, description = "Identity provider does not exist")
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[get("oidc/{id}")]
@@ -47,6 +53,9 @@ pub async fn get_provider(id: Path<String>, data: Data<Arc<IdentityProviderRepos
 #[utoipa::path(context_path = "/identity_provider/",
     responses(
         (status = OK)
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[delete("oidc/{id}")]
