@@ -1,4 +1,5 @@
 use crate::services::backends::base::BackendType;
+use boxer_core::services::observability::open_telemetry::settings::OpenTelemetrySettings;
 use duration_string::DurationString;
 use serde::Deserialize;
 use std::net::SocketAddr;
@@ -29,4 +30,5 @@ pub struct AppSettings {
     pub listen_address: SocketAddr,
     pub init: InitializationSettings,
     pub backend: BackendSettings,
+    pub opentelemetry: OpenTelemetrySettings,
 }

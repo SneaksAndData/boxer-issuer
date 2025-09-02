@@ -565,6 +565,7 @@ dependencies = [
  "cedar-policy",
  "config",
  "duration-string",
+ "env_filter",
  "env_logger",
  "hmac",
  "jwt",
@@ -585,7 +586,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.9#6bb3c117b6bd1200e44153829287a2433364e1df"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=configurable-telemetry#9231aa89d79f328c43e038c6726c0338925e13be"
 dependencies = [
  "actix-web",
  "anyhow",
@@ -594,6 +595,7 @@ dependencies = [
  "base64 0.22.1",
  "cedar-policy",
  "duration-string",
+ "env_filter",
  "futures",
  "futures-util",
  "jwt",

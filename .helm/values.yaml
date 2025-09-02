@@ -254,28 +254,15 @@ issuer:
         # The operation timeout in seconds
         resourceOwnerLabel: ""
 
-# Observability settings for Datadog
-datadog:
+# Observability settings for OpenTelemetry
+openTelemetry:
 
   # if enabled, will set Datadog-specific environment variables on the container
   enabled: false
 
-  # Datadog endpoint to sink logs to
-  endpoint: "datadoghq.eu"
-
-  # Name for a Secret resource that contains Datadog API Key to use for log submissions
-  apiKeySecret: "secretName"
-
-  # Key in the secret that contains datadog api key
-  apiKeySecretKey: "secretKey"
-
-  # Datadog Service Name parameter
-  serviceName: "boxer-issuer"
-
-  # value to use as a DogStatsd server url
-  # Examples: udp://127.0.0.1:8125 or unix:///path/to/dsd.socket
-  # https://github.com/DataDog/datadog-go?tab=readme-ov-file#unix-domain-sockets-client
-  statsdUrl: unix:///var/run/datadog/dsd.socket
+  # Value to use as GRPC endpoint for OpenTelemetry export
+  # Defaults to
+  grpcEndpoint: ""
 
   # enables metric origin detection by setting DD_ENTITY_ID
   enableOriginDetection: true

@@ -25,16 +25,36 @@ use crate::services::principal_service::PrincipalService;
 use anyhow::Result;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
+use boxer_core::services::observability::open_telemetry;
+use env_filter::Builder;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    ComposedLogger::new()
-        // .with_logger(open_telemetry::logging::init_logger()?)
-        .with_logger(Box::new(env_logger::Builder::from_default_env().build()))
-        .with_global_level(log::LevelFilter::Info)
-        .init()?;
+    let mut builder = Builder::new();
+
+    let filter = if let Ok(ref filter) = std::env::var("RUST_LOG") {
+        builder.parse(filter);
+        builder.build()
+    } else {
+        Builder::default().parse("info").build()
+    };
 
     let cm = AppSettings::new()?;
+
+    let logger = ComposedLogger::new();
+    let logger = {
+        if cm.opentelemetry.log_settings.enabled {
+            logger.with_logger(open_telemetry::logging::init_logger()?)
+        } else {
+            logger
+        }
+    };
+
+    logger
+        .with_logger(Box::new(env_logger::Builder::from_default_env().build()))
+        .with_global_level(filter)
+        .init()?;
+
     info!("Configuration manager started");
 
     let current_backend = load_backend(cm.get_backend_type(), &cm).await?;
