@@ -261,13 +261,30 @@ openTelemetry:
   enabled: false
 
   # Value to use as GRPC endpoint for OpenTelemetry export
-  # Defaults to TODO: add default value
+  # Defaults to current node port 4317 if not set
   grpcEndpoint: ""
 
   # Value to use as GRPC endpoint for OpenTelemetry export
-  # Defaults to TODO: add default value
+  # Defaults to Chart name or nameOverride if set
   serviceName: ""
 
+  # Enable OpenTelemetry logging
+  logs:
+
+    # Set to true to enable OpenTelemetry logging
+    enabled: "false"
+
+  # Enable OpenTelemetry metrics
+  metrics:
+
+    # Set to true to enable OpenTelemetry metrics
+    enabled: "false"
+
+  # Enable OpenTelemetry tracing
+  tracing:
+
+    # Set to true to enable OpenTelemetry tracing
+    enabled: ""
 
 
 

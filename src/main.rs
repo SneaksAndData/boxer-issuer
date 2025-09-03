@@ -26,6 +26,8 @@ use anyhow::Result;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry;
+use boxer_core::services::observability::open_telemetry::metrics::init_metrics;
+use boxer_core::services::observability::open_telemetry::tracing::init_tracer;
 use env_filter::Builder;
 
 #[actix_web::main]
@@ -56,6 +58,16 @@ async fn main() -> Result<()> {
         .init()?;
 
     info!("Configuration manager started");
+
+    if cm.opentelemetry.tracing_settings.enabled {
+        info!("Tracing is enabled, starting tracer...");
+        init_tracer()?;
+    }
+
+    if cm.opentelemetry.metrics_settings.enabled {
+        info!("Metrics is enabled, starting metrics...");
+        init_metrics()?;
+    }
 
     let current_backend = load_backend(cm.get_backend_type(), &cm).await?;
 

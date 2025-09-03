@@ -73,10 +73,25 @@ spec:
               value: {{ (default (include "app.fullname" .) .Values.issuer.config.backend.kubernetes.resourceOwnerLabel) | quote }}
           {{- end }}
           {{- if .Values.openTelemetry.enabled }}
+            {{- if .Values.openTelemetry.grpcEndpoint }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: {{ .Values.openTelemetry.grpcEndpoint | quote }}
+            {{else}}
+            - name: OTEL_EXPORTER_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://$(OTEL_EXPORTER_HOST):4317"
+            {{- end }}
             - name: OTEL_SERVICE_NAME
               value: {{ (default (include "app.name" .) .Values.openTelemetry.serviceName) | quote }}
+            - name: BOXER__OPENTELEMETRY__LOG_SETTINGS__ENABLED
+              value: {{ .Values.openTelemetry.logs.enabled | default "false" | quote }}
+            - name: BOXER__OPENTELEMETRY__METRICS_SETTINGS__ENABLED
+              value: {{ .Values.openTelemetry.logs.enabled | default "false" | quote }}
+            - name: BOXER__OPENTELEMETRY__TRACING_SETTINGS__ENABLED
+              value: {{ .Values.openTelemetry.logs.enabled | default "false" | quote }}
           {{- end }}
         {{- with .Values.extraEnv }}
           {{ toYaml . | nindent 12 }}
