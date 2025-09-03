@@ -29,6 +29,7 @@ use boxer_core::services::observability::open_telemetry;
 use boxer_core::services::observability::open_telemetry::metrics::init_metrics;
 use boxer_core::services::observability::open_telemetry::tracing::init_tracer;
 use env_filter::Builder;
+use opentelemetry_instrumentation_actix_web::RequestTracing;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -93,6 +94,7 @@ async fn main() -> Result<()> {
     info!(host:? = &cm.listen_address.ip(); "listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
     HttpServer::new(move || {
         App::new()
+            .wrap(RequestTracing::new())
             .wrap(Logger::default())
             .app_data(Data::new(token_provider.clone()))
             .app_data(Data::new(principal_service.clone()))
