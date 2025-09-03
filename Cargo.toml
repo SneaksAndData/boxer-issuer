@@ -21,7 +21,7 @@ cedar-policy = "4.4.0"
 config = "0.15.11"
 serde_yml = "0.0.12"
 #boxer_core = { path = "../boxer-core/" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", branch = "configurable-telemetry" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.10" }
 schemars = "0.8.6"
 duration-string = "0.5.2"
 env_filter = "0.1.3"
@@ -37,4 +37,4 @@ opentelemetry = "0.30.0"
 [dev-dependencies]
 rstest = "0.25.0"
 #boxer_core = { path = "../boxer-core/", features = ["testing"] }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", branch = "configurable-telemetry" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.10" }

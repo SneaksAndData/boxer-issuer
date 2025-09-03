@@ -588,7 +588,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=configurable-telemetry#9231aa89d79f328c43e038c6726c0338925e13be"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.10#4c5f8e5025766d2c198dbe3f304f66624e3cbec8"
 dependencies = [
  "actix-web",
  "anyhow",
