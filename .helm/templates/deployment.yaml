@@ -76,7 +76,7 @@ spec:
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: {{ .Values.openTelemetry.grpcEndpoint | quote }}
             - name: OTEL_SERVICE_NAME
-              value: {{ (default (include "app.name") .Values.openTelemetry.serviceName) | quote }} # TODO: add default value
+              value: {{ (default (include "app.name" .) .Values.openTelemetry.serviceName) | quote }}
           {{- end }}
         {{- with .Values.extraEnv }}
           {{ toYaml . | nindent 12 }}
