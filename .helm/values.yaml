@@ -261,11 +261,13 @@ openTelemetry:
   enabled: false
 
   # Value to use as GRPC endpoint for OpenTelemetry export
-  # Defaults to
+  # Defaults to TODO: add default value
   grpcEndpoint: ""
 
-  # enables metric origin detection by setting DD_ENTITY_ID
-  enableOriginDetection: true
+  # Value to use as GRPC endpoint for OpenTelemetry export
+  # Defaults to TODO: add default value
+  serviceName: ""
+
 
 
 
