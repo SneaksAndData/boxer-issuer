@@ -12,8 +12,7 @@ use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::http::controllers::token::token;
-use crate::http::controllers::{identity, principal, provider, schema};
+use crate::http::controllers::v1;
 use crate::http::openapi::ApiDoc;
 use crate::services::backends::base::load_backend;
 use crate::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
@@ -106,11 +105,7 @@ async fn main() -> Result<()> {
             .app_data(Data::new(entities_repository.clone()))
             .app_data(Data::new(identity_provider_repository.clone()))
             .app_data(Data::new(audit_service.clone()))
-            .service(token)
-            .service(identity::crud())
-            .service(schema::crud())
-            .service(principal::crud())
-            .service(provider::crud())
+            .service(v1::urls())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
     .bind(cm.listen_address.clone())?

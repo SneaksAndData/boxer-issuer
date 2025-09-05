@@ -1,4 +1,4 @@
-use crate::http::controllers::identity::external_identity_registration_request::ExternalIdentityRegistrationRequest;
+use crate::http::controllers::v1::identity::external_identity_registration_request::ExternalIdentityRegistrationRequest;
 use boxer_core::services::audit::audit_facade::to_audit_record::ToAuditRecord;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;

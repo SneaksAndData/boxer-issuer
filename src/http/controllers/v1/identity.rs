@@ -1,8 +1,8 @@
 pub mod external_identity_registration;
 mod external_identity_registration_request;
 
-use crate::http::controllers::identity::external_identity_registration::ExternalIdentityRegistration;
-use crate::http::controllers::identity::external_identity_registration_request::ExternalIdentityRegistrationRequest;
+use crate::http::controllers::v1::identity::external_identity_registration::ExternalIdentityRegistration;
+use crate::http::controllers::v1::identity::external_identity_registration_request::ExternalIdentityRegistrationRequest;
 use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};

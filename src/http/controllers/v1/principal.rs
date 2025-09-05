@@ -1,6 +1,6 @@
 mod principal_create_response;
 
-use crate::http::controllers::principal::principal_create_response::PrincipalCreateResponse;
+use crate::http::controllers::v1::principal::principal_create_response::PrincipalCreateResponse;
 use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
 use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
 use actix_web::dev::HttpServiceFactory;

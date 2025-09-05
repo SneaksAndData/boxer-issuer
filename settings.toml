@@ -16,3 +16,13 @@ in_cluster = false                       # Whether to run in-cluster or not
 namespace = "default"                    # Kubernetes namespace
 operation_timeout = "30s"                # Timeout for operations on the actions repository
 resource_owner_label = "local.debug"     # Label to identify resources created by this instance
+
+[opentelemetry.log_settings]
+enabled = false
+
+[opentelemetry.metrics_settings]
+enabled = false
+
+[opentelemetry.tracing_settings]
+enabled = false
+

@@ -1,4 +1,4 @@
-use crate::http::controllers::identity::external_identity_registration::ExternalIdentityRegistration;
+use crate::http::controllers::v1::identity::external_identity_registration::ExternalIdentityRegistration;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
 use boxer_core::services::backends::kubernetes::repositories::{SoftDeleteResource, ToResource, TryFromResource};
