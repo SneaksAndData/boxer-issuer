@@ -22,14 +22,11 @@ impl AppSettings {
 #[async_trait]
 impl InitializationConfigurationManager for AppSettings {
     fn get_signing_key(&self) -> Arc<Vec<u8>> {
-        Arc::new(
-            vec!["-----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEYzktXu5jghaKX/x3lPMAQXc4goj1
-odFzkY6hO4dscDCrcTmVaQYS7xUgC5V7+tLZRQk2WfppAQFd7MhuUz6N+w==
------END PUBLIC KEY-----"
-                .as_bytes()]
-            .concat(),
-        )
+        Arc::new(self.signature.key.clone())
+    }
+
+    fn get_key_id(&self) -> String {
+        self.signature.key_id.clone()
     }
 
     fn get_backend_type(&self) -> BackendType {

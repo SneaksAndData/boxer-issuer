@@ -90,6 +90,7 @@ async fn main() -> Result<()> {
         validator_provider.clone(),
         principal_service.clone(),
         cm.get_signing_key(),
+        cm.get_key_id(),
     ));
 
     let audit_service: Arc<dyn AuditService> = Arc::new(LogAuditService::new());

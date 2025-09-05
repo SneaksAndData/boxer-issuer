@@ -26,3 +26,7 @@ enabled = false
 [opentelemetry.tracing_settings]
 enabled = false
 
+[signature]
+key_id = "1"
+key = "0123456789ABCDEF0123456789ABCDEF"
+

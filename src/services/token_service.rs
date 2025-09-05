@@ -5,7 +5,7 @@ use crate::services::principal_service::PrincipalService;
 use async_trait::async_trait;
 use boxer_core::contracts::internal_token::v1::TokenBuilder;
 use hmac::Mac;
-use josekit::jwe::{JweHeader, ECDH_ES};
+use josekit::jwe::{Dir, JweHeader};
 use josekit::jwt;
 use josekit::jwt::JwtPayload;
 use std::sync::Arc;
@@ -24,6 +24,7 @@ pub struct TokenService {
     validators: Arc<dyn ExternalIdentityValidatorProvider + Send + Sync>,
     principal_service: Arc<PrincipalService>,
     encrypt_secret: Arc<Vec<u8>>,
+    key_id: String,
 }
 
 #[async_trait]
@@ -52,8 +53,9 @@ impl TokenProvider for TokenService {
 
         let mut header = JweHeader::new();
         header.set_token_type("JWT");
-        header.set_content_encryption("A128CBC-HS256");
-        let encrypter = ECDH_ES.encrypter_from_pem(&*self.encrypt_secret)?;
+        header.set_key_id(&self.key_id);
+
+        let encrypter = Dir.encrypter_from_bytes(&*self.encrypt_secret)?;
         jwt::encode_with_encrypter(&payload, &header, &encrypter).map_err(|e| anyhow::anyhow!(e))
     }
 }
@@ -63,11 +65,13 @@ impl TokenService {
         validators: Arc<dyn ExternalIdentityValidatorProvider + Send + Sync>,
         principal_service: Arc<PrincipalService>,
         encrypt_secret: Arc<Vec<u8>>,
+        key_id: String,
     ) -> Self {
         TokenService {
             validators,
             principal_service,
             encrypt_secret,
+            key_id,
         }
     }
 }

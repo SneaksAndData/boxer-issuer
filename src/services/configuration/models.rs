@@ -25,10 +25,17 @@ pub struct BackendSettings {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct SignatureSettings {
+    pub key_id: String,
+    pub key: Vec<u8>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct AppSettings {
     pub instance_name: String,
     pub listen_address: SocketAddr,
     pub init: InitializationSettings,
     pub backend: BackendSettings,
     pub opentelemetry: OpenTelemetrySettings,
+    pub signature: SignatureSettings,
 }
