@@ -22,7 +22,14 @@ impl AppSettings {
 #[async_trait]
 impl InitializationConfigurationManager for AppSettings {
     fn get_signing_key(&self) -> Arc<Vec<u8>> {
-        Arc::new(vec!["dummy-secret".as_bytes()].concat())
+        Arc::new(
+            vec!["-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEYzktXu5jghaKX/x3lPMAQXc4goj1
+odFzkY6hO4dscDCrcTmVaQYS7xUgC5V7+tLZRQk2WfppAQFd7MhuUz6N+w==
+-----END PUBLIC KEY-----"
+                .as_bytes()]
+            .concat(),
+        )
     }
 
     fn get_backend_type(&self) -> BackendType {
