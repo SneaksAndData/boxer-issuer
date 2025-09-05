@@ -43,7 +43,7 @@ impl PrincipalService {
         let schema_id = registration.principal_schema.clone();
         let pid = PrincipalIdentity::new(registration.principal_schema, uid);
         let entity = self.principals.get(pid).await?;
-        Ok(Principal::new(entity, schema_id))
+        Ok(Principal::new(entity.into(), schema_id))
     }
 
     pub async fn get_validator_schema(&self, external_identity: ExternalIdentity) -> Result<String, anyhow::Error> {

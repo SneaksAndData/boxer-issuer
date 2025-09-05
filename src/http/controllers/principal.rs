@@ -37,7 +37,7 @@ async fn post_principal(
         .map_err(actix_web::error::ErrorInternalServerError)?;
     let uid = entity.uid().to_string();
     let principal_identity = PrincipalIdentity::new(schema_id.clone(), entity.uid());
-    principals_repository.upsert(principal_identity, entity).await?;
+    principals_repository.upsert(principal_identity, entity.into()).await?;
     let response = PrincipalCreateResponse { uid: uid.to_string() };
     Ok(Json(response))
 }
@@ -56,7 +56,7 @@ async fn get_principal(path: Path<(String, String)>, data: Data<Arc<PrincipalRep
     let (schema, id) = path.into_inner();
     let id = EntityUid::from_str(&id).map_err(actix_web::error::ErrorBadRequest)?;
     let principal_identity = PrincipalIdentity::new(schema, id);
-    let principal = data.get(principal_identity).await?;
+    let principal: Entity = data.get(principal_identity).await?.into();
     let json = principal
         .to_json_value()
         .map_err(actix_web::error::ErrorInternalServerError)?;

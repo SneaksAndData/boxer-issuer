@@ -23,6 +23,7 @@ use crate::services::configuration::models::AppSettings;
 use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use crate::services::principal_service::PrincipalService;
 use anyhow::Result;
+use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry;
@@ -91,6 +92,8 @@ async fn main() -> Result<()> {
         cm.get_signing_key(),
     ));
 
+    let audit_service = Arc::new(LogAuditService::new());
+
     info!(host:? = &cm.listen_address.ip(); "listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
     HttpServer::new(move || {
         App::new()
@@ -102,6 +105,7 @@ async fn main() -> Result<()> {
             .app_data(Data::new(schemas_repository.clone()))
             .app_data(Data::new(entities_repository.clone()))
             .app_data(Data::new(identity_provider_repository.clone()))
+            .app_data(Data::new(audit_service.clone()))
             .service(token)
             .service(identity::crud())
             .service(schema::crud())

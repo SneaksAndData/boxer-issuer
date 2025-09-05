@@ -13,6 +13,8 @@ use crate::services::configuration::models::{BackendSettings, KubernetesBackendS
 use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
+use boxer_core::services::audit::audit_facade::WithAuditFacade;
+use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::from_cluster;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::object_owner_mark::ObjectOwnerMark;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
@@ -145,7 +147,8 @@ impl BackendConfiguration for KubernetesBackend {
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?;
+        .await?
+        .with_audit(Arc::new(LogAuditService::new()));
 
         let principal_repository = Self::create_repository(
             &settings.namespace,
@@ -153,7 +156,8 @@ impl BackendConfiguration for KubernetesBackend {
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?;
+        .await?
+        .with_audit(Arc::new(LogAuditService::new()));
 
         let schemas_repository = Self::create_repository(
             &settings.namespace,
@@ -161,7 +165,8 @@ impl BackendConfiguration for KubernetesBackend {
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?;
+        .await?
+        .with_audit(Arc::new(LogAuditService::new()));
 
         let identity_provider_repository = Self::create_repository(
             &settings.namespace,
@@ -169,7 +174,8 @@ impl BackendConfiguration for KubernetesBackend {
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?;
+        .await?
+        .with_audit(Arc::new(LogAuditService::new()));
 
         let validator_provider = KubernetesValidatorProvider::new(identity_provider_repository.clone());
 
