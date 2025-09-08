@@ -13,4 +13,7 @@ pub trait InitializationConfigurationManager {
 
     /// Retrieves the backend type for the application.
     fn get_backend_type(&self) -> BackendType;
+
+    fn get_audience(&self) -> String;
+    fn get_issuer(&self) -> String;
 }

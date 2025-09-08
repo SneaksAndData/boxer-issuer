@@ -91,6 +91,8 @@ async fn main() -> Result<()> {
         principal_service.clone(),
         cm.get_signing_key(),
         cm.get_key_id(),
+        cm.get_audience(),
+        cm.get_issuer(),
     ));
 
     let audit_service: Arc<dyn AuditService> = Arc::new(LogAuditService::new());
