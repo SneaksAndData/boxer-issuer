@@ -41,6 +41,6 @@ impl InitializationConfigurationManager for AppSettings {
         self.token_issuer.clone()
     }
     fn get_content_encryption(&self) -> String {
-        self.content_encryption.clone()
+        self.signature.content_encryption.clone()
     }
 }
