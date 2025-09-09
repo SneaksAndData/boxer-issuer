@@ -29,6 +29,8 @@ enabled = false
 enabled = false
 
 [signature]
-key_id = "1"
+# The settings below provided for testing purposes only
+key_id = "public"
 key = "0123456789ABCDEF0123456789ABCDEF"
+encryption = "A128CBC-HS256"
 

@@ -93,6 +93,7 @@ async fn main() -> Result<()> {
         cm.get_key_id(),
         cm.get_audience(),
         cm.get_issuer(),
+        cm.get_content_encryption(),
     ));
 
     let audit_service: Arc<dyn AuditService> = Arc::new(LogAuditService::new());

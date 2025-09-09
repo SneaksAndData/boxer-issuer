@@ -40,4 +40,7 @@ impl InitializationConfigurationManager for AppSettings {
     fn get_issuer(&self) -> String {
         self.token_issuer.clone()
     }
+    fn get_content_encryption(&self) -> String {
+        self.content_encryption.clone()
+    }
 }

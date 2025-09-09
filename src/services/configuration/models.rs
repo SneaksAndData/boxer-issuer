@@ -40,4 +40,5 @@ pub struct AppSettings {
     pub signature: SignatureSettings,
     pub token_audience: String,
     pub token_issuer: String,
+    pub content_encryption: String,
 }

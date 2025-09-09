@@ -26,6 +26,7 @@ pub struct TokenService {
     audience: String,
     key_id: String,
     issuer: String,
+    content_encryption: String,
 }
 
 #[async_trait]
@@ -56,7 +57,7 @@ impl TokenProvider for TokenService {
         header.set_token_type("JWT");
         header.set_audience(vec![self.audience.as_str()]);
         header.set_issuer(self.issuer.clone());
-        header.set_content_encryption("A128CBC-HS256");
+        header.set_content_encryption(&self.content_encryption);
         header.set_key_id(&self.key_id);
 
         let encrypter = Dir.encrypter_from_bytes(&*self.encrypt_secret)?;
@@ -72,6 +73,7 @@ impl TokenService {
         key_id: String,
         audience: String,
         issuer: String,
+        content_encryption: String,
     ) -> Self {
         TokenService {
             validators,
@@ -80,6 +82,7 @@ impl TokenService {
             key_id,
             audience,
             issuer,
+            content_encryption,
         }
     }
 }
