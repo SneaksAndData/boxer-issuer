@@ -2,8 +2,6 @@
 instance_name = "integration-tests"
 
 listen_address = "127.0.0.1:8888" # Address to listen on
-token_audience = "boxer.sneaksanddata.com" # Expected audience for tokens
-token_issuer = "boxer.sneaksanddata.com" # Expected audience for tokens
 
 # Initialization settings
 [init]
@@ -33,4 +31,6 @@ enabled = false
 key_id = "public"
 key = "0123456789ABCDEF0123456789ABCDEF"
 content_encryption = "A128CBC-HS256"
+audience = "boxer.sneaksanddata.com" # Expected audience for tokens
+issuer = "boxer.sneaksanddata.com" # Expected audience for tokens
 
