@@ -71,6 +71,16 @@ spec:
               value: {{ (default .Release.Namespace .Values.issuer.config.backend.kubernetes.operationTimeout) | quote }}
             - name: BOXER__BACKEND__KUBERNETES__RESOURCE_OWNER_LABEL
               value: {{ (default (include "app.fullname" .) .Values.issuer.config.backend.kubernetes.resourceOwnerLabel) | quote }}
+            - name: BOXER__TOKEN_SETTINGS__AUDIENCE
+              value: {{ .Values.issuer.config.tokenSettings.audience | default "boxer.sneaksanddata.com" }}
+            - name: BOXER__TOKEN_SETTINGS__ISSUER
+              value: {{ .Values.issuer.config.tokenSettings.issuer | default "boxer.sneaksanddata.com" }}
+            - name: BOXER__TOKEN_SETTINGS__KEY_ID
+              value: {{ (default "default" .Values.issuer.config.tokenSettings.keyId) }}
+            - name: BOXER__TOKEN_SETTINGS__KEY
+              value: {{ (default (randAlphaNum 33) .Values.issuer.config.tokenSettings.keyId) }}
+            - name: BOXER__TOKEN_SETTINGS__CONTENT_ENCRYPTION
+              value: {{ (default "A128CBC-HS256" .Values.issuer.config.tokenSettings.contentEncryption) }}
           {{- end }}
           {{- if .Values.openTelemetry.enabled }}
             {{- if .Values.openTelemetry.grpcEndpoint }}

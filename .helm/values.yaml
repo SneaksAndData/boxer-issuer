@@ -254,6 +254,26 @@ issuer:
         # The operation timeout in seconds
         resourceOwnerLabel: ""
 
+    # The signature settings
+    tokenSettings:
+      # The key ID to use for signing tokens
+      keyId: ""
+
+      # The private key to use for signing tokens
+      key: ""
+
+      # Content encryption algorithm name
+      # See https://www.rfc-editor.org/rfc/rfc7518.html#section-4.7 for valid values
+      # Default: A128CBC-HS256
+      contentEncryption: ""
+
+      # The audience for the tokens issued by the Boxer Issuer
+      audience: ""
+
+      # The iss claim for the tokens issued by the Boxer Issuer
+      issuer: ""
+
+
 # Observability settings for OpenTelemetry
 openTelemetry:
 

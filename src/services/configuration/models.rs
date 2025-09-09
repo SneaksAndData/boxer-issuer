@@ -25,7 +25,9 @@ pub struct BackendSettings {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct SignatureSettings {
+pub struct TokenSettings {
+    pub issuer: String,
+    pub audience: String,
     pub key_id: String,
     pub key: String,
     pub content_encryption: String,
@@ -38,7 +40,5 @@ pub struct AppSettings {
     pub init: InitializationSettings,
     pub backend: BackendSettings,
     pub opentelemetry: OpenTelemetrySettings,
-    pub signature: SignatureSettings,
-    pub token_audience: String,
-    pub token_issuer: String,
+    pub token_settings: TokenSettings,
 }

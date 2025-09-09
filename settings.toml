@@ -28,9 +28,9 @@ enabled = false
 [opentelemetry.tracing_settings]
 enabled = false
 
-[signature]
+[token_settings]
 # The settings below provided for testing purposes only
 key_id = "public"
 key = "0123456789ABCDEF0123456789ABCDEF"
-encryption = "A128CBC-HS256"
+content_encryption = "A128CBC-HS256"
 
