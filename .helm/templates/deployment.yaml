@@ -61,6 +61,8 @@ spec:
               value: {{ .Values.issuer.config.logLevel | default "info" | quote }}
             - name: BOXER__INSTANCE_NAME
               value: {{ .Values.issuer.config.instanceName | default .Release.Name | lower }}
+            - name: BOXER__DEPLOY_ENVIRONMENT
+              value: {{ .Values.environment | default "development" | lower }}
             - name: BOXER__LISTEN_ADDRESS
               value: "{{ (default "127.0.0.1" .Values.issuer.config.listenIp) }}:{{ .Values.issuer.config.port }}"
             - name: BOXER__INIT__BACKEND_TYPE

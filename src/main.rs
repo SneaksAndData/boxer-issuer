@@ -48,7 +48,7 @@ async fn main() -> Result<()> {
     let logger = ComposedLogger::new();
     let logger = {
         if cm.opentelemetry.log_settings.enabled {
-            logger.with_logger(open_telemetry::logging::init_logger()?)
+            logger.with_logger(open_telemetry::logging::init_logger(cm.deploy_environment.clone())?)
         } else {
             logger
         }
