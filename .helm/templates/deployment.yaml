@@ -78,7 +78,7 @@ spec:
             - name: BOXER__BACKEND__KUBERNETES__OPERATION_TIMEOUT
               value: {{ (default .Release.Namespace .Values.issuer.config.backend.kubernetes.operationTimeout) | quote }}
             - name: BOXER__BACKEND__KUBERNETES__RESOURCE_OWNER_LABEL
-              value: {{ (default (include "app.fullname" .) .Values.issuer.config.backend.kubernetes.resourceOwnerLabel) | quote }}
+              value: {{ (default "boxer.sneaksanddata.com/owner" .Values.issuer.config.backend.kubernetes.resourceOwnerLabel) | quote }}
             - name: BOXER__TOKEN_SETTINGS__AUDIENCE
               value: {{ .Values.issuer.config.tokenSettings.audience | default "boxer.sneaksanddata.com" }}
             - name: BOXER__TOKEN_SETTINGS__ISSUER

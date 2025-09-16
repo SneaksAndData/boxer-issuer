@@ -139,7 +139,7 @@ impl BackendConfiguration for KubernetesBackend {
             }
         };
 
-        let owner_mark = ObjectOwnerMark::new(&instance_name, &settings.resource_owner_label);
+        let owner_mark = ObjectOwnerMark::new(&settings.resource_owner_label, &instance_name);
 
         let identity_repository = Self::create_repository(
             &settings.namespace,
