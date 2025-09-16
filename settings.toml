@@ -1,5 +1,6 @@
 # Application settings
 instance_name = "integration-tests"
+deploy_environment = "development"
 
 listen_address = "127.0.0.1:8888" # Address to listen on
 

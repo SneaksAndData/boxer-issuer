@@ -4,7 +4,7 @@ mod services;
 
 use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
 use crate::services::token_service::TokenService;
-use actix_web::middleware::Logger;
+use actix_web::middleware::{from_fn, Logger};
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::info;
@@ -22,6 +22,7 @@ use crate::services::configuration::models::AppSettings;
 use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use crate::services::principal_service::PrincipalService;
 use anyhow::Result;
+use boxer_core::http::middleware::logging::custom_error_logging;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::audit::AuditService;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
@@ -103,6 +104,7 @@ async fn main() -> Result<()> {
         App::new()
             .wrap(RequestTracing::new())
             .wrap(Logger::default())
+            .wrap(from_fn(custom_error_logging))
             .app_data(Data::new(token_provider.clone()))
             .app_data(Data::new(principal_service.clone()))
             .app_data(Data::new(identity_repository.clone()))
