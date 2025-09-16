@@ -573,7 +573,6 @@ dependencies = [
  "schemars 0.8.22",
  "serde",
  "serde_json",
- "serde_yml",
  "sha2",
  "utoipa",
  "utoipa-swagger-ui",

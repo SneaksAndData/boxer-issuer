@@ -15,7 +15,7 @@ use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use boxer_core::services::audit::audit_facade::WithAuditFacade;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
-use boxer_core::services::backends::kubernetes::kubeconfig_loader::from_cluster;
+use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_cluster, from_command, from_file};
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::object_owner_mark::ObjectOwnerMark;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
     KubernetesResourceManagerConfig, UpdateLabels,
@@ -25,12 +25,10 @@ use boxer_core::services::backends::kubernetes::repositories::{KubernetesReposit
 use boxer_core::services::backends::{Backend, BackendConfiguration};
 use boxer_core::services::service_provider::ServiceProvider;
 use k8s_openapi::NamespaceResourceScope;
-use kube::config::Kubeconfig;
 use kube::Config;
 use kubernetes_validator_provider::KubernetesValidatorProvider;
-use log::{debug, info};
+use log::info;
 use std::hash::Hash;
-use std::process::Command;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -126,10 +124,10 @@ impl BackendConfiguration for KubernetesBackend {
             KubernetesBackendSettings { in_cluster: true, .. } => from_cluster().load()?,
             KubernetesBackendSettings {
                 kubeconfig: Some(path), ..
-            } => Self::get_from_file(&path).await?,
+            } => from_file().load(&path).await?,
             KubernetesBackendSettings {
                 exec: Some(command), ..
-            } => Self::get_from_exec(&command).await?,
+            } => from_command().load(&command).await?,
             KubernetesBackendSettings {
                 kubeconfig: None,
                 exec: None,
@@ -190,29 +188,6 @@ impl BackendConfiguration for KubernetesBackend {
 }
 
 impl KubernetesBackend {
-    async fn get_from_exec(command: &str) -> anyhow::Result<Config> {
-        info!("Configuring Kubernetes backend with command: {:?}", command);
-        let output = Command::new("sh").arg("-c").arg(command).output()?;
-        if !output.status.success() {
-            bail!(
-                "Failed to execute command: {:?}",
-                String::from_utf8_lossy(&output.stderr)
-            );
-        }
-        let kubeconfig_string = String::from_utf8(output.stdout)?;
-        debug!("Kubeconfig used by the backend:\n{:?}", kubeconfig_string);
-        let kubeconfig: Kubeconfig = serde_yml::from_str(&kubeconfig_string)?;
-        Ok(Config::from_custom_kubeconfig(kubeconfig, &Default::default()).await?)
-    }
-
-    async fn get_from_file(path: &str) -> anyhow::Result<Config> {
-        info!("Configuring Kubernetes backend with kubeconfig file: {:?}", path);
-        let kubeconfig_string = std::fs::read_to_string(path)?;
-        debug!("Kubeconfig used by the backend:\n{:?}", kubeconfig_string);
-        let kubeconfig: Kubeconfig = serde_yml::from_str(&kubeconfig_string)?;
-        Ok(Config::from_custom_kubeconfig(kubeconfig, &Default::default()).await?)
-    }
-
     pub async fn create_repository<R>(
         namespace: &str,
         kubeconfig: Config,

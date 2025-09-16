@@ -19,7 +19,6 @@ utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 utoipa = { version = "5.3.1", features = ["actix_extras"] }
 cedar-policy = "4.4.0"
 config = "0.15.11"
-serde_yml = "0.0.12"
 schemars = "0.8.6"
 duration-string = "0.5.2"
 env_filter = "0.1.3"
