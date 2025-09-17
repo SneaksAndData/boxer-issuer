@@ -4,9 +4,13 @@ mod external_identity_registration_request;
 use crate::http::controllers::v1::identity::external_identity_registration::ExternalIdentityRegistration;
 use crate::http::controllers::v1::identity::external_identity_registration_request::ExternalIdentityRegistrationRequest;
 use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
+use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
+use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
+use cedar_policy::EntityUid;
+use std::str::FromStr;
 use std::sync::Arc;
 
 #[utoipa::path(context_path = "/identity/",
@@ -61,8 +65,14 @@ pub async fn get_identity(
 pub async fn delete_identity(
     params: Path<(String, String)>,
     data: Data<Arc<IdentityRepository>>,
+    principal_data: Data<Arc<PrincipalRepository>>,
 ) -> Result<HttpResponse> {
-    data.delete(params.into_inner()).await?;
+    let identity_provider_id = params.into_inner();
+    let identity = data.get(identity_provider_id.clone()).await?;
+    let pid = EntityUid::from_str(&identity.principal_id).map_err(actix_web::error::ErrorBadRequest)?;
+    let principal_identity = PrincipalIdentity::new(identity.principal_schema, pid);
+    principal_data.delete(principal_identity).await?;
+    data.delete(identity_provider_id.clone()).await?;
     Ok(HttpResponse::Ok().finish())
 }
 
