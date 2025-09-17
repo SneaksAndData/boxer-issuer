@@ -14,10 +14,12 @@ pub mod principal_identity;
 
 impl ToResource<CedarEntityDocument> for StoredEntity {
     fn to_resource(&self, object_meta: &kube::api::ObjectMeta) -> Result<CedarEntityDocument, Status> {
-        let json_string = self
+        let json_value = self
             .0
-            .to_json_string()
+            .to_json_value()
             .map_err(|e| Status::ConversionError(anyhow::Error::from(e)))?;
+        let json_string =
+            serde_json::to_string_pretty(&json_value).map_err(|e| Status::ConversionError(anyhow::Error::from(e)))?;
         Ok(CedarEntityDocument {
             metadata: object_meta.clone(),
             spec: CedarEntityDocumentSpec {
