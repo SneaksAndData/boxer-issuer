@@ -102,7 +102,7 @@ impl ToResource<ExternalIdentityDocument> for ExternalIdentityRegistration {
 impl TryFromResource<ExternalIdentityDocument> for ExternalIdentityRegistration {
     type Error = Status;
 
-    fn try_into_resource(resource: Arc<ExternalIdentityDocument>) -> Result<Self, Self::Error> {
+    fn try_from_resource(resource: Arc<ExternalIdentityDocument>) -> Result<Self, Self::Error> {
         Ok(ExternalIdentityRegistration {
             id: resource.spec.id.clone(),
             identity_provider: resource.spec.identity_provider.clone(),

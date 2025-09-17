@@ -80,7 +80,7 @@ impl ToResource<IdentityProviderDocument> for IdentityProviderRegistration {
 impl TryFromResource<IdentityProviderDocument> for IdentityProviderRegistration {
     type Error = Status;
 
-    fn try_into_resource(resource: Arc<IdentityProviderDocument>) -> Result<Self, Self::Error> {
+    fn try_from_resource(resource: Arc<IdentityProviderDocument>) -> Result<Self, Self::Error> {
         Ok(IdentityProviderRegistration {
             name: resource.metadata.name.clone().unwrap_or_default(),
             oidc: resource.spec.oidc.clone(),

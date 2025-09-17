@@ -33,7 +33,7 @@ impl ToResource<CedarEntityDocument> for StoredEntity {
 impl TryFromResource<CedarEntityDocument> for StoredEntity {
     type Error = Status;
 
-    fn try_into_resource(resource: Arc<CedarEntityDocument>) -> Result<Self, Self::Error>
+    fn try_from_resource(resource: Arc<CedarEntityDocument>) -> Result<Self, Self::Error>
     where
         Self: Sized,
     {
