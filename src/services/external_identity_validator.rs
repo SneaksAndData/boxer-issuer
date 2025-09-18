@@ -3,8 +3,9 @@ use crate::models::api::external::identity_provider_settings::OidcExternalIdenti
 use crate::models::api::external::token::ExternalToken;
 use anyhow::bail;
 use async_trait::async_trait;
+use jsonwebtoken::errors::ErrorKind;
 use jwt_authorizer::error::InitError;
-use jwt_authorizer::{Authorizer, AuthorizerBuilder, JwtAuthorizer, Validation};
+use jwt_authorizer::{AuthError, Authorizer, AuthorizerBuilder, JwtAuthorizer, Validation};
 use log::info;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -41,7 +42,15 @@ struct ExternalIdentityValidatorImpl {
 impl ExternalIdentityValidator for ExternalIdentityValidatorImpl {
     async fn validate(&self, token: ExternalToken) -> Result<ExternalIdentity, anyhow::Error> {
         let token_str: String = token.into();
-        let result = self.authorizer.check_auth(&token_str).await?;
+        let result = self.authorizer.check_auth(&token_str).await.map_err(|e| match e {
+            AuthError::InvalidToken(underlying) if underlying.kind() == &ErrorKind::InvalidAudience => {
+                anyhow::anyhow!(
+                    "Token has invalid audience, expected: {:?}",
+                    self.authorizer.validation.aud
+                )
+            }
+            _ => anyhow::anyhow!("Token validation error: {}", e),
+        })?;
         let maybe_ext_id = extract_user_id(&result.claims, &self.user_id_claim, self.name.clone());
         match maybe_ext_id {
             Some(ext_id) => {

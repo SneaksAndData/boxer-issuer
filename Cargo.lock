@@ -563,6 +563,7 @@ dependencies = [
  "env_logger",
  "hmac",
  "josekit",
+ "jsonwebtoken",
  "jwt-authorizer",
  "k8s-openapi",
  "kube",
