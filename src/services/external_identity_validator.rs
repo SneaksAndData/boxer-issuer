@@ -42,6 +42,7 @@ struct ExternalIdentityValidatorImpl {
 impl ExternalIdentityValidator for ExternalIdentityValidatorImpl {
     async fn validate(&self, token: ExternalToken) -> Result<ExternalIdentity, anyhow::Error> {
         let token_str: String = token.into();
+        info!("Validating External Identity Token: {}", token_str);
         let result = self.authorizer.check_auth(&token_str).await.map_err(|e| match e {
             AuthError::InvalidToken(underlying) if underlying.kind() == &ErrorKind::InvalidAudience => {
                 anyhow::anyhow!(
