@@ -1,4 +1,4 @@
-use crate::models::api::external::token::ExternalToken;
+use crate::services::external_identity_validator::jwt_validator::token::ExternalToken;
 use actix_web::http::header::HeaderValue;
 use anyhow::bail;
 

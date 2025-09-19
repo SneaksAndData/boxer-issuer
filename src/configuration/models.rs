@@ -1,4 +1,4 @@
-use crate::services::backends::base::BackendType;
+use crate::services::backends::BackendType;
 use boxer_core::services::observability::open_telemetry::settings::OpenTelemetrySettings;
 use duration_string::DurationString;
 use serde::Deserialize;

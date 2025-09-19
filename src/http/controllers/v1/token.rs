@@ -1,6 +1,6 @@
-use crate::models::api::external::identity_provider::ExternalIdentityProvider;
-use crate::models::api::external::token::ExternalToken;
-use crate::services::token_service::{TokenProvider, TokenService};
+use crate::services::external_identity_validator::jwt_validator::token::ExternalToken;
+use crate::services::external_identity_validator_provider::external_identity_provider::ExternalIdentityProvider;
+use crate::services::token_provider::TokenProvider;
 use actix_web::web::{Data, Path};
 use actix_web::{get, HttpRequest};
 use log::error;
@@ -14,7 +14,7 @@ use std::sync::Arc;
 )]
 #[get("/token/{identity_provider}")]
 pub async fn token(
-    data: Data<Arc<TokenService>>,
+    data: Data<Arc<dyn TokenProvider>>,
     identity_provider: Path<String>,
     req: HttpRequest,
 ) -> actix_web::Result<String> {

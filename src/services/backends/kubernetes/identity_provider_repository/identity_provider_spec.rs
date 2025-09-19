@@ -1,5 +1,5 @@
-use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
-use crate::models::identity_provider_registration::IdentityProviderRegistration;
+use crate::services::backends::kubernetes::identity_provider_repository::identity_provider_registration::IdentityProviderRegistration;
+use crate::services::backends::kubernetes::identity_provider_repository::oidc_identity_provider_settings::OidcExternalIdentityProviderSettings;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
 use boxer_core::services::backends::kubernetes::repositories::{SoftDeleteResource, ToResource, TryFromResource};

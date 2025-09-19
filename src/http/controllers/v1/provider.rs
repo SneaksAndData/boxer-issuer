@@ -1,8 +1,8 @@
 mod oidc_provider_registration;
 
 use crate::http::controllers::v1::provider::oidc_provider_registration::OidcIdentityProviderRegistration;
-use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
-use crate::models::identity_provider_registration::IdentityProviderRegistration;
+use crate::services::backends::kubernetes::identity_provider_repository::identity_provider_registration::IdentityProviderRegistration;
+use crate::services::backends::kubernetes::identity_provider_repository::oidc_identity_provider_settings::OidcExternalIdentityProviderSettings;
 use crate::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
