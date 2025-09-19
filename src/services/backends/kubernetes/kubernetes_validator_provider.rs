@@ -25,7 +25,7 @@ impl ExternalIdentityValidatorProvider for KubernetesValidatorProvider {
     ) -> Result<Arc<dyn ExternalIdentityValidator + Send + Sync>, Error> {
         let registration = self.repository.get(provider.name()).await?;
         match registration.oidc {
-            None => bail!("No OIDC configuration found for provider: {:?}", provider.name()),
+            None => bail!("No OIDC configuration found for provider: {}", provider.name()),
             Some(p) => Ok(p.build_validator(provider.name()).await?),
         }
     }
