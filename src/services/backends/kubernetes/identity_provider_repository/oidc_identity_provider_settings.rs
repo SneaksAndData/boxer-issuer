@@ -1,3 +1,5 @@
+mod external_identity_validator_factory;
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

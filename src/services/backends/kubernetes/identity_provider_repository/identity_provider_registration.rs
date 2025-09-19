@@ -1,4 +1,4 @@
-use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
+use crate::services::backends::kubernetes::identity_provider_repository::oidc_identity_provider_settings::OidcExternalIdentityProviderSettings;
 use boxer_core::services::audit::audit_facade::to_audit_record::ToAuditRecord;
 use serde::{Deserialize, Serialize};
 

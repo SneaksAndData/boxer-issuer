@@ -1,4 +1,4 @@
-use crate::services::backends::base::BackendType;
+use crate::services::backends::BackendType;
 use async_trait::async_trait;
 use std::sync::Arc;
 

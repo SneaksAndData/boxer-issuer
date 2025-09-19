@@ -6,11 +6,11 @@ mod kubernetes_validator_provider;
 
 use crate::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
 
-use crate::services::backends::base::IssuerBackend;
+use crate::configuration::models::{BackendSettings, KubernetesBackendSettings};
 use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
 use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
-use crate::services::configuration::models::{BackendSettings, KubernetesBackendSettings};
-use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
+use crate::services::backends::IssuerBackend;
+use crate::services::external_identity_validator_provider::ExternalIdentityValidatorProvider;
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use boxer_core::services::audit::audit_facade::WithAuditFacade;

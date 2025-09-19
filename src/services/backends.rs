@@ -1,12 +1,14 @@
-use crate::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
-use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
-use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
-use crate::services::backends::kubernetes::KubernetesBackend;
-use crate::services::configuration::models::AppSettings;
-use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
+pub mod kubernetes;
+
+use crate::configuration::models::AppSettings;
+use crate::services::external_identity_validator_provider::ExternalIdentityValidatorProvider;
 use anyhow::Result;
 use boxer_core::services::backends::{Backend, BackendConfiguration};
 use boxer_core::services::service_provider::ServiceProvider;
+use kubernetes::identity_provider_repository::IdentityProviderRepository;
+use kubernetes::identity_repository::IdentityRepository;
+use kubernetes::principal_repository::PrincipalRepository;
+use kubernetes::KubernetesBackend;
 use serde::Deserialize;
 use std::sync::Arc;
 
