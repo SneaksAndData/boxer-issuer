@@ -108,6 +108,10 @@ where
                         let mut ext = req.extensions_mut();
                         ext.insert(external_token);
                     }
+                    let event = TokenValidationEvent::external_empty(true, HashSet::new());
+                    audit_service
+                        .record_token_validation(event)
+                        .map_err(ErrorUnauthorized)?;
                     let res = service
                         .call(req)
                         .with_context(parent.clone())
