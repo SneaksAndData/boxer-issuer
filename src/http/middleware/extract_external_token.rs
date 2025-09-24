@@ -103,12 +103,12 @@ where
 
             match external_token_result {
                 Ok(external_token) => {
+                    let event = TokenValidationEvent::external(&external_token.token, true, HashSet::new());
                     // make nested block to avoid borrowing issues
                     {
                         let mut ext = req.extensions_mut();
                         ext.insert(external_token);
                     }
-                    let event = TokenValidationEvent::external_empty(true, HashSet::new());
                     audit_service
                         .record_token_validation(event)
                         .map_err(ErrorUnauthorized)?;
