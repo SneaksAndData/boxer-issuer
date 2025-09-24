@@ -561,6 +561,7 @@ dependencies = [
  "duration-string",
  "env_filter",
  "env_logger",
+ "futures-util",
  "hmac",
  "josekit",
  "jwt-authorizer",
@@ -568,6 +569,7 @@ dependencies = [
  "kube",
  "log",
  "md5",
+ "opentelemetry",
  "opentelemetry-instrumentation-actix-web",
  "rstest",
  "schemars 0.8.22",
@@ -581,7 +583,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.18#997b8455a7f285468714d70421e9523d130bddd5"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=fix-token-id#f9fa51a14f91f6143494da419561e88e44f07389"
 dependencies = [
  "actix-web",
  "anyhow",
@@ -597,6 +599,7 @@ dependencies = [
  "kube",
  "log",
  "maplit",
+ "md5",
  "opentelemetry",
  "opentelemetry-appender-log",
  "opentelemetry-appender-tracing",

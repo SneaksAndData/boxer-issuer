@@ -1,3 +1,4 @@
+use crate::http::middleware::extract_external_token::ExternalTokenMiddlewareFactory;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use utoipa::openapi::security::{Http, HttpAuthScheme, SecurityScheme};
@@ -44,5 +45,6 @@ pub fn urls() -> impl HttpServiceFactory {
         .service(schema::crud())
         .service(principal::crud())
         .service(provider::crud())
+        .wrap(ExternalTokenMiddlewareFactory::default())
         .service(token::token)
 }
