@@ -4,6 +4,7 @@ use crate::services::identity_validator_provider::ExternalIdentityValidatorProvi
 use crate::services::principal_service::PrincipalService;
 use async_trait::async_trait;
 use boxer_core::contracts::internal_token::v1::TokenBuilder;
+use boxer_core::services::observability::open_telemetry::metrics::{TokenIssuanceCounter, TokenIssuanceMetric};
 use josekit::jwe::{Dir, JweHeader};
 use josekit::jwt;
 use josekit::jwt::JwtPayload;
@@ -45,8 +46,8 @@ impl TokenProvider for TokenService {
         let payload: JwtPayload = TokenBuilder::new()
             .principal(principal.get_entity().clone())
             .schema(schemas)
-            .user_id(identity.user_id)
-            .identity_provider(identity.identity_provider)
+            .user_id(identity.user_id.clone())
+            .identity_provider(identity.identity_provider.clone())
             .schema_name(schema_name)
             .validity_period(Duration::from_secs(3600))
             .validator_schema_id(validator_schema_id)
@@ -61,7 +62,11 @@ impl TokenProvider for TokenService {
         header.set_key_id(&self.key_id);
 
         let encrypter = Dir.encrypter_from_bytes(&*self.encrypt_secret)?;
-        jwt::encode_with_encrypter(&payload, &header, &encrypter).map_err(|e| anyhow::anyhow!(e))
+        let token = jwt::encode_with_encrypter(&payload, &header, &encrypter).map_err(|e| anyhow::anyhow!(e))?;
+        let metric = TokenIssuanceCounter::new("boxer_issuer");
+        metric.increment(identity.identity_provider, identity.user_id);
+
+        Ok(token)
     }
 }
 
