@@ -35,6 +35,21 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if and .Values.openTelemetry.enabled .Values.openTelemetry.waitForCollector.enabled }}
+      initContainers:
+        - name: wait-for-telemetry
+          image: "{{ include "app.image" . }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          env:
+            - name: OTEL_EXPORTER_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          command:
+            - 'sh'
+            - '-c'
+            - 'until nc -z ${OTEL_EXPORTER_HOST} 4317; do echo waiting for OpenTelemetry Collector; sleep 2; done;'
+      {{- end }}
       containers:
         - name: boxer-issuer
           ports:
