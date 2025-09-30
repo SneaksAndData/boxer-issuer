@@ -29,9 +29,12 @@ use boxer_core::services::backends::kubernetes::repositories::schema_repository:
 use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry;
 use boxer_core::services::observability::open_telemetry::metrics::init_metrics;
+use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
 use boxer_core::services::observability::open_telemetry::tracing::init_tracer;
 use env_filter::Builder;
 use opentelemetry_instrumentation_actix_web::RequestTracing;
+
+const ROOT_METRICS_NAMESPACE: &str = "boxer-issuer";
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -95,6 +98,7 @@ async fn main() -> Result<()> {
         cm.get_audience(),
         cm.get_issuer(),
         cm.get_content_encryption(),
+        MetricsProvider::new(ROOT_METRICS_NAMESPACE, cm.instance_name.clone()),
     ));
 
     let audit_service: Arc<dyn AuditService> = Arc::new(LogAuditService::new());

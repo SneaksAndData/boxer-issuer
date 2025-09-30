@@ -1,4 +1,5 @@
 /// Represents an external JWT Token used to authorize the `ExternalIdentity` and issue an `InternalToken`
+#[derive(Clone)]
 pub struct ExternalToken {
     pub token: String,
 }
