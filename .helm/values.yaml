@@ -305,3 +305,13 @@ openTelemetry:
 
     # Set to true to enable OpenTelemetry tracing
     enabled: ""
+
+  # Wait for the OpenTelemetry collector to be ready before starting the application
+  waitForCollector:
+
+    # Set to false for the application to start immediately without waiting for the OTEL collector
+    enabled: true
+
+# topology spread uses kubernetes.io/hostname
+topologySpread:
+  maxSkew: 1
