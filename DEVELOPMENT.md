@@ -19,11 +19,13 @@ Before you begin, ensure you have the following installed on your system:
 
 To be able to run the project locally, you need to clone the following repositories:
 
-- https://github.com/<YOUR_GITHUB_ACCOUNT>/boxer-issuer.git
-- https://github.com/<YOUR_GITHUB_ACCOUNT>/boxer-validator-nginx.git
-- https://github.com/<YOUR_GITHUB_ACCOUNT>/boxer-core.git
-- https://github.com/<YOUR_GITHUB_ACCOUNT>/boxer-crd.git
-- https://github.com/<YOUR_GITHUB_ACCOUNT>/terraform-provider-boxer.git
+```
+https://github.com/<YOUR_GITHUB_ACCOUNT>/boxer-issuer.git
+https://github.com/<YOUR_GITHUB_ACCOUNT>/boxer-validator-nginx.git
+https://github.com/<YOUR_GITHUB_ACCOUNT>/boxer-core.git
+https://github.com/<YOUR_GITHUB_ACCOUNT>/boxer-crd.git
+https://github.com/<YOUR_GITHUB_ACCOUNT>/terraform-provider-boxer.git
+```
 
 Replace `<YOUR_GITHUB_ACCOUNT>` with your actual GitHub username.
 
@@ -94,3 +96,6 @@ When required CRDs are installed, you need to install the bootstrap resources in
 ```bash
 kubectl apply -f <repo-location>/terraform-provider-boxer/integration_tests/bootstrap.yaml
 ```
+
+>[!note]
+>Note that bootstrap resources are located in the **terraform-provider-boxer** repsistory.
