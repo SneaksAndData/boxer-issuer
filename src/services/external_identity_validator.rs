@@ -5,7 +5,7 @@ use anyhow::bail;
 use async_trait::async_trait;
 use jwt_authorizer::error::InitError;
 use jwt_authorizer::{Authorizer, AuthorizerBuilder, JwtAuthorizer, Validation};
-use log::info;
+use log::{error, info};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -41,7 +41,10 @@ struct ExternalIdentityValidatorImpl {
 impl ExternalIdentityValidator for ExternalIdentityValidatorImpl {
     async fn validate(&self, token: ExternalToken) -> Result<ExternalIdentity, anyhow::Error> {
         let token_str: String = token.into();
-        let result = self.authorizer.check_auth(&token_str).await?;
+        let result = self.authorizer.check_auth(&token_str).await.map_err(|e| {
+            error!("Failed to validate external token: {}", e);
+            e
+        })?;
         let maybe_ext_id = extract_user_id(&result.claims, &self.user_id_claim, self.name.clone());
         match maybe_ext_id {
             Some(ext_id) => {
