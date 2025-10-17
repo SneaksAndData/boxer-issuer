@@ -84,6 +84,14 @@ entry pointing to the git repository.
 The Boxer project aims to be easily configurable for development and testing purposes.
 You can add additional entities to the Keycloak sever by modifying the `integration-tests/keycloak/keycloak.tf` file.
 
+# Code style
+
+## Writing code
+
+
+## Writing tests
+https://gist.github.com/Nekrolm/82827563061fcf9488473fcad9aa1f03
+
 # Creating a pull request
 
 When you are ready to create a pull request, push your changes to your forked repository and create a pull request.
