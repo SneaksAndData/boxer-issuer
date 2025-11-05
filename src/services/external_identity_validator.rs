@@ -72,8 +72,14 @@ impl ExternalIdentityValidatorFactory for OidcExternalIdentityProviderSettings {
         name: String,
     ) -> Result<Arc<dyn ExternalIdentityValidator + Send + Sync>, Self::Error> {
         let validation_builder = Validation::new().iss(&self.issuers).aud(&self.audiences);
-        let builder: AuthorizerBuilder<DynamicClaimsCollection> =
-            JwtAuthorizer::from_oidc(self.discovery_url.as_str()).validation(validation_builder);
+        let client = reqwest::Client::builder()
+            .danger_accept_invalid_certs(true)
+            .build()
+            .unwrap();
+
+        let builder = JwtAuthorizer::<DynamicClaimsCollection>::from_oidc(self.discovery_url.as_str())
+            .validation(validation_builder)
+            .http_client(client);
         let authorizer = builder.build().await?;
         Ok(Arc::new(ExternalIdentityValidatorImpl {
             authorizer,
