@@ -48,14 +48,7 @@ struct Claims {
 impl ExternalIdentityValidator for ExternalIdentityValidatorImpl {
     async fn validate(&self, token: ExternalToken) -> Result<ExternalIdentity, anyhow::Error> {
         let token_str: String = token.into();
-        let result = self.authorizer.check_auth(&token_str).await.map_err(|e| match e {
-            jwt_authorizer::error::AuthError::InvalidToken(_) => {
-                let claim = jsonwebtoken::dangerous::insecure_decode::<Claims>(token_str).unwrap();
-                info!("Token validation failed for token with aud claim: {}", claim.claims.aud);
-                e
-            }
-            _ => e,
-        })?;
+        let result = self.authorizer.check_auth(&token_str).await?;
         let maybe_ext_id = extract_user_id(&result.claims, &self.user_id_claim, self.name.clone());
         match maybe_ext_id {
             Some(ext_id) => {
