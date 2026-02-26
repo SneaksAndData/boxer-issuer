@@ -25,7 +25,7 @@ use anyhow::Result;
 use boxer_core::http::middleware::logging::custom_error_logging;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::audit::AuditService;
-use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry;
 use boxer_core::services::observability::open_telemetry::metrics::init_metrics;

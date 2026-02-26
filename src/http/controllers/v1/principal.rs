@@ -6,7 +6,7 @@ use crate::services::backends::kubernetes::principal_repository::PrincipalReposi
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{get, post, web, Responder, Result};
-use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use cedar_policy::{Entity, EntityUid, Schema};
 use serde_json::Value;
 use std::str::FromStr;

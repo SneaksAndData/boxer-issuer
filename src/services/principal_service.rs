@@ -3,7 +3,7 @@ use crate::models::principal::Principal;
 use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
 use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
 use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
-use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use cedar_policy::{EntityUid, SchemaFragment};
 use std::str::FromStr;
 use std::sync::Arc;

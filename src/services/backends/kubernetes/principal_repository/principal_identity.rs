@@ -1,6 +1,6 @@
 use crate::services::backends::kubernetes::principal_repository::cedar_entity_document::CedarEntityDocument;
 use boxer_core::services::audit::audit_facade::to_audit_record::ToAuditRecord;
-use boxer_core::services::backends::kubernetes::repositories::try_into_object_ref::TryIntoObjectRef;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::try_into_object_ref::TryIntoObjectRef;
 use cedar_policy::EntityUid;
 use kube::runtime::reflector::ObjectRef;
 use serde::ser::SerializeStruct;

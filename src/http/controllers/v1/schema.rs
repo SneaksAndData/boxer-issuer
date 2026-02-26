@@ -1,7 +1,7 @@
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
-use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use cedar_policy::SchemaFragment;
 use serde_json::Value;
 use std::sync::Arc;

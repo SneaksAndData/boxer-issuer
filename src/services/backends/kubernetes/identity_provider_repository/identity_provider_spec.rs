@@ -1,8 +1,10 @@
 use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
 use crate::models::identity_provider_registration::IdentityProviderRegistration;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::soft_delete_resource::SoftDeleteResource;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::to_resource::ToResource;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::try_from_resource::TryFromResource;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
-use boxer_core::services::backends::kubernetes::repositories::{SoftDeleteResource, ToResource, TryFromResource};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::CustomResource;
 use schemars::JsonSchema;

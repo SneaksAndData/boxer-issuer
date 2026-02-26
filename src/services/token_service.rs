@@ -3,15 +3,17 @@ use crate::models::api::external::token::ExternalToken;
 use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use crate::services::principal_service::PrincipalService;
 use async_trait::async_trait;
-use boxer_core::contracts::internal_token::v1::TokenBuilder;
-use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
-use boxer_core::services::observability::open_telemetry::metrics::token_forbidden::{
+use boxer_core::contracts::internal_token::v1::token::InternalToken;
+use boxer_core::services::observability::open_telemetry::metrics::metric_recorders::token_forbidden::{
     TokenForbidden, TokenForbiddenMetric,
 };
-use boxer_core::services::observability::open_telemetry::metrics::token_issued::{TokenIssued, TokenIssuedMetric};
-use boxer_core::services::observability::open_telemetry::metrics::token_lifetime::{
+use boxer_core::services::observability::open_telemetry::metrics::metric_recorders::token_issued::{
+    TokenIssued, TokenIssuedMetric,
+};
+use boxer_core::services::observability::open_telemetry::metrics::metric_recorders::token_lifetime::{
     TokenLifetime, TokenLifetimeMetric,
 };
+use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
 use boxer_core::services::service_provider::ServiceProvider;
 use josekit::jwe::{Dir, JweHeader};
 use josekit::jwt;
@@ -57,16 +59,16 @@ impl TokenProvider for TokenService {
         let schema_name = principal.get_schema_id().clone();
         let schemas = self.principal_service.get_schemas(schema_name.clone()).await?;
         let validator_schema_id = self.principal_service.get_validator_schema(identity.clone()).await?;
-        let payload: JwtPayload = TokenBuilder::new()
-            .principal(principal.get_entity().clone())
-            .schema(schemas)
-            .user_id(identity.user_id.clone())
-            .identity_provider(identity.identity_provider.clone())
-            .schema_name(schema_name)
-            .validity_period(self.token_duration.clone())
-            .validator_schema_id(validator_schema_id)
-            .build()?
-            .try_into()?;
+        let payload: JwtPayload = InternalToken::new(
+            principal.get_entity().clone(),
+            schemas,
+            identity.user_id.clone(),
+            identity.identity_provider.clone(),
+            schema_name,
+            self.token_duration.clone(),
+            validator_schema_id,
+        )
+        .try_into()?;
 
         let mut header = JweHeader::new();
         header.set_token_type("JWT");

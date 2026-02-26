@@ -1,6 +1,6 @@
 use anyhow::anyhow;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::soft_delete_resource::SoftDeleteResource;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
-use boxer_core::services::backends::kubernetes::repositories::SoftDeleteResource;
 use cedar_policy::Entity;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::CustomResource;
