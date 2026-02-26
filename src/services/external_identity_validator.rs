@@ -38,12 +38,6 @@ struct ExternalIdentityValidatorImpl {
     name: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct Claims {
-    aud: String,
-    // add other fields as needed
-}
-
 #[async_trait]
 impl ExternalIdentityValidator for ExternalIdentityValidatorImpl {
     async fn validate(&self, token: ExternalToken) -> Result<ExternalIdentity, anyhow::Error> {
