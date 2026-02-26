@@ -582,7 +582,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=add-token-metadata-to-audit-events#634408531e77a50f66dd7bbee262913b9f846746"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=add-token-metadata-to-audit-events#79d767c8d5d621e86c888520243ace7cceb60d92"
 dependencies = [
  "actix-web",
  "anyhow",
