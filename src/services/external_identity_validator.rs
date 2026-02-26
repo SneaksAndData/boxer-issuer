@@ -6,7 +6,6 @@ use async_trait::async_trait;
 use jwt_authorizer::error::InitError;
 use jwt_authorizer::{Authorizer, AuthorizerBuilder, JwtAuthorizer, Validation};
 use log::info;
-use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
