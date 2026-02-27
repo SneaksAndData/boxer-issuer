@@ -34,9 +34,9 @@ opentelemetry-instrumentation-actix-web = "0.22.0"
 opentelemetry = "0.30.0"
 
 #boxer_core = { path = "../boxer-core/" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", branch = "add-token-metadata-to-audit-events" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.23" }
 
 [dev-dependencies]
 rstest = "0.25.0"
 #boxer_core = { path = "../boxer-core/" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", branch = "add-token-metadata-to-audit-events" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.23" }
