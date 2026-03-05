@@ -18,6 +18,8 @@ Authorization API.
 
 ## Project architecture
 
+![diagram](docs/architecture-diagram.png)
+
 The project is based on pluggable microservices architecture, which allows utilizing authorization with different
 schemas and protocols.
 
