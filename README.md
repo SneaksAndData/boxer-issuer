@@ -27,18 +27,24 @@ The project structure is as follows:
 
 - Responsible for managing AWS Cedar entities, token issuance, validating external tokens, managing external identities.
 
-### boxer-validator-nginx (https://github.com/SneaksAndData/boxer-validator-nginx)
+### boxer-validator-nginx
+
+https://github.com/SneaksAndData/boxer-validator-nginx
 
 - An Nginx-based authorization and authentication validator that can be used as a sidecar or standalone service.
 - Responsible for validating incoming requests based on the policies defined in AWS Cedar and the tokens issued by the
   boxer-issuer.
 
-### boxer-core (https://github.com/SneaksAndData/boxer-core)
+### boxer-core
+
+https://github.com/SneaksAndData/boxer-core
 
 - A core library that provides common functionalities for both the issuer and validator, such as token management,
   policy evaluation, and integration with AWS Cedar.
 
-### terraform-provider-boxer (https://github.com/SneaksAndData/terraform-provider-boxer)
+### terraform-provider-boxer
+
+https://github.com/SneaksAndData/terraform-provider-boxer
 
 - A Terraform provider that allows managing AWS Cedar policies and entities as code, enabling seamless integration with
   modern infrastructure management practices.
