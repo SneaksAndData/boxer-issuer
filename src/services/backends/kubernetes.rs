@@ -196,6 +196,7 @@ impl KubernetesBackend {
         kubeconfig: Config,
         owner_mark: ObjectOwnerMark,
         operation_timeout: Duration,
+        readiness_rx: tokio::sync::watch::Receiver<bool>,
     ) -> anyhow::Result<Arc<KubernetesRepository<R, GenericKubernetesResourceManager<R>>>>
     where
         R: kube::Resource<Scope = NamespaceResourceScope>
@@ -212,7 +213,9 @@ impl KubernetesBackend {
             kubeconfig: kubeconfig.clone(),
             owner_mark,
             operation_timeout,
+            readiness_rx,
         };
+        // TODO: get resource manager with rx
         let resource_manager = GenericKubernetesResourceManager::start(config, Arc::new(LoggingUpdateHandler)).await?;
         KubernetesRepository::<R, GenericKubernetesResourceManager<R>>::start(resource_manager, operation_timeout)
             .await
