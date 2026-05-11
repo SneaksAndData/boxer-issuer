@@ -1,12 +1,10 @@
 pub mod http;
 mod models;
 mod services;
-use tokio;
 
 use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
 use crate::services::token_service::TokenService;
 use actix_web::middleware::{from_fn, Logger};
-use actix_web::web;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::info;
@@ -78,10 +76,8 @@ async fn main() -> Result<()> {
         init_metrics()?;
     }
 
-    // Emit a watch::Receiver here, to 'poll' the backend readiness and inject it
-    // into web::Data later
-    let (tx, rx) = tokio::sync::watch::channel(false); // Make this into a named struct
     let current_backend = load_backend(cm.get_backend_type(), &cm).await?;
+    let readiness_state = current_backend.readiness_state();
 
     let validator_provider: Arc<dyn ExternalIdentityValidatorProvider + Send + Sync> = current_backend.get();
 
@@ -122,7 +118,7 @@ async fn main() -> Result<()> {
             .app_data(Data::new(entities_repository.clone()))
             .app_data(Data::new(identity_provider_repository.clone()))
             .app_data(Data::new(audit_service.clone()))
-            .app_data(Data::new(current_backend.readiness_rx.clone()))
+            .app_data(Data::new(readiness_state.clone()))
             .service(v1::urls())
             .service(health::urls())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))

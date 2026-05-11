@@ -1,6 +1,8 @@
 use actix_web::dev::HttpServiceFactory;
 use actix_web::get;
 use actix_web::web;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[utoipa::path(
     context_path = "/health",
@@ -15,11 +17,14 @@ pub async fn get_health() -> actix_web::Result<String> {
 #[utoipa::path(
     context_path = "/health",
     responses((status = OK, body = String)),
-    responses((status = StatusCode::INTERNAL_SERVER_ERROR, description = "Service not ready")),
+    responses((status = StatusCode::SERVICE_UNAVAILABLE, description = "Service not ready")),
 )]
 #[get("/probe")]
-pub async fn get_health_probe() -> actix_web::Result<String> {
-    Ok("OK".into())
+pub async fn get_health_probe(readiness_state: web::Data<Arc<AtomicBool>>) -> actix_web::Result<String> {
+    if readiness_state.load(Ordering::Acquire) {
+        return Ok("OK".into());
+    }
+    Err(actix_web::error::ErrorServiceUnavailable("Service not ready"))
 }
 
 pub fn urls() -> impl HttpServiceFactory {

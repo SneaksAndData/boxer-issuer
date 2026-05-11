@@ -33,6 +33,7 @@ use kubernetes_validator_provider::KubernetesValidatorProvider;
 use log::info;
 use std::hash::Hash;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 pub struct KubernetesBackend {
@@ -41,6 +42,7 @@ pub struct KubernetesBackend {
     pub identity_repository: Option<Arc<IdentityRepository>>,
     pub identity_provider_repository: Option<Arc<IdentityProviderRepository>>,
     pub validator_provider: Option<Arc<KubernetesValidatorProvider>>,
+    readiness_state: Arc<AtomicBool>,
 }
 
 impl KubernetesBackend {
@@ -51,6 +53,7 @@ impl KubernetesBackend {
             identity_repository: None,
             identity_provider_repository: None,
             validator_provider: None,
+            readiness_state: Arc::new(AtomicBool::new(false)),
         }
     }
 }
@@ -105,7 +108,9 @@ impl Backend for KubernetesBackend {
 }
 
 impl IssuerBackend for KubernetesBackend {
-    // Nothing here, as this is a marker trait
+    fn readiness_state(&self) -> Arc<AtomicBool> {
+        self.readiness_state.clone()
+    }
 }
 
 #[async_trait]
@@ -142,41 +147,41 @@ impl BackendConfiguration for KubernetesBackend {
 
         let owner_mark = ObjectOwnerMark::new(&settings.resource_owner_label, &instance_name);
 
-        let identity_repository = Self::create_repository(
+        let (identity_repository, identity_repository_readiness) = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?
-        .with_audit(Arc::new(LogAuditService::new()));
+        .await?;
+        let identity_repository = identity_repository.with_audit(Arc::new(LogAuditService::new()));
 
-        let principal_repository = Self::create_repository(
+        let (principal_repository, principal_repository_readiness) = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?
-        .with_audit(Arc::new(LogAuditService::new()));
+        .await?;
+        let principal_repository = principal_repository.with_audit(Arc::new(LogAuditService::new()));
 
-        let schemas_repository = Self::create_repository(
+        let (schemas_repository, schemas_repository_readiness) = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?
-        .with_audit(Arc::new(LogAuditService::new()));
+        .await?;
+        let schemas_repository = schemas_repository.with_audit(Arc::new(LogAuditService::new()));
 
-        let identity_provider_repository = Self::create_repository(
+        let (identity_provider_repository, identity_provider_repository_readiness) = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?
-        .with_audit(Arc::new(LogAuditService::new()));
+        .await?;
+        let identity_provider_repository = identity_provider_repository.with_audit(Arc::new(LogAuditService::new()));
 
         let validator_provider = KubernetesValidatorProvider::new(identity_provider_repository.clone());
 
@@ -185,6 +190,14 @@ impl BackendConfiguration for KubernetesBackend {
         self.schemas_repository = Some(schemas_repository);
         self.identity_provider_repository = Some(identity_provider_repository);
         self.validator_provider = Some(Arc::new(validator_provider));
+        let readiness_state = self.readiness_state.clone();
+        tokio::spawn(async move {
+            let is_ready = identity_repository_readiness.await.is_ok()
+                && principal_repository_readiness.await.is_ok()
+                && schemas_repository_readiness.await.is_ok()
+                && identity_provider_repository_readiness.await.is_ok();
+            readiness_state.store(is_ready, Ordering::Release);
+        });
         info!("Kubernetes backend configured successfully");
         Ok(Arc::new(self))
     }
@@ -196,8 +209,10 @@ impl KubernetesBackend {
         kubeconfig: Config,
         owner_mark: ObjectOwnerMark,
         operation_timeout: Duration,
-        readiness_rx: tokio::sync::watch::Receiver<bool>,
-    ) -> anyhow::Result<Arc<KubernetesRepository<R, GenericKubernetesResourceManager<R>>>>
+    ) -> anyhow::Result<(
+        Arc<KubernetesRepository<R, GenericKubernetesResourceManager<R>>>,
+        tokio::sync::oneshot::Receiver<()>,
+    )>
     where
         R: kube::Resource<Scope = NamespaceResourceScope>
             + SoftDeleteResource
@@ -213,13 +228,13 @@ impl KubernetesBackend {
             kubeconfig: kubeconfig.clone(),
             owner_mark,
             operation_timeout,
-            readiness_rx,
         };
-        // TODO: get resource manager with rx
-        let resource_manager = GenericKubernetesResourceManager::start(config, Arc::new(LoggingUpdateHandler)).await?;
-        KubernetesRepository::<R, GenericKubernetesResourceManager<R>>::start(resource_manager, operation_timeout)
-            .await
-            .map(Arc::new)
-            .map_err(|e| e.into())
+        let (resource_manager, readiness_rx) =
+            GenericKubernetesResourceManager::start(config, Arc::new(LoggingUpdateHandler)).await?;
+        let repository =
+            KubernetesRepository::<R, GenericKubernetesResourceManager<R>>::start(resource_manager, operation_timeout)
+                .await
+                .map(Arc::new)?;
+        Ok((repository, readiness_rx))
     }
 }
