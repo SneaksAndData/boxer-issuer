@@ -551,7 +551,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "tokio",
  "utoipa",
  "utoipa-swagger-ui",
 ]
@@ -559,6 +558,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.23#e78b8fcaf2ec2bd58e33b113b82404d05798cf3e"
 dependencies = [
  "actix-web",
  "anyhow",
