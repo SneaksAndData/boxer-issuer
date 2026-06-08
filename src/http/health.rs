@@ -11,7 +11,7 @@ use std::sync::Arc;
 )]
 #[get("")]
 pub async fn get_health() -> actix_web::Result<String> {
-    Ok("OkK".into())
+    Ok("ok".into())
 }
 
 #[utoipa::path(
@@ -22,7 +22,7 @@ pub async fn get_health() -> actix_web::Result<String> {
 #[get("/probe")]
 pub async fn get_health_probe(readiness_state: web::Data<Arc<AtomicBool>>) -> actix_web::Result<String> {
     if readiness_state.load(Ordering::Acquire) {
-        return Ok("OK".into());
+        return Ok("ok".into());
     }
     Err(actix_web::error::ErrorServiceUnavailable("Service not ready"))
 }
@@ -51,7 +51,6 @@ mod tests {
     async fn test_health_probe_returns_ok_when_ready() {
         let readiness_state = web::Data::new(Arc::new(AtomicBool::new(true)));
         let app = test::init_service(App::new().app_data(readiness_state).service(super::urls())).await;
-
         let req = test::TestRequest::get().uri("/health/probe").to_request();
         let resp = test::call_service(&app, req).await;
 
