@@ -41,6 +41,5 @@ pub struct AppSettings {
     pub init: InitializationSettings,
     pub backend: BackendSettings,
     pub opentelemetry: OpenTelemetrySettings,
-    pub opentelemetry: OpenTelemetrySettings,
     pub token_settings: TokenSettings,
 }
