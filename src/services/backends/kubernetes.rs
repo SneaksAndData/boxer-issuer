@@ -32,9 +32,10 @@ use kube::Config;
 use kubernetes_validator_provider::KubernetesValidatorProvider;
 use log::info;
 use std::hash::Hash;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
+use tokio;
 
 pub struct KubernetesBackend {
     pub schemas_repository: Option<Arc<SchemaRepository>>,
