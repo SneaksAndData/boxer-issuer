@@ -19,7 +19,7 @@ pub async fn get_health() -> actix_web::Result<String> {
     responses((status = OK, body = String)),
     responses((status = StatusCode::SERVICE_UNAVAILABLE, description = "Service not ready")),
 )]
-#[get("/probe")]
+#[get("/ready")]
 pub async fn get_health_probe(readiness_state: web::Data<Arc<AtomicBool>>) -> actix_web::Result<String> {
     if readiness_state.load(Ordering::Acquire) {
         return Ok("ok".into());
