@@ -8,6 +8,7 @@ use anyhow::Result;
 use boxer_core::services::backends::{Backend, BackendConfiguration};
 use boxer_core::services::service_provider::ServiceProvider;
 use serde::Deserialize;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -24,6 +25,7 @@ pub trait IssuerBackend:
     + ServiceProvider<Arc<IdentityProviderRepository>>
     + ServiceProvider<Arc<dyn ExternalIdentityValidatorProvider + Send + Sync>>
 {
+    fn readiness_state(&self) -> Arc<AtomicBool>;
 }
 
 pub async fn load_backend(backend_type: BackendType, cm: &AppSettings) -> Result<Arc<dyn IssuerBackend>> {

@@ -8,7 +8,7 @@ pub trait InitializationConfigurationManager {
     /// Retrieves the signing key used for token generation.
     fn get_signing_key(&self) -> Arc<Vec<u8>>;
 
-    /// Retrieves the signing key used for token generation.
+    /// Retrieves the signing key ID used for token generation.
     fn get_key_id(&self) -> String;
 
     /// Retrieves the backend type for the application.

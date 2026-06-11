@@ -26,6 +26,9 @@ Don't do the following:
 - Creating the `mod.rs` files in Rust code. Use the `foo.rs` file instead of `foo/mod.rs`.
 - Using the unsafe code in Rust code in this project.
 
+### Module layout convention
+Use named module files over `mod.rs`. In general, named module root files (e.g.: `health.rs`,`middleware.rs` ) help searching through the repository. If there is a good reason for it, use `mod.rs`.
+
 ## Pull Requests
 
 Make sure you are following the checklist in the PR template.

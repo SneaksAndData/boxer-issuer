@@ -13,6 +13,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::http::controllers::v1;
+use crate::http::health;
 use crate::http::openapi::ApiDoc;
 use crate::services::backends::base::load_backend;
 use crate::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
@@ -76,6 +77,7 @@ async fn main() -> Result<()> {
     }
 
     let current_backend = load_backend(cm.get_backend_type(), &cm).await?;
+    let readiness_state = current_backend.readiness_state();
 
     let validator_provider: Arc<dyn ExternalIdentityValidatorProvider + Send + Sync> = current_backend.get();
 
@@ -116,7 +118,9 @@ async fn main() -> Result<()> {
             .app_data(Data::new(entities_repository.clone()))
             .app_data(Data::new(identity_provider_repository.clone()))
             .app_data(Data::new(audit_service.clone()))
+            .app_data(Data::new(readiness_state.clone()))
             .service(v1::urls())
+            .service(health::urls())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
     .bind(cm.listen_address.clone())?

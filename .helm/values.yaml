@@ -93,6 +93,26 @@ tolerations: { }
 # Node labels for pod assignment
 affinity: { }
 
+# Additional settings for the liveness probe that hits /health on the http port.
+# Merged into the probe spec; httpGet path and port are managed by the chart.
+livenessProbe: { }
+# Example:
+#
+#  initialDelaySeconds: 10
+#  periodSeconds: 10
+#  timeoutSeconds: 1
+#  failureThreshold: 3
+
+# Additional settings for the readiness probe that hits /health/ready on the http port.
+# Merged into the probe spec; httpGet path and port are managed by the chart.
+readinessProbe: { }
+# Example:
+#
+#  initialDelaySeconds: 5
+#  periodSeconds: 10
+#  timeoutSeconds: 1
+#  failureThreshold: 3
+
 # Security context settings for the container
 securityContext:
   allowPrivilegeEscalation: false
