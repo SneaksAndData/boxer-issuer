@@ -39,22 +39,10 @@ jobs:
       - name: Rustfmt Check
         uses: actions-rust-lang/rustfmt@v1
 
-      - name: Create k8s Kind Cluster
-        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc #v1.14.0
-        with:
-          cluster_name: 'kind'
-          version: v0.32.0
+      - uses: extractions/setup-just@v4
 
-      - name: Check kind cluster
-        run: |
-          kubectl cluster-info
-          kubectl get nodes
-          kind get kubeconfig --name kind
-
-      - name: Install integration test dependencies
-        run: |
-          helm dependency build ./integration-tests/helm/integration_tests \
-          && helm install integration-tests ./integration-tests/helm/integration_tests 
+      - name: Setup integration tests
+        run: just up
 
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
