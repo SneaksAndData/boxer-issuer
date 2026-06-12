@@ -1,5 +1,5 @@
-mod token_not_present_error;
-mod with_external_token_id;
+pub mod token_not_present_error;
+pub mod with_external_token_id;
 
 use crate::http::middleware::external_token::token_not_present_error::ExternalTokenError;
 use crate::models::api::external::token::ExternalToken;

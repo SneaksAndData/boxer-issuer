@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use actix_web::dev::ServiceRequest;
 use actix_web::http::header::HeaderValue;
 use anyhow::{anyhow, bail};
@@ -24,6 +27,7 @@ impl From<String> for ExternalToken {
 impl TryFrom<&HeaderValue> for ExternalToken {
     type Error = anyhow::Error;
 
+    #[allow(unreachable_code)] // False detect
     fn try_from(value: &HeaderValue) -> Result<Self, Self::Error> {
         match value.to_str() {
             Ok(string_value) => {
