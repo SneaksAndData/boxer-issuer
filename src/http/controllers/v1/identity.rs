@@ -3,9 +3,9 @@ mod external_identity_registration_request;
 
 use crate::http::controllers::v1::identity::external_identity_registration::ExternalIdentityRegistration;
 use crate::http::controllers::v1::identity::external_identity_registration_request::ExternalIdentityRegistrationRequest;
-// use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
-// use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
-// use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
+use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
+use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
+use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
