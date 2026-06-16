@@ -1,4 +1,4 @@
-pub mod http;
+mod http;
 mod models;
 mod services;
 
