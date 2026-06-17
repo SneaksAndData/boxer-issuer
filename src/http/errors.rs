@@ -7,8 +7,6 @@ use std::fmt::{Debug, Display, Formatter};
 #[derive(Debug)]
 pub struct Error(anyhow::Error);
 
-pub type Result<T> = actix_web::Result<T, Error>;
-
 impl Error {
     pub fn new(msg: &'static str) -> Self {
         Self(anyhow::anyhow!(msg))
