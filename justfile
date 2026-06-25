@@ -33,7 +33,7 @@ keycloak:
     helm upgrade --install keycloak oci://ghcr.io/codecentric/helm-charts/keycloakx \
       --set keycloak.username=admin \
       --set keycloak.password=admin \
-      --values ./integration_tests/keycloak.yaml
+      --values ./integration-tests/keycloak.yaml
 
 ingress-controller:
     kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
