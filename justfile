@@ -41,13 +41,13 @@ ingress-controller:
 wait-for-services:
     kubectl rollout status deployment/ingress-nginx-controller --namespace ingress-nginx --timeout=180s
     kubectl rollout status statefulset/keycloak-keycloakx --timeout=180s
-    kubectl rollout status deployment/boxer-validator-nginx --timeout=360s
+    kubectl rollout status deployment/boxer-validator-nginx --timeout=180s
 
 ingress:
     # Wait a bit for ingress controller to be ready to accept rules
     sleep 10
     # Create ingress rules for boxer-issuer and boxer-validator-nginx
-    kubectl apply -f ./integration_tests/ingress.yaml
+    kubectl apply -f ./integration-tests/ingress.yaml
 
 token-secret:
     kubectl create secret generic boxer-issuer-token-settings --from-literal=BOXER__TOKEN_SETTINGS__KEY='{{ key }}'
