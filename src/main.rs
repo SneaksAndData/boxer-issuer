@@ -1,4 +1,4 @@
-pub mod http;
+mod http;
 mod models;
 mod services;
 
@@ -23,6 +23,7 @@ use crate::services::configuration::models::AppSettings;
 use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use crate::services::principal_service::PrincipalService;
 use anyhow::Result;
+use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
 use boxer_core::http::middleware::logging::custom_error_logging;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::audit::AuditService;
@@ -103,7 +104,11 @@ async fn main() -> Result<()> {
         MetricsProvider::new(ROOT_METRICS_NAMESPACE, cm.instance_name.clone()),
     ));
 
+    // The audit_service variable is deprecated, use audit_writer instead.
+    // Will be removed in the next releases.
     let audit_service: Arc<dyn AuditService> = Arc::new(LogAuditService::new());
+
+    let audit_writer: Arc<dyn AuditWriter> = Arc::new(LogAuditService::new());
 
     info!(host:? = &cm.listen_address.ip(); "listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
     HttpServer::new(move || {
@@ -119,7 +124,7 @@ async fn main() -> Result<()> {
             .app_data(Data::new(identity_provider_repository.clone()))
             .app_data(Data::new(audit_service.clone()))
             .app_data(Data::new(readiness_state.clone()))
-            .service(v1::urls())
+            .service(v1::urls(audit_writer.clone()))
             .service(health::urls())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })

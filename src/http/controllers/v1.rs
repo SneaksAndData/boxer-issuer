@@ -1,6 +1,8 @@
-use crate::http::middleware::extract_external_token::ExternalTokenMiddlewareFactory;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
+use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
+use boxer_core::http::middleware::audit::audit_scope::AuditScope;
+use std::sync::Arc;
 use utoipa::openapi::security::{Http, HttpAuthScheme, SecurityScheme};
 use utoipa::{Modify, OpenApi};
 
@@ -39,12 +41,11 @@ impl Modify for SecurityAddon {
     }
 }
 
-pub fn urls() -> impl HttpServiceFactory {
+pub fn urls(writer: Arc<dyn AuditWriter>) -> impl HttpServiceFactory {
     web::scope("/api/v1")
         .service(identity::crud())
         .service(schema::crud())
         .service(principal::crud())
         .service(provider::crud())
-        .wrap(ExternalTokenMiddlewareFactory::default())
-        .service(token::token)
+        .service(web::scope("").service(token::token).with_initial_audit_scope(writer))
 }
