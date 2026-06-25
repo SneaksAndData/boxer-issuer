@@ -39,9 +39,9 @@ ingress-controller:
     kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
 
 wait-for-services:
-    kubectl rollout status deployment/boxer-validator-nginx --timeout=180s
     kubectl rollout status deployment/ingress-nginx-controller --namespace ingress-nginx --timeout=180s
     kubectl rollout status statefulset/keycloak-keycloakx --timeout=180s
+    kubectl rollout status deployment/boxer-validator-nginx --timeout=360s
 
 ingress:
     # Wait a bit for ingress controller to be ready to accept rules
