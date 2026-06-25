@@ -51,3 +51,10 @@ jobs:
         uses: romeovs/lcov-reporter-action@v0.4.0
         with:
           lcov-file: ./lcov.info
+
+      - name: Get logs from application pods
+        if: always()
+        run: |
+          kubectl describe pods --namespace default || true
+          echo "============================= Logs from boxer-validator-nginx ========================================"
+          kubectl logs -l app.kubernetes.io/name=boxer-validator-nginx || true
