@@ -1,36 +1,25 @@
-use actix_web::middleware::{Logger, from_fn};
-use actix_web::web::Data;
-use actix_web::{App, HttpServer};
 use boxer_issuer_http::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
 use boxer_issuer_http::services::token_service::TokenService;
-use log::{info, log};
+use log::info;
 use std::sync::Arc;
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
 
 use anyhow::Result;
 use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
-use boxer_core::http::middleware::logging::custom_error_logging;
-use boxer_core::services::audit::AuditService;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
+use boxer_core::services::audit::AuditService;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry;
 use boxer_core::services::observability::open_telemetry::metrics::init_metrics;
 use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
 use boxer_core::services::observability::open_telemetry::tracing::init_tracer;
-use boxer_issuer_http::http::controllers::v1;
-use boxer_issuer_http::http::health;
-use boxer_issuer_http::http::openapi::ApiDoc;
 use boxer_issuer_http::services::backends::base::load_backend;
-use boxer_issuer_http::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
 use boxer_issuer_http::services::backends::kubernetes::identity_repository::IdentityRepository;
 use boxer_issuer_http::services::backends::kubernetes::principal_repository::PrincipalRepository;
 use boxer_issuer_http::services::configuration::models::AppSettings;
 use boxer_issuer_http::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use boxer_issuer_http::services::principal_service::PrincipalService;
 use env_filter::Builder;
-use opentelemetry_instrumentation_actix_web::RequestTracing;
 
 const ROOT_METRICS_NAMESPACE: &str = "boxer-issuer";
 
