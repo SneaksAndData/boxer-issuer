@@ -3,12 +3,12 @@ mod external_identity_registration_request;
 
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
-use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
+use actix_web::{HttpResponse, Responder, Result, delete, get, post, web};
 use boxer_issuer::http::controllers::v1::identity::external_identity_registration::ExternalIdentityRegistration;
 use boxer_issuer::http::controllers::v1::identity::external_identity_registration_request::ExternalIdentityRegistrationRequest;
 use boxer_issuer::services::backends::kubernetes::identity_repository::IdentityRepository;
-use boxer_issuer::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
 use boxer_issuer::services::backends::kubernetes::principal_repository::PrincipalRepository;
+use boxer_issuer::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
 use cedar_policy::EntityUid;
 use std::str::FromStr;
 use std::sync::Arc;

@@ -2,13 +2,13 @@ pub mod http;
 pub mod models;
 pub mod services;
 
-use actix_web::middleware::{from_fn, Logger};
+use actix_web::middleware::{Logger, from_fn};
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::info;
 use services::token_service::TokenService;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 

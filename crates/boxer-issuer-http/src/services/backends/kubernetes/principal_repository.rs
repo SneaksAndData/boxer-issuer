@@ -1,9 +1,9 @@
 use boxer_core::services::audit::audit_facade::to_audit_record::ToAuditRecord;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::to_resource::ToResource;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::try_from_resource::TryFromResource;
-use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
-use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::GenericKubernetesResourceManager;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::base::upsert_repository::UpsertRepositoryWithDelete;
 use boxer_issuer::services::backends::kubernetes::principal_repository::cedar_entity_document::{
     CedarEntityDocument, CedarEntityDocumentSpec,
@@ -52,12 +52,12 @@ impl UpsertRepositoryWithDelete<PrincipalIdentity, StoredEntity>
 }
 
 pub type PrincipalRepository = dyn UpsertRepositoryWithDelete<
-    PrincipalIdentity,
-    StoredEntity,
-    DeleteError = Status,
-    Error = Status,
-    ReadError = Status,
->;
+        PrincipalIdentity,
+        StoredEntity,
+        DeleteError = Status,
+        Error = Status,
+        ReadError = Status,
+    >;
 
 pub struct StoredEntity(Entity);
 

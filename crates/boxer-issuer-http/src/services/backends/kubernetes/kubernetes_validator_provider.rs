@@ -1,4 +1,4 @@
-use anyhow::{bail, Error};
+use anyhow::{Error, bail};
 use async_trait::async_trait;
 use boxer_issuer::models::api::external::identity_provider::ExternalIdentityProvider;
 use boxer_issuer::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;

@@ -1,7 +1,7 @@
 use actix_web::error::PayloadError;
 use anyhow::anyhow;
-use cedar_policy::entities_errors::EntitiesError;
 use cedar_policy::SchemaError;
+use cedar_policy::entities_errors::EntitiesError;
 use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug)]

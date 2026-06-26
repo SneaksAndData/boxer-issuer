@@ -1,6 +1,6 @@
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
-use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
+use actix_web::{HttpResponse, Responder, Result, delete, get, post, web};
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use cedar_policy::SchemaFragment;
 use serde_json::Value;

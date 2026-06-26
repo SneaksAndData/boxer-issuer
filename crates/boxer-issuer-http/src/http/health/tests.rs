@@ -1,7 +1,7 @@
 use actix_web::web;
-use actix_web::{http::StatusCode, test, App};
-use std::sync::atomic::AtomicBool;
+use actix_web::{App, http::StatusCode, test};
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 #[actix_web::test]
 async fn test_health_returns_ok() {

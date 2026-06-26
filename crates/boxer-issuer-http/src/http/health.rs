@@ -1,8 +1,8 @@
 use actix_web::dev::HttpServiceFactory;
 use actix_web::get;
 use actix_web::web;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[cfg(test)]
 mod tests;

@@ -1,4 +1,4 @@
-use actix_web::middleware::{from_fn, Logger};
+use actix_web::middleware::{Logger, from_fn};
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use boxer_issuer_http::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
@@ -11,8 +11,8 @@ use utoipa_swagger_ui::SwaggerUi;
 use anyhow::Result;
 use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
 use boxer_core::http::middleware::logging::custom_error_logging;
-use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::audit::AuditService;
+use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry;

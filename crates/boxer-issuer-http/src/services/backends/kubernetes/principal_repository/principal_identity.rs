@@ -3,8 +3,8 @@ use boxer_core::services::backends::kubernetes::kubernetes_repository::try_into_
 use boxer_issuer::services::backends::kubernetes::principal_repository::cedar_entity_document::CedarEntityDocument;
 use cedar_policy::EntityUid;
 use kube::runtime::reflector::ObjectRef;
-use serde::ser::SerializeStruct;
 use serde::Serialize;
+use serde::ser::SerializeStruct;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct PrincipalIdentity {
