@@ -85,7 +85,6 @@ async fn main() -> Result<()> {
     let schemas_repository: Arc<SchemaRepository> = current_backend.get();
     let entities_repository: Arc<PrincipalRepository> = current_backend.get();
     let identity_repository: Arc<IdentityRepository> = current_backend.get();
-    let identity_provider_repository: Arc<IdentityProviderRepository> = current_backend.get();
 
     let principal_service = Arc::new(PrincipalService::new(
         identity_repository.clone(),
@@ -111,25 +110,15 @@ async fn main() -> Result<()> {
     let audit_writer: Arc<dyn AuditWriter> = Arc::new(LogAuditService::new());
 
     info!(host:? = &cm.listen_address.ip(); "listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
-    HttpServer::new(move || {
-        App::new()
-            .wrap(RequestTracing::new())
-            .wrap(Logger::default())
-            .wrap(from_fn(custom_error_logging))
-            .app_data(Data::new(token_provider.clone()))
-            .app_data(Data::new(principal_service.clone()))
-            .app_data(Data::new(identity_repository.clone()))
-            .app_data(Data::new(schemas_repository.clone()))
-            .app_data(Data::new(entities_repository.clone()))
-            .app_data(Data::new(identity_provider_repository.clone()))
-            .app_data(Data::new(audit_service.clone()))
-            .app_data(Data::new(readiness_state.clone()))
-            .service(v1::urls(audit_writer.clone()))
-            .service(health::urls())
-            .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
-    })
-    .bind(cm.listen_address.clone())?
-    .run()
+
+    boxer_issuer::start_api_server(
+        current_backend,
+        token_provider,
+        audit_service,
+        audit_writer,
+        readiness_state,
+        principal_service,
+        cm,
+    )
     .await
-    .map_err(anyhow::Error::from)
 }
