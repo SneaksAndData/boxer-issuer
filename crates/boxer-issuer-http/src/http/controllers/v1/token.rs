@@ -1,8 +1,8 @@
+use crate::models::api::external::identity_provider::ExternalIdentityProvider;
+use crate::services::token_service::{TokenProvider, TokenService};
 use actix_web::get;
 use actix_web::web::{Data, Path, ReqData};
 use boxer_core::models::external_token::ExternalToken;
-use boxer_issuer::models::api::external::identity_provider::ExternalIdentityProvider;
-use boxer_issuer::services::token_service::{TokenProvider, TokenService};
 use log::error;
 use std::sync::Arc;
 

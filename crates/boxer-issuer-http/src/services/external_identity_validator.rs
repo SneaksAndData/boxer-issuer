@@ -1,8 +1,8 @@
+use crate::models::api::external::identity::ExternalIdentity;
+use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
 use anyhow::bail;
 use async_trait::async_trait;
 use boxer_core::models::external_token::ExternalToken;
-use boxer_issuer::models::api::external::identity::ExternalIdentity;
-use boxer_issuer::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
 use jwt_authorizer::error::InitError;
 use jwt_authorizer::{Authorizer, AuthorizerBuilder, JwtAuthorizer, Validation};
 use log::info;

@@ -1,5 +1,5 @@
-use boxer_issuer::http::controllers::v1::ApiV1;
-use boxer_issuer::http::health;
+use crate::http::controllers::v1::ApiV1;
+use crate::http::health;
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]

@@ -5,8 +5,13 @@ pub mod principal_repository;
 
 mod kubernetes_validator_provider;
 
-use boxer_issuer::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
+use crate::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
 
+use crate::services::backends::base::IssuerBackend;
+use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
+use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
+use crate::services::configuration::models::{BackendSettings, KubernetesBackendSettings};
+use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use boxer_core::services::audit::audit_facade::WithAuditFacade;
@@ -22,11 +27,6 @@ use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
 use boxer_core::services::backends::kubernetes::logging_update_handler::LoggingUpdateHandler;
 use boxer_core::services::backends::{Backend, BackendConfiguration};
 use boxer_core::services::service_provider::ServiceProvider;
-use boxer_issuer::services::backends::base::IssuerBackend;
-use boxer_issuer::services::backends::kubernetes::identity_repository::IdentityRepository;
-use boxer_issuer::services::backends::kubernetes::principal_repository::PrincipalRepository;
-use boxer_issuer::services::configuration::models::{BackendSettings, KubernetesBackendSettings};
-use boxer_issuer::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use k8s_openapi::NamespaceResourceScope;
 use kube::Config;
 use kubernetes_validator_provider::KubernetesValidatorProvider;

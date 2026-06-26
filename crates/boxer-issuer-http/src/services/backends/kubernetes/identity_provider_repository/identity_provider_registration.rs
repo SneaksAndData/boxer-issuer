@@ -1,5 +1,5 @@
+use crate::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
 use boxer_core::services::audit::audit_facade::to_audit_record::ToAuditRecord;
-use boxer_issuer::models::api::external::identity_provider_settings::OidcExternalIdentityProviderSettings;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]

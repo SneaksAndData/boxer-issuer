@@ -1,8 +1,8 @@
+use crate::models::api::external::identity::ExternalIdentity;
+use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
+use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
+use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
-use boxer_issuer::models::api::external::identity::ExternalIdentity;
-use boxer_issuer::services::backends::kubernetes::identity_repository::IdentityRepository;
-use boxer_issuer::services::backends::kubernetes::principal_repository::PrincipalRepository;
-use boxer_issuer::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
 use cedar_policy::{EntityUid, SchemaFragment};
 use principal::Principal;
 use std::str::FromStr;

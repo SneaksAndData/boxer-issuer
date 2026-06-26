@@ -1,12 +1,12 @@
 mod principal_create_response;
 
+use crate::http::controllers::v1::principal::principal_create_response::PrincipalCreateResponse;
+use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
+use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{Responder, Result, get, post, web};
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
-use boxer_issuer::http::controllers::v1::principal::principal_create_response::PrincipalCreateResponse;
-use boxer_issuer::services::backends::kubernetes::principal_repository::PrincipalRepository;
-use boxer_issuer::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
 use cedar_policy::{Entity, EntityUid, Schema};
 use serde_json::Value;
 use std::str::FromStr;

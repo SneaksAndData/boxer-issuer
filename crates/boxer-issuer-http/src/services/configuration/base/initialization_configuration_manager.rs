@@ -1,5 +1,5 @@
+use crate::services::backends::base::BackendType;
 use async_trait::async_trait;
-use boxer_issuer::services::backends::base::BackendType;
 use std::sync::Arc;
 
 #[async_trait]

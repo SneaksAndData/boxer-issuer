@@ -1,5 +1,5 @@
+use crate::services::backends::base::BackendType;
 use boxer_core::services::observability::open_telemetry::settings::OpenTelemetrySettings;
-use boxer_issuer::services::backends::base::BackendType;
 use duration_string::DurationString;
 use serde::Deserialize;
 use std::net::SocketAddr;

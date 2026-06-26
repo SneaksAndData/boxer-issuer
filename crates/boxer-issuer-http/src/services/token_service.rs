@@ -1,3 +1,6 @@
+use crate::models::api::external::identity_provider::ExternalIdentityProvider;
+use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
+use crate::services::principal_service::PrincipalService;
 use async_trait::async_trait;
 use boxer_core::contracts::internal_token::v1::token::InternalToken;
 use boxer_core::models::external_token::ExternalToken;
@@ -12,9 +15,6 @@ use boxer_core::services::observability::open_telemetry::metrics::metric_recorde
 };
 use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
 use boxer_core::services::service_provider::ServiceProvider;
-use boxer_issuer::models::api::external::identity_provider::ExternalIdentityProvider;
-use boxer_issuer::services::identity_validator_provider::ExternalIdentityValidatorProvider;
-use boxer_issuer::services::principal_service::PrincipalService;
 use josekit::jwe::{Dir, JweHeader};
 use josekit::jwt;
 use josekit::jwt::JwtPayload;

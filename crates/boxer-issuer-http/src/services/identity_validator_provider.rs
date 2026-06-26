@@ -1,6 +1,6 @@
+use crate::models::api::external::identity_provider::ExternalIdentityProvider;
+use crate::services::external_identity_validator::ExternalIdentityValidator;
 use async_trait::async_trait;
-use boxer_issuer::models::api::external::identity_provider::ExternalIdentityProvider;
-use boxer_issuer::services::external_identity_validator::ExternalIdentityValidator;
 use std::sync::Arc;
 
 /// Read-only interface for managing external identity validators.

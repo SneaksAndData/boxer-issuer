@@ -1,7 +1,7 @@
+use crate::services::backends::base::BackendType;
+use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
+use crate::services::configuration::models::AppSettings;
 use async_trait::async_trait;
-use boxer_issuer::services::backends::base::BackendType;
-use boxer_issuer::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
-use boxer_issuer::services::configuration::models::AppSettings;
 use config::{Config, ConfigError, Environment, File};
 use std::sync::Arc;
 

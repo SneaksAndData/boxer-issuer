@@ -1,11 +1,9 @@
+use crate::models::api::external::identity_provider::ExternalIdentityProvider;
+use crate::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
+use crate::services::external_identity_validator::{ExternalIdentityValidator, ExternalIdentityValidatorFactory};
+use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use anyhow::{Error, bail};
 use async_trait::async_trait;
-use boxer_issuer::models::api::external::identity_provider::ExternalIdentityProvider;
-use boxer_issuer::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
-use boxer_issuer::services::external_identity_validator::{
-    ExternalIdentityValidator, ExternalIdentityValidatorFactory,
-};
-use boxer_issuer::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use std::sync::Arc;
 
 pub struct KubernetesValidatorProvider {
