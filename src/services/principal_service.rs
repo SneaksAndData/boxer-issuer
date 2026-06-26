@@ -1,12 +1,14 @@
 use crate::models::api::external::identity::ExternalIdentity;
-use crate::models::principal::Principal;
 use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
 use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
 use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use cedar_policy::{EntityUid, SchemaFragment};
+use principal::Principal;
 use std::str::FromStr;
 use std::sync::Arc;
+
+pub mod principal;
 
 pub struct PrincipalService {
     identities: Arc<IdentityRepository>,
