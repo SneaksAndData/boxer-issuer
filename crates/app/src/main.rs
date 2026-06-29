@@ -96,7 +96,7 @@ async fn main() -> Result<()> {
 
     info!(host:? = &cm.listen_address.ip(); "listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
 
-    boxer_issuer_http::start_api_server(
+    let server = boxer_issuer_http::start_api_server(
         current_backend,
         token_provider,
         audit_service,
@@ -104,6 +104,7 @@ async fn main() -> Result<()> {
         readiness_state,
         principal_service,
         cm,
-    )
-    .await
+    )?;
+
+    server.await.map_err(anyhow::Error::from)
 }

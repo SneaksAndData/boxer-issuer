@@ -37,7 +37,7 @@ pub fn start_api_server(
     readiness_state: Arc<AtomicBool>,
     principal_service: Arc<dyn PrincipalServiceTrait>,
     cm: AppSettings,
-) -> Result<Server, actix_web::Error> {
+) -> Result<Server, anyhow::Error> {
     let schemas_repository: Arc<SchemaRepository> = current_backend.get();
     let entities_repository: Arc<PrincipalRepository> = current_backend.get();
     let identity_repository: Arc<IdentityRepository> = current_backend.get();
