@@ -10,6 +10,7 @@ use boxer_core::services::audit::events::resource_delete_audit_event::ResourceDe
 use boxer_core::services::audit::events::resource_modification_audit_event::ResourceModificationAuditEvent;
 use boxer_core::services::audit::events::token_validation_event::TokenValidationEvent;
 use boxer_core::services::audit::AuditService;
+use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry::logging::settings::LogSettings;
 use boxer_core::services::observability::open_telemetry::metrics::settings::MetricsSettings;
 use boxer_core::services::observability::open_telemetry::settings::OpenTelemetrySettings;
@@ -24,18 +25,48 @@ use boxer_issuer_http::services::principal_service::principal::Principal;
 use boxer_issuer_http::services::principal_service::PrincipalServiceTrait;
 use boxer_issuer_http::services::token_service::TokenProvider;
 use cedar_policy::SchemaFragment;
+use env_filter::Builder;
+use log::info;
 use mockall::mock;
+use reqwest::Client;
 use std::net::SocketAddr;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 #[actix_web::test]
 async fn it_works() {
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
+
+    init_logging();
+
     let server = build_server().await;
+    let handle = server.handle();
     let thread = tokio::spawn(server);
 
-    thread.abort();
+    let client = Client::new();
+    let external_token = get_external_token(&client).await.expect("Failed to get external token");
+
+    let internal_token = client
+        .get("http://localhost:8080/api/v1/token/keycloak")
+        .bearer_auth(external_token)
+        .send()
+        .await
+        .unwrap();
+    info!("Internal token response: {:?}", internal_token);
+
+    // let external_token = handle.stop(true).await;
+
     assert_eq!(true, false);
+}
+
+fn init_logging() {
+    let _ = env_logger::builder()
+        .target(env_logger::Target::Stdout)
+        .filter_level(log::LevelFilter::Debug)
+        .is_test(true)
+        .try_init();
 }
 
 async fn build_server() -> Server {
@@ -77,7 +108,11 @@ async fn build_server() -> Server {
     let principal_service = Arc::new(MockPrincipalService::new());
     let token_provider = Arc::new(MockTokenProvider::new());
     let audit_service = Arc::new(MockAuditService::new());
-    let audit_writer = Arc::new(MockAuditWriter::new());
+
+    let mut audit_writer = MockAuditWriter::new();
+    audit_writer.expect_write().returning(|_event| ());
+
+    let audit_writer = Arc::new(audit_writer);
     let readiness_state = Arc::new(AtomicBool::new(true));
     boxer_issuer_http::start_api_server(
         current_backend,
@@ -89,6 +124,28 @@ async fn build_server() -> Server {
         app_settings,
     )
     .expect("Start api server failed")
+}
+
+async fn get_external_token(client: &Client) -> Result<String> {
+    let response = client
+        .post("http://localhost:5555/auth/realms/master/protocol/openid-connect/token")
+        .form(&[
+            ("client_id", "test_client"),
+            ("client_secret", "test_client_secret"),
+            ("username", "test_root"),
+            ("password", "test-root-password"),
+            ("grant_type", "password"),
+        ])
+        .send()
+        .await?;
+
+    let body = response.text().await?;
+    let claims = serde_json::from_str::<serde_json::Value>(&body)?;
+
+    let access_token = claims["access_token"]
+        .as_str()
+        .ok_or(anyhow::anyhow!("access_token not found in response"))?;
+    Ok(access_token.to_string())
 }
 
 mock! {
