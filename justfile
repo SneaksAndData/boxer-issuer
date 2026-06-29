@@ -7,7 +7,7 @@ default:
 update-deps:
     helm dependency update ./integration-tests/helm/setup
 
-up: start-kind-cluster build-deps integration-tests keycloak ingress-controller wait-for-services ingress token-secret
+up: start-kind-cluster build-deps integration-tests keycloak ingress-controller wait-for-services ingress token-secret configure-keycloak
 
 fresh: stop up
 
@@ -51,3 +51,15 @@ ingress:
 
 token-secret:
     kubectl create secret generic boxer-issuer-token-settings --from-literal=BOXER__TOKEN_SETTINGS__KEY='{{ key }}'
+
+configure-keycloak:
+    # Wait a bit for Keycloak to be ready to accept admin commands
+    sleep 10
+
+    # Create realm, client, and user for tests
+    docker run --rm --network=host -v $(pwd)/integration-tests/terraform/keycloak:/tofu --workdir /tofu \
+      ghcr.io/opentofu/opentofu:latest init
+    docker run --rm --network=host -v $(pwd)/integration-tests/terraform/keycloak:/tofu --workdir /tofu \
+      ghcr.io/opentofu/opentofu:latest plan
+    docker run --rm --network=host -v $(pwd)/integration-tests/terraform/keycloak:/tofu --workdir /tofu \
+      ghcr.io/opentofu/opentofu:latest apply -auto-approve

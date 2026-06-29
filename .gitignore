@@ -17,9 +17,9 @@ target/
 .idea/
 
 
-## Integration Tests
-/integration-tests/.terraform/
-/integration-tests/terraform.tfstate
-/integration-tests/terraform.tfstate.backup
-/integration-tests/.terraform.lock.hcl
+# Integrationtest state files and generated directories
 /integration-tests/helm/setup/charts/**
+/integration-tests/terraform/*/.terraform/
+/integration-tests/terraform/*/terraform.tfstate*
+/integration-tests/terraform/*/.terraform.lock.hcl
+
