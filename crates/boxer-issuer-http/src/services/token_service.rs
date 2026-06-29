@@ -1,6 +1,6 @@
 use crate::models::api::external::identity_provider::ExternalIdentityProvider;
 use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
-use crate::services::principal_service::PrincipalService;
+use crate::services::principal_service::{PrincipalService, PrincipalServiceTrait};
 use async_trait::async_trait;
 use boxer_core::contracts::internal_token::v1::token::InternalToken;
 use boxer_core::models::external_token::ExternalToken;
@@ -22,7 +22,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 #[async_trait]
-pub trait TokenProvider {
+pub trait TokenProvider: Send + Sync + 'static {
     async fn issue_token(
         &self,
         external_identity_provider: ExternalIdentityProvider,
@@ -32,7 +32,7 @@ pub trait TokenProvider {
 
 pub struct TokenService {
     validators: Arc<dyn ExternalIdentityValidatorProvider + Send + Sync>,
-    principal_service: Arc<PrincipalService>,
+    principal_service: Arc<dyn PrincipalServiceTrait>,
     encrypt_secret: Arc<Vec<u8>>,
     audience: String,
     key_id: String,
