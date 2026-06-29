@@ -2,5 +2,5 @@
 members = [
     "crates/boxer-issuer-http",
     "crates/app"
-]
+, "crates/tests"]
 resolver = "2"

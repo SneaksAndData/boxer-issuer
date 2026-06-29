@@ -1,0 +1,12 @@
+[package]
+name = "tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+boxer-issuer-http = { path = "../boxer-issuer-http" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.26" }
+actix-web = "4.14.0"
+tokio = "1.52.3"
+anyhow = "1.0.103"
+mockall = "0.14.0"

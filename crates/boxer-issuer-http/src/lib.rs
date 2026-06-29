@@ -12,6 +12,8 @@ use std::sync::atomic::AtomicBool;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::services::principal_service::PrincipalServiceTrait;
+use crate::services::token_service::TokenProvider;
 use anyhow::Result;
 use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
 use boxer_core::http::middleware::logging::custom_error_logging;
@@ -30,11 +32,11 @@ use services::principal_service::PrincipalService;
 
 pub async fn start_api_server(
     current_backend: Arc<dyn IssuerBackend>,
-    token_provider: Arc<TokenService>,
+    token_provider: Arc<dyn TokenProvider>,
     audit_service: Arc<dyn AuditService>,
     audit_writer: Arc<dyn AuditWriter>,
     readiness_state: Arc<AtomicBool>,
-    principal_service: Arc<PrincipalService>,
+    principal_service: Arc<dyn PrincipalServiceTrait>,
     cm: AppSettings,
 ) -> Result<()> {
     let schemas_repository: Arc<SchemaRepository> = current_backend.get();
