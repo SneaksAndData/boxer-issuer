@@ -1,6 +1,7 @@
 [workspace]
+resolver = "2"
 members = [
     "crates/boxer-issuer-http",
-    "crates/app"
-, "crates/tests"]
-resolver = "2"
+    "crates/app",
+    "crates/tests"
+]
