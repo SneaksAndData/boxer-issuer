@@ -3,12 +3,12 @@ pub mod models;
 pub mod services;
 
 use actix_web::dev::Server;
-use actix_web::middleware::{from_fn, Logger};
+use actix_web::middleware::{Logger, from_fn};
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::info;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
