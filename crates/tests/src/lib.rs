@@ -4,12 +4,12 @@ use actix_web::dev::Server;
 use anyhow::Result;
 use async_trait::async_trait;
 use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
-use boxer_core::services::audit::AuditService;
 use boxer_core::services::audit::chained::audit_event::AuditEvent;
 use boxer_core::services::audit::events::authorization_audit_event::AuthorizationAuditEvent;
 use boxer_core::services::audit::events::resource_delete_audit_event::ResourceDeleteAuditEvent;
 use boxer_core::services::audit::events::resource_modification_audit_event::ResourceModificationAuditEvent;
 use boxer_core::services::audit::events::token_validation_event::TokenValidationEvent;
+use boxer_core::services::audit::AuditService;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry::logging::settings::LogSettings;
 use boxer_core::services::observability::open_telemetry::metrics::settings::MetricsSettings;
@@ -17,12 +17,12 @@ use boxer_core::services::observability::open_telemetry::settings::OpenTelemetry
 use boxer_core::services::observability::open_telemetry::tracing::settings::TracingSettings;
 use boxer_issuer_http::models::api::external::identity::ExternalIdentity;
 use boxer_issuer_http::models::api::external::identity_provider::ExternalIdentityProvider;
-use boxer_issuer_http::services::backends::base::{BackendType, load_backend};
+use boxer_issuer_http::services::backends::base::{load_backend, BackendType};
 use boxer_issuer_http::services::configuration::models::{
     AppSettings, BackendSettings, InitializationSettings, KubernetesBackendSettings, TokenSettings,
 };
-use boxer_issuer_http::services::principal_service::PrincipalServiceTrait;
 use boxer_issuer_http::services::principal_service::principal::Principal;
+use boxer_issuer_http::services::principal_service::PrincipalServiceTrait;
 use boxer_issuer_http::services::token_service::TokenProvider;
 use cedar_policy::SchemaFragment;
 use env_filter::Builder;
@@ -31,7 +31,6 @@ use mockall::mock;
 use reqwest::Client;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
 
 #[actix_web::test]
 async fn it_works() {
@@ -113,17 +112,8 @@ async fn build_server() -> Server {
     audit_writer.expect_write().returning(|_event| ());
 
     let audit_writer = Arc::new(audit_writer);
-    let readiness_state = Arc::new(AtomicBool::new(true));
-    boxer_issuer_http::start_api_server(
-        current_backend,
-        token_provider,
-        audit_service,
-        audit_writer,
-        readiness_state,
-        principal_service,
-        app_settings,
-    )
-    .expect("Start api server failed")
+    boxer_issuer_http::start_api_server(current_backend, audit_writer, app_settings, "test")
+        .expect("Start api server failed")
 }
 
 async fn get_external_token(client: &Client) -> Result<String> {

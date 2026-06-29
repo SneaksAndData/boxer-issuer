@@ -15,7 +15,7 @@ use std::sync::Arc;
 #[get("/token/{identity_provider}")]
 pub async fn token(
     external_token: ReqData<ExternalToken>,
-    data: Data<Arc<TokenService>>,
+    data: Data<Arc<dyn TokenProvider>>,
     identity_provider: Path<String>,
 ) -> actix_web::Result<String> {
     let ip = ExternalIdentityProvider::from(identity_provider.to_string());
