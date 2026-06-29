@@ -2,13 +2,13 @@ pub mod http;
 pub mod models;
 pub mod services;
 
-use actix_web::middleware::{Logger, from_fn};
+use actix_web::dev::Server;
+use actix_web::middleware::{from_fn, Logger};
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::info;
-use services::token_service::TokenService;
-use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -28,9 +28,8 @@ use services::backends::kubernetes::identity_provider_repository::IdentityProvid
 use services::backends::kubernetes::identity_repository::IdentityRepository;
 use services::backends::kubernetes::principal_repository::PrincipalRepository;
 use services::configuration::models::AppSettings;
-use services::principal_service::PrincipalService;
 
-pub async fn start_api_server(
+pub fn start_api_server(
     current_backend: Arc<dyn IssuerBackend>,
     token_provider: Arc<dyn TokenProvider>,
     audit_service: Arc<dyn AuditService>,
@@ -38,14 +37,14 @@ pub async fn start_api_server(
     readiness_state: Arc<AtomicBool>,
     principal_service: Arc<dyn PrincipalServiceTrait>,
     cm: AppSettings,
-) -> Result<()> {
+) -> Result<Server, actix_web::Error> {
     let schemas_repository: Arc<SchemaRepository> = current_backend.get();
     let entities_repository: Arc<PrincipalRepository> = current_backend.get();
     let identity_repository: Arc<IdentityRepository> = current_backend.get();
     let identity_provider_repository: Arc<IdentityProviderRepository> = current_backend.get();
 
     info!(host:? = &cm.listen_address.ip(); "listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
-    HttpServer::new(move || {
+    let server_builder = HttpServer::new(move || {
         App::new()
             .wrap(RequestTracing::new())
             .wrap(Logger::default())
@@ -62,8 +61,6 @@ pub async fn start_api_server(
             .service(health::urls())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
-    .bind(cm.listen_address.clone())?
-    .run()
-    .await
-    .map_err(anyhow::Error::from)
+    .bind(cm.listen_address.clone())?;
+    Ok(server_builder.run())
 }

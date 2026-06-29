@@ -544,7 +544,7 @@ dependencies = [
  "actix-web",
  "anyhow",
  "boxer-issuer-http",
- "boxer_core",
+ "boxer_core 0.1.0 (git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.26)",
  "env_filter 0.1.4",
  "env_logger",
  "log",
@@ -560,7 +560,7 @@ dependencies = [
  "actix-web",
  "anyhow",
  "async-trait",
- "boxer_core",
+ "boxer_core 0.1.0",
  "cedar-policy",
  "config",
  "duration-string",
@@ -580,6 +580,41 @@ dependencies = [
  "tokio",
  "utoipa",
  "utoipa-swagger-ui",
+]
+
+[[package]]
+name = "boxer_core"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "assert_matches",
+ "async-trait",
+ "cedar-policy",
+ "duration-string",
+ "env_filter 0.1.4",
+ "futures",
+ "futures-util",
+ "josekit",
+ "jsonwebtoken 10.4.0",
+ "k8s-openapi",
+ "kube",
+ "log",
+ "maplit",
+ "md5",
+ "opentelemetry 0.30.0",
+ "opentelemetry-appender-log",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
+ "regex",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "serde_norway",
+ "test-context",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
@@ -4230,8 +4265,10 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "anyhow",
+ "async-trait",
  "boxer-issuer-http",
- "boxer_core",
+ "boxer_core 0.1.0",
+ "cedar-policy",
  "mockall",
  "tokio",
 ]

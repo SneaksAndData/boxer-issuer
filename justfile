@@ -44,8 +44,6 @@ wait-for-services:
     kubectl rollout status deployment/boxer-validator-nginx --timeout=180s
 
 ingress:
-    # Wait a bit for ingress controller to be ready to accept rules
-    sleep 10
     # Create ingress rules for boxer-issuer and boxer-validator-nginx
     kubectl apply -f ./integration-tests/ingress.yaml
 
@@ -63,3 +61,6 @@ configure-keycloak:
       ghcr.io/opentofu/opentofu:latest plan
     docker run --rm --network=host -v $(pwd)/integration-tests/terraform/keycloak:/tofu --workdir /tofu \
       ghcr.io/opentofu/opentofu:latest apply -auto-approve
+
+bootstrap:
+    kubectl apply -f ./integration-tests/bootstrap/bootstrap.yaml

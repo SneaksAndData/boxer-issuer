@@ -1,8 +1,9 @@
 use crate::models::api::external::identity::ExternalIdentity;
 use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
-use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
 use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
+use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
 use anyhow::Result;
+use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use cedar_policy::{EntityUid, SchemaFragment};
 use principal::Principal;
@@ -11,9 +12,11 @@ use std::sync::Arc;
 
 pub mod principal;
 
-pub trait PrincipalServiceTrait {
+#[async_trait]
+pub trait PrincipalServiceTrait: Send + Sync + 'static {
     async fn get_principal(&self, external_identity: ExternalIdentity) -> Result<Principal>;
     async fn get_validator_schema(&self, external_identity: ExternalIdentity) -> Result<String>;
+    async fn get_schemas(&self, schema_id: String) -> Result<SchemaFragment, anyhow::Error>;
 }
 
 pub struct PrincipalService {
@@ -23,10 +26,6 @@ pub struct PrincipalService {
 }
 
 impl PrincipalService {
-    pub async fn get_schemas(&self, schema_id: String) -> Result<SchemaFragment, anyhow::Error> {
-        let schema = self.schema_repository.get(schema_id).await?;
-        Ok(schema)
-    }
     pub fn new(
         identities: Arc<IdentityRepository>,
         principals: Arc<PrincipalRepository>,
@@ -40,6 +39,7 @@ impl PrincipalService {
     }
 }
 
+#[async_trait]
 impl PrincipalServiceTrait for PrincipalService {
     async fn get_principal(&self, external_identity: ExternalIdentity) -> Result<Principal, anyhow::Error> {
         let registration = self
@@ -59,5 +59,10 @@ impl PrincipalServiceTrait for PrincipalService {
             .get((external_identity.identity_provider, external_identity.user_id))
             .await?;
         Ok(registration.validator_schema)
+    }
+
+    async fn get_schemas(&self, schema_id: String) -> Result<SchemaFragment, anyhow::Error> {
+        let schema = self.schema_repository.get(schema_id).await?;
+        Ok(schema)
     }
 }
