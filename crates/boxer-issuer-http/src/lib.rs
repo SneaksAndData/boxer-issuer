@@ -3,12 +3,12 @@ pub mod models;
 pub mod services;
 
 use actix_web::dev::Server;
-use actix_web::middleware::{from_fn, Logger};
+use actix_web::middleware::{Logger, from_fn};
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::info;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -19,8 +19,8 @@ use crate::services::token_service::{TokenProvider, TokenService};
 use anyhow::Result;
 use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
 use boxer_core::http::middleware::logging::custom_error_logging;
-use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::audit::AuditService;
+use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
 use http::controllers::v1;
