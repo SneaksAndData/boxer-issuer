@@ -1,19 +1,19 @@
 use crate::MockAuditWriter;
 use actix_web::dev::ServerHandle;
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use boxer_core::services::observability::open_telemetry::logging::settings::LogSettings;
 use boxer_core::services::observability::open_telemetry::metrics::settings::MetricsSettings;
 use boxer_core::services::observability::open_telemetry::settings::OpenTelemetrySettings;
 use boxer_core::services::observability::open_telemetry::tracing::settings::TracingSettings;
 use boxer_core::testing::get_kubeconfig;
-use boxer_issuer_http::services::backends::base::{BackendType, load_backend};
+use boxer_issuer_http::services::backends::base::{load_backend, BackendType};
 use boxer_issuer_http::services::configuration::models::{
     AppSettings, BackendSettings, InitializationSettings, KubernetesBackendSettings, TokenSettings,
 };
 use k8s_openapi::api::core::v1::Secret;
 use kube::{Api, Client};
 use rstest::fixture;
-use serde_json::{Value, from_str};
+use serde_json::{from_str, Value};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
@@ -80,7 +80,7 @@ pub async fn with_test_server() -> TestServerHandles {
         backend: BackendSettings {
             kubernetes: Some(KubernetesBackendSettings {
                 kubeconfig: None,
-                exec: Some("/opt/homebrew/bin/kind get kubeconfig".to_string()),
+                exec: Some("kind get kubeconfig".to_string()),
                 in_cluster: false,
                 namespace: "default".to_string(),
                 operation_timeout: Default::default(),
