@@ -2,7 +2,7 @@ terraform {
   required_providers {
     keycloak = {
       source  = "keycloak/keycloak"
-      version = ">= 5.0.0"
+      version = "= 5.0.0"
     }
   }
 }
@@ -11,22 +11,11 @@ provider "keycloak" {
   client_id = "admin-cli"
   username  = "admin"
   password  = "admin"
-  url       = "http://keycloak:8080"
+  url       = "http://localhost:5555/auth"
 }
 
 data "keycloak_realm" "master" {
   realm = "master"
-}
-
-resource "keycloak_user" "user_with_initial_password" {
-  realm_id = data.keycloak_realm.master.id
-  username = "test_user"
-  enabled  = true
-
-  initial_password {
-    value = "test_user_password"
-  }
-
 }
 
 resource "keycloak_openid_client" "test_client" {
@@ -48,6 +37,26 @@ resource "keycloak_openid_client_default_scopes" "client_default_scopes" {
     "email",
     "roles",
     "web-origins",
-    "microprofile-jwt",
   ]
 }
+
+resource "keycloak_user" "test_user" {
+  realm_id = data.keycloak_realm.master.id
+  username = "test_user"
+  enabled  = true
+
+  initial_password {
+    value = "test-user-password"
+  }
+}
+
+resource "keycloak_user" "test_root" {
+  realm_id = data.keycloak_realm.master.id
+  username = "test_root"
+  enabled  = true
+
+  initial_password {
+    value = "test-root-password"
+  }
+}
+
