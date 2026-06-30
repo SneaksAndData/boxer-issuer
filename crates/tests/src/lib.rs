@@ -47,6 +47,8 @@ async fn it_works() {
     let client = Client::new();
     let external_token = get_external_token(&client).await.expect("Failed to get external token");
 
+    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+
     let internal_token = client
         .get("http://localhost:8080/api/v1/token/keycloak")
         .bearer_auth(external_token)
@@ -71,7 +73,7 @@ fn init_logging() {
 async fn build_server() -> Server {
     let app_settings = AppSettings {
         deploy_environment: "integration-tests".to_string(),
-        instance_name: "test".to_string(),
+        instance_name: "integration-tests".to_string(),
         listen_address: SocketAddr::from(([127, 0, 0, 1], 8080)),
         init: InitializationSettings {
             backend_type: BackendType::Kubernetes,
@@ -88,25 +90,21 @@ async fn build_server() -> Server {
                 in_cluster: false,
                 namespace: "default".to_string(),
                 operation_timeout: Default::default(),
-                resource_owner_label: "integration-tests".to_string(),
+                resource_owner_label: "application/boxer-issuer".to_string(),
             }),
         },
         token_settings: TokenSettings {
             issuer: "integration-tests".to_string(),
             audience: "integration-tests".to_string(),
             key_id: "key-id".to_string(),
-            key: "key".to_string(),
-            content_encryption: "encryption".to_string(),
+            key: "214bed5c9ddb129a6563565faf8416fe".to_string(),
+            content_encryption: "A128CBC-HS256".to_string(),
         },
     };
 
     let current_backend = load_backend(BackendType::Kubernetes, &app_settings)
         .await
         .expect("Failed to load backend");
-
-    let principal_service = Arc::new(MockPrincipalService::new());
-    let token_provider = Arc::new(MockTokenProvider::new());
-    let audit_service = Arc::new(MockAuditService::new());
 
     let mut audit_writer = MockAuditWriter::new();
     audit_writer.expect_write().returning(|_event| ());
@@ -139,43 +137,10 @@ async fn get_external_token(client: &Client) -> Result<String> {
 }
 
 mock! {
-
-    pub TokenProvider {}
-
-    #[async_trait]
-    impl TokenProvider for TokenProvider {
-        async fn issue_token( &self, external_identity_provider: ExternalIdentityProvider, external_token: boxer_core::models::external_token::ExternalToken, ) -> Result<String>;
-    }
-}
-
-mock! {
-    pub AuditService {}
-
-    impl AuditService for AuditService {
-        fn record_authorization(&self, event: AuthorizationAuditEvent) -> Result<()>;
-        fn record_resource_deletion(&self, event: ResourceDeleteAuditEvent) -> Result<()>;
-        fn record_resource_modification(&self, event: ResourceModificationAuditEvent) -> Result<()>;
-        fn record_token_validation(&self, event: TokenValidationEvent) -> Result<()>;
-    }
-
-}
-
-mock! {
     pub AuditWriter {}
 
     impl AuditWriter for AuditWriter {
         fn write(&self, event: AuditEvent);
     }
 
-}
-
-mock! {
-    pub PrincipalService {}
-
-    #[async_trait]
-    impl PrincipalServiceTrait for PrincipalService {
-        async fn get_principal(&self, external_identity: ExternalIdentity) -> Result<Principal>;
-        async fn get_validator_schema(&self, external_identity: ExternalIdentity) -> Result<String>;
-        async fn get_schemas(&self, schema_id: String) -> Result<SchemaFragment, anyhow::Error>;
-    }
 }

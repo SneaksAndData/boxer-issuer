@@ -7,7 +7,7 @@ default:
 update-deps:
     helm dependency update ./integration-tests/helm/setup
 
-up: start-kind-cluster build-deps integration-tests keycloak ingress-controller wait-for-services ingress token-secret configure-keycloak
+up: start-kind-cluster build-deps integration-tests keycloak ingress-controller wait-for-services ingress token-secret configure-keycloak bootstrap
 
 fresh: stop up
 

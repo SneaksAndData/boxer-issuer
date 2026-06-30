@@ -50,7 +50,7 @@ pub fn start_api_server(
         entities_repository.clone(),
         schemas_repository.clone(),
     ));
-    let token_provider = Arc::new(TokenService::new(
+    let token_provider: Arc<dyn TokenProvider> = Arc::new(TokenService::new(
         validator_provider.clone(),
         principal_service.clone(),
         cm.get_signing_key(),
