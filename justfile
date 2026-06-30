@@ -7,7 +7,7 @@ default:
 update-deps:
     helm dependency update ./integration-tests/helm/setup
 
-up: start-kind-cluster build-deps integration-tests keycloak ingress-controller wait-for-services ingress token-secret
+up: start-kind-cluster build-deps integration-tests keycloak ingress-controller wait-for-services ingress token-secret bootstrap
 
 fresh: stop up
 
@@ -51,3 +51,6 @@ ingress:
 
 token-secret:
     kubectl create secret generic boxer-issuer-token-settings --from-literal=BOXER__TOKEN_SETTINGS__KEY='{{ key }}'
+
+bootstrap:
+    kubectl apply -f ./integration-tests/bootstrap/bootstrap.yaml
