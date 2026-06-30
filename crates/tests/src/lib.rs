@@ -2,7 +2,7 @@
 
 mod fixtures;
 
-use crate::fixtures::{external_token, token_review_endpoint, TestServerHandles};
+use crate::fixtures::{TestServerHandles, external_token, token_review_endpoint};
 use anyhow::Result;
 use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
 use boxer_core::services::audit::chained::audit_event::AuditEvent;
