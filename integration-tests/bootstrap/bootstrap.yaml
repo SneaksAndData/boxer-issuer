@@ -1,0 +1,157 @@
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: IdentityProviderDocument
+metadata:
+  labels:
+    application/boxer-issuer: integration-tests
+  name: keycloak
+  namespace: default
+spec:
+  active: true
+  oidc:
+    audiences:
+      - account
+    discoveryUrl: http://localhost:5555/auth/realms/master/
+    issuers:
+      - http://localhost:5555/auth/realms/master
+    userIdClaim: preferred_username
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: ExternalIdentityDocument
+metadata:
+  labels:
+    application/boxer-issuer: integration-tests
+  name: keycloak-test-root
+  namespace: default
+spec:
+  active: true
+  id: test_root
+  identityProvider: keycloak
+  principalRef:
+    principal: PhotoApp::User::"root"
+    schema: root-issuer
+  validatorSchemaId: validator-schema
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: CedarEntityDocument
+metadata:
+  labels:
+    application/boxer-issuer: integration-tests
+  name: root-issuer-root-photoapp
+  namespace: default
+spec:
+  active: true
+  entity: |
+    {
+      "uid": {
+        "type": "PhotoApp::User",
+        "id": "root"
+      },
+      "attrs": {
+      },
+      "parents": []
+    }
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: SchemaDocument
+metadata:
+  labels:
+    application/boxer-issuer: integration-tests
+  name: root-issuer
+  namespace: default
+spec:
+  active: true
+  schema: |
+    {
+      "PhotoApp": {
+        "commonTypes": {},
+        "entityTypes": {
+          "User": {
+            "shape": {
+              "type": "Record",
+              "attributes": {}
+            }
+          }
+        },
+        "actions": {}
+      }
+    }
+
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: SchemaDocument
+metadata:
+  labels:
+    application/boxer-validator-nginx: integration-tests
+  name: validator-schema
+  namespace: default
+spec:
+  active: true
+  schema: |-
+    {
+      "PhotoApp": {
+        "entityTypes": {
+          "Example": {}
+        },
+        "actions": {
+          "Example": {
+            "appliesTo": {
+              "resourceTypes": [
+                "Example"
+              ],
+              "principalTypes": [
+                "User"
+              ]
+            }
+          }
+        }
+      }
+    }
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: ResourceDiscoveryDocument
+metadata:
+  labels:
+    application/boxer-validator-nginx: integration-tests
+  name: resoruce-discovery-document
+  namespace: default
+spec:
+  active: true
+  hostname: example.com
+  routes:
+    - resourceUid: PhotoApp::"Example"
+      routeTemplate: api/v1/example/
+  schema: validator-schema
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: ActionDiscoveryDocument
+metadata:
+  labels:
+    application/boxer-validator-nginx: integration-tests
+  name: action-discovery-document
+  namespace: default
+spec:
+  active: true
+  hostname: example.com
+  routes:
+    - actionUid: PhotoApp::"Example"
+      method: Get
+      routeTemplate: api/v1/example/
+  schema: validator-schema
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: PolicyDocument
+metadata:
+  labels:
+    application/boxer-validator-nginx: integration-tests
+  name: root-validator-nginx-root
+  namespace: default
+spec:
+  active: true
+  policies: |
+    permit (
+      principal,
+      action,
+      resource
+    );
+  schema: validator-schema
