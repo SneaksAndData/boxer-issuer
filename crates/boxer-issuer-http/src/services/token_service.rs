@@ -1,6 +1,6 @@
 use crate::models::api::external::identity_provider::ExternalIdentityProvider;
 use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
-use crate::services::principal_service::{PrincipalService, PrincipalServiceTrait};
+use crate::services::principal_service::PrincipalServiceTrait;
 use async_trait::async_trait;
 use boxer_core::contracts::internal_token::v1::token::InternalToken;
 use boxer_core::models::external_token::ExternalToken;
@@ -93,7 +93,7 @@ impl TokenProvider for TokenService {
 impl TokenService {
     pub fn new(
         validators: Arc<dyn ExternalIdentityValidatorProvider + Send + Sync>,
-        principal_service: Arc<PrincipalService>,
+        principal_service: Arc<dyn PrincipalServiceTrait>,
         encrypt_secret: Arc<Vec<u8>>,
         key_id: String,
         audience: String,
