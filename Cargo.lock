@@ -607,6 +607,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.27#d033621e772efcfe4a2121719227a3b1e86a1861"
 dependencies = [
  "actix-web",
  "anyhow",
@@ -4555,6 +4556,8 @@ dependencies = [
  "cedar-policy",
  "env_filter 0.1.4",
  "env_logger",
+ "k8s-openapi",
+ "kube",
  "log",
  "mockall",
  "reqwest 0.13.4",
