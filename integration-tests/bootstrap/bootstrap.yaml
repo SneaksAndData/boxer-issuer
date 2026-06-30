@@ -11,7 +11,7 @@ spec:
   oidc:
     audiences:
       - account
-    discoveryUrl: http://keycloak-keycloakx-http/auth/realms/master/
+    discoveryUrl: http://localhost:5555/auth/realms/master/
     issuers:
       - http://localhost:5555/auth/realms/master
     userIdClaim: preferred_username
@@ -30,7 +30,7 @@ spec:
   principalRef:
     principal: PhotoApp::User::"root"
     schema: root-issuer
-  validatorSchemaId: integration-test-validator
+  validatorSchemaId: validator-schema
 ---
 apiVersion: auth.sneaksanddata.com/v1beta1
 kind: CedarEntityDocument
@@ -76,3 +76,82 @@ spec:
         "actions": {}
       }
     }
+
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: SchemaDocument
+metadata:
+  labels:
+    application/boxer-validator-nginx: integration-tests
+  name: validator-schema
+  namespace: default
+spec:
+  active: true
+  schema: |-
+    {
+      "PhotoApp": {
+        "entityTypes": {
+          "Example": {}
+        },
+        "actions": {
+          "Example": {
+            "appliesTo": {
+              "resourceTypes": [
+                "Example"
+              ],
+              "principalTypes": [
+                "User"
+              ]
+            }
+          }
+        }
+      }
+    }
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: ResourceDiscoveryDocument
+metadata:
+  labels:
+    application/boxer-validator-nginx: integration-tests
+  name: resoruce-discovery-document
+  namespace: default
+spec:
+  active: true
+  hostname: example.com
+  routes:
+    - resourceUid: PhotoApp::"Example"
+      routeTemplate: api/v1/example/
+  schema: validator-schema
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: ActionDiscoveryDocument
+metadata:
+  labels:
+    application/boxer-validator-nginx: integration-tests
+  name: action-discovery-document
+  namespace: default
+spec:
+  active: true
+  hostname: example.com
+  routes:
+    - actionUid: PhotoApp::"Example"
+      method: Get
+      routeTemplate: api/v1/example/
+  schema: validator-schema
+---
+apiVersion: auth.sneaksanddata.com/v1beta1
+kind: PolicyDocument
+metadata:
+  labels:
+    application/boxer-validator-nginx: integration-tests
+  name: root-validator-nginx-root
+  namespace: default
+spec:
+  active: true
+  policies: |
+    permit (
+      principal,
+      action,
+      resource
+    );
+  schema: validator-schema

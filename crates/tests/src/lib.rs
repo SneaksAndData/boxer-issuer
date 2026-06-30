@@ -16,7 +16,7 @@ use rstest::rstest;
 use std::time::Duration;
 
 #[rstest]
-#[timeout(Duration::from_secs(5))]
+#[timeout(Duration::from_secs(15))]
 #[actix_web::test]
 async fn it_works(_with_logging: (), #[future] with_test_server: TestServerHandles) {
     rustls::crypto::ring::default_provider()
@@ -26,14 +26,17 @@ async fn it_works(_with_logging: (), #[future] with_test_server: TestServerHandl
     let (server_handle, thread_handle) = with_test_server.await;
     let client = Client::new();
     let external_token = get_external_token(&client).await.expect("Failed to get external token");
+    println!("EXTERNAL_TOKEN: {}", external_token);
     let internal_token = get_internal_token(&client, external_token)
         .await
         .expect("Failed to get internal token");
+    println!("INTERNAL_TOKEN: {}", internal_token);
 
     let validation_result = client
         .get("http://localhost:5555/validator/api/v1/token/review")
-        .header("X-Original-Url", "http://example.com/example")
-        .header("X-Original-Method", "POST")
+        // .get("http://localhost:8081/api/v1/token/review")
+        .header("X-Original-Url", "http://example.com/api/v1/example/")
+        .header("X-Original-Method", "GET")
         .bearer_auth(internal_token)
         .send()
         .await

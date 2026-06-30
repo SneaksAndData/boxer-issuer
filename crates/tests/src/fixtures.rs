@@ -48,10 +48,10 @@ pub async fn with_test_server() -> TestServerHandles {
             }),
         },
         token_settings: TokenSettings {
-            issuer: "integration-tests".to_string(),
-            audience: "integration-tests".to_string(),
-            key_id: "key-id".to_string(),
-            key: "KZW3kJpPUQse99az".to_string(),
+            issuer: "boxer.sneaksanddata.com".to_string(),
+            audience: "boxer.sneaksanddata.com".to_string(),
+            key_id: "default".to_string(),
+            key: "DuRHOehapnJjrcTN6t8pi7iSa5zwlAcC".to_string(),
             content_encryption: "A128CBC-HS256".to_string(),
         },
     };
