@@ -20,7 +20,7 @@ start-kind-cluster:
 build-deps:
     helm dependency build ./integration-tests/helm/setup
 
-key := `openssl rand -base64 16 | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1`
+key := `openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
 
 integration-tests:
     helm upgrade --install --namespace default integration-tests integration-tests/helm/setup \
