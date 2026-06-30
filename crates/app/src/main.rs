@@ -1,5 +1,4 @@
 use boxer_issuer_http::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
-use boxer_issuer_http::services::token_service::TokenService;
 use log::info;
 use std::sync::Arc;
 
@@ -11,13 +10,10 @@ use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_re
 use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry;
 use boxer_core::services::observability::open_telemetry::metrics::init_metrics;
-use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
 use boxer_core::services::observability::open_telemetry::tracing::init_tracer;
 use boxer_issuer_http::services::backends::base::load_backend;
 use boxer_issuer_http::services::backends::kubernetes::identity_repository::IdentityRepository;
 use boxer_issuer_http::services::configuration::models::AppSettings;
-use boxer_issuer_http::services::identity_validator_provider::ExternalIdentityValidatorProvider;
-use boxer_issuer_http::services::principal_service::PrincipalService;
 use env_filter::Builder;
 
 const ROOT_METRICS_NAMESPACE: &str = "boxer-issuer";
