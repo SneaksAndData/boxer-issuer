@@ -4,15 +4,12 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
-use boxer_core::services::audit::AuditService;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
-use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry;
 use boxer_core::services::observability::open_telemetry::metrics::init_metrics;
 use boxer_core::services::observability::open_telemetry::tracing::init_tracer;
 use boxer_issuer_http::services::backends::base::load_backend;
-use boxer_issuer_http::services::backends::kubernetes::identity_repository::IdentityRepository;
 use boxer_issuer_http::services::configuration::models::AppSettings;
 use env_filter::Builder;
 
