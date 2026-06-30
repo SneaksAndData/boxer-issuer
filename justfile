@@ -44,6 +44,8 @@ wait-for-services:
     kubectl rollout status deployment/boxer-validator-nginx --timeout=180s
 
 ingress:
+    # Wait a bit for ingress controller to be ready to accept rules
+    sleep 10
     # Create ingress rules for boxer-issuer and boxer-validator-nginx
     kubectl apply -f ./integration-tests/ingress.yaml
 
