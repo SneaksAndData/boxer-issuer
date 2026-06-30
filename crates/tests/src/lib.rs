@@ -2,7 +2,7 @@
 
 mod fixtures;
 
-use crate::fixtures::{TestServerHandles, external_token, token_review_endpoint};
+use crate::fixtures::{external_token, token_review_endpoint, TestServerHandles};
 use anyhow::Result;
 use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
 use boxer_core::services::audit::chained::audit_event::AuditEvent;
@@ -16,7 +16,7 @@ use std::time::Duration;
 #[rstest]
 #[timeout(Duration::from_secs(15))]
 #[actix_web::test]
-async fn it_works(
+async fn test_internal_token_issuance(
     _with_logging: (),
     #[future] with_test_server: TestServerHandles,
     token_review_endpoint: String,
