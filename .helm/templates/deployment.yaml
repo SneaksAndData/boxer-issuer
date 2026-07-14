@@ -63,20 +63,36 @@ spec:
             - containerPort: {{ .Values.issuer.config.port }}
               name: http
               protocol: TCP
+          {{- if (default true .Values.issuer.probes.startup.enabled) }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.issuer.probes.startup.path | quote }}
+              port: {{ .Values.issuer.probes.startup.port }}
+            initialDelaySeconds: {{ .Values.issuer.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.issuer.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.issuer.probes.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.issuer.probes.startup.failureThreshold }}
+          {{- end }}
+          {{- if (default true .Values.issuer.probes.liveness.enabled) }}
           livenessProbe:
             httpGet:
-              path: /health
-              port: http
-            {{- with .Values.livenessProbe }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+              path: {{ .Values.issuer.probes.liveness.path | quote }}
+              port: {{ .Values.issuer.probes.liveness.port }}
+            initialDelaySeconds: {{ .Values.issuer.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.issuer.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.issuer.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.issuer.probes.liveness.failureThreshold }}
+          {{- end }}
+          {{- if (default true .Values.issuer.probes.readiness.enabled) }}
           readinessProbe:
             httpGet:
-              path: /health/ready
-              port: http
-            {{- with .Values.readinessProbe }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+              path: {{ .Values.issuer.probes.readiness.path | quote }}
+              port: {{ .Values.issuer.probes.readiness.port }}
+            initialDelaySeconds: {{ .Values.issuer.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.issuer.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.issuer.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.issuer.probes.readiness.failureThreshold }}
+          {{- end }}
         {{- with .Values.securityContext }}
           securityContext:
         {{ toYaml . | nindent 12 }}
