@@ -293,6 +293,32 @@ issuer:
       # The iss claim for the tokens issued by the Boxer Issuer
       issuer: ""
 
+    # Health probe settings
+    probes:
+      startup:
+        enabled: true
+        path: "/health"
+        port: http
+        initialDelaySeconds: 5
+        timeoutSeconds: 2
+        failureThreshold: 3
+      liveness:
+        enabled: true
+        path: "/health"
+        port: http
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        timeoutSeconds: 2
+        failureThreshold: 3
+      readiness:
+        enabled: true
+        path: "/health/ready"
+        port: http
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        timeoutSeconds: 2
+        failureThreshold: 3
+
 
 # Observability settings for OpenTelemetry
 openTelemetry:
