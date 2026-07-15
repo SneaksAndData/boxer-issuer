@@ -26,8 +26,6 @@ use boxer_core::services::backends::kubernetes::logging_update_handler::LoggingU
 use boxer_core::services::backends::{Backend, BackendConfiguration};
 use boxer_core::services::service_provider::ServiceProvider;
 use boxer_core::services::token_service::internal_token_service::external_identity_validator_provider::ExternalIdentityValidatorProvider;
-use boxer_core::services::token_service::internal_token_service::InternalTokenService;
-use boxer_core::services::token_service::TokenService;
 use k8s_openapi::NamespaceResourceScope;
 use kube::Config;
 use kubernetes_validator_provider::KubernetesValidatorProvider;
