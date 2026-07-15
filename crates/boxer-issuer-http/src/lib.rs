@@ -1,9 +1,8 @@
 pub mod http;
-pub mod models;
 pub mod services;
 
 use actix_web::dev::Server;
-use actix_web::middleware::{Logger, from_fn};
+use actix_web::middleware::{from_fn, Logger};
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::info;
@@ -12,16 +11,19 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::services::configuration::base::initialization_configuration_manager::InitializationConfigurationManager;
-use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
-use crate::services::principal_service::PrincipalService;
-use crate::services::token_service::{TokenProvider, TokenService};
+use crate::services::principal_service::PrincipalServiceImpl;
 use anyhow::Result;
 use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
 use boxer_core::http::middleware::logging::custom_error_logging;
-use boxer_core::services::audit::AuditService;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
+use boxer_core::services::audit::AuditService;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
+use boxer_core::services::encrypted_token_service::EncryptedTokenService;
 use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
+use boxer_core::services::token_service::internal_token_service::external_identity_validator_provider::ExternalIdentityValidatorProvider;
+use boxer_core::services::token_service::internal_token_service::token_provider::TokenProvider;
+use boxer_core::services::token_service::internal_token_service::InternalTokenService;
+use boxer_core::services::token_service::TokenService;
 use http::controllers::v1;
 use http::health;
 use http::openapi::ApiDoc;
@@ -42,15 +44,14 @@ pub fn start_api_server(
     let entities_repository: Arc<PrincipalRepository> = current_backend.get();
     let identity_repository: Arc<IdentityRepository> = current_backend.get();
     let identity_provider_repository: Arc<IdentityProviderRepository> = current_backend.get();
-    let validator_provider: Arc<dyn ExternalIdentityValidatorProvider + Send + Sync> = current_backend.get();
+    let validator_provider: Arc<dyn ExternalIdentityValidatorProvider> = current_backend.get();
     let readiness_state = current_backend.readiness_state();
-    let principal_service = Arc::new(PrincipalService::new(
+    let principal_service = Arc::new(PrincipalServiceImpl::new(
         identity_repository.clone(),
         entities_repository.clone(),
         schemas_repository.clone(),
     ));
-    let token_provider: Arc<dyn TokenProvider> = Arc::new(TokenService::new(
-        validator_provider.clone(),
+    let token_provider: Arc<dyn TokenProvider> = Arc::new(EncryptedTokenService::new(
         principal_service.clone(),
         cm.get_signing_key(),
         cm.get_key_id(),
@@ -59,6 +60,8 @@ pub fn start_api_server(
         cm.get_content_encryption(),
         MetricsProvider::new(root_metrics_namespace, cm.instance_name.clone()),
     ));
+
+    let token_service: Arc<dyn TokenService> = Arc::new(InternalTokenService::new(validator_provider, token_provider));
 
     // The audit_service variable is deprecated, use audit_writer instead.
     // Will be removed in the next releases.
@@ -70,7 +73,6 @@ pub fn start_api_server(
             .wrap(RequestTracing::new())
             .wrap(Logger::default())
             .wrap(from_fn(custom_error_logging))
-            .app_data(Data::new(token_provider.clone()))
             .app_data(Data::new(principal_service.clone()))
             .app_data(Data::new(identity_repository.clone()))
             .app_data(Data::new(schemas_repository.clone()))
@@ -78,6 +80,7 @@ pub fn start_api_server(
             .app_data(Data::new(identity_provider_repository.clone()))
             .app_data(Data::new(audit_service.clone()))
             .app_data(Data::new(readiness_state.clone()))
+            .app_data(Data::new(token_service.clone()))
             .service(v1::urls(audit_writer.clone()))
             .service(health::urls())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))

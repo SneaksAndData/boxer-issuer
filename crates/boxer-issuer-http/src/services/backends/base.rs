@@ -1,15 +1,15 @@
-use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
 use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
 use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
+use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::configuration::models::AppSettings;
-use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use anyhow::Result;
 use boxer_core::services::backends::{Backend, BackendConfiguration};
 use boxer_core::services::service_provider::ServiceProvider;
+use boxer_core::services::token_service::internal_token_service::external_identity_validator_provider::ExternalIdentityValidatorProvider;
 use serde::Deserialize;
-use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
 
 #[derive(Debug, Deserialize, Clone)]
 pub enum BackendType {
@@ -23,7 +23,7 @@ pub trait IssuerBackend:
     + ServiceProvider<Arc<PrincipalRepository>>
     + ServiceProvider<Arc<IdentityRepository>>
     + ServiceProvider<Arc<IdentityProviderRepository>>
-    + ServiceProvider<Arc<dyn ExternalIdentityValidatorProvider + Send + Sync>>
+    + ServiceProvider<Arc<dyn ExternalIdentityValidatorProvider>>
 {
     fn readiness_state(&self) -> Arc<AtomicBool>;
 }

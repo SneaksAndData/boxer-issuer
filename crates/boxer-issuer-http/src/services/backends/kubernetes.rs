@@ -1,9 +1,8 @@
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
 pub mod identity_provider_repository;
 pub mod identity_repository;
-pub mod principal_repository;
-
 mod kubernetes_validator_provider;
+pub mod principal_repository;
 
 use crate::services::backends::kubernetes::identity_provider_repository::IdentityProviderRepository;
 
@@ -11,15 +10,14 @@ use crate::services::backends::base::IssuerBackend;
 use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
 use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
 use crate::services::configuration::models::{BackendSettings, KubernetesBackendSettings};
-use crate::services::identity_validator_provider::ExternalIdentityValidatorProvider;
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use boxer_core::services::audit::audit_facade::WithAuditFacade;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_cluster, from_command, from_file};
-use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::soft_delete_resource::SoftDeleteResource;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::object_owner_mark::ObjectOwnerMark;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
     GenericKubernetesResourceManager, KubernetesResourceManagerConfig, UpdateLabels,
@@ -27,13 +25,16 @@ use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
 use boxer_core::services::backends::kubernetes::logging_update_handler::LoggingUpdateHandler;
 use boxer_core::services::backends::{Backend, BackendConfiguration};
 use boxer_core::services::service_provider::ServiceProvider;
+use boxer_core::services::token_service::internal_token_service::external_identity_validator_provider::ExternalIdentityValidatorProvider;
+use boxer_core::services::token_service::internal_token_service::InternalTokenService;
+use boxer_core::services::token_service::TokenService;
 use k8s_openapi::NamespaceResourceScope;
 use kube::Config;
 use kubernetes_validator_provider::KubernetesValidatorProvider;
 use log::info;
 use std::hash::Hash;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 use tokio;
 
@@ -42,7 +43,7 @@ pub struct KubernetesBackend {
     pub entities_repository: Option<Arc<PrincipalRepository>>,
     pub identity_repository: Option<Arc<IdentityRepository>>,
     pub identity_provider_repository: Option<Arc<IdentityProviderRepository>>,
-    pub validator_provider: Option<Arc<KubernetesValidatorProvider>>,
+    pub validator_provider: Option<Arc<dyn ExternalIdentityValidatorProvider>>,
     readiness_state: Arc<AtomicBool>,
 }
 
@@ -95,8 +96,8 @@ impl ServiceProvider<Arc<IdentityProviderRepository>> for KubernetesBackend {
     }
 }
 
-impl ServiceProvider<Arc<dyn ExternalIdentityValidatorProvider + Send + Sync>> for KubernetesBackend {
-    fn get(&self) -> Arc<dyn ExternalIdentityValidatorProvider + Send + Sync> {
+impl ServiceProvider<Arc<dyn ExternalIdentityValidatorProvider>> for KubernetesBackend {
+    fn get(&self) -> Arc<dyn ExternalIdentityValidatorProvider> {
         self.validator_provider
             .as_ref()
             .expect("Backend is not started")
