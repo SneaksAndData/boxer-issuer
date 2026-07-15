@@ -15,9 +15,9 @@ use async_trait::async_trait;
 use boxer_core::services::audit::audit_facade::WithAuditFacade;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_cluster, from_command, from_file};
+use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::soft_delete_resource::SoftDeleteResource;
-use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::object_owner_mark::ObjectOwnerMark;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
     GenericKubernetesResourceManager, KubernetesResourceManagerConfig, UpdateLabels,
@@ -31,8 +31,8 @@ use kube::Config;
 use kubernetes_validator_provider::KubernetesValidatorProvider;
 use log::info;
 use std::hash::Hash;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio;
 

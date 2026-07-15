@@ -1,6 +1,6 @@
 use crate::services::backends::kubernetes::identity_repository::IdentityRepository;
-use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
 use crate::services::backends::kubernetes::principal_repository::PrincipalRepository;
+use crate::services::backends::kubernetes::principal_repository::principal_identity::PrincipalIdentity;
 use anyhow::Result;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
