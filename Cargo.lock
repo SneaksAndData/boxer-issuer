@@ -607,19 +607,21 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.27#d033621e772efcfe4a2121719227a3b1e86a1861"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.32#9d3c0f2c2370f4267efca2fbd2ef519314553ca7"
 dependencies = [
  "actix-web",
  "anyhow",
  "assert_matches",
  "async-trait",
  "cedar-policy",
+ "collection_macros",
  "duration-string",
  "env_filter 0.1.4",
  "futures",
  "futures-util",
  "josekit",
  "jsonwebtoken 10.4.0",
+ "jwt-authorizer",
  "k8s-openapi",
  "kube",
  "log",
@@ -635,8 +637,11 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
+ "strum",
+ "strum_macros",
  "test-context",
  "tokio",
+ "url",
  "uuid",
 ]
 
@@ -811,6 +816,12 @@ checksum = "c0f78a02292a74a88ac736019ab962ece0bc380e3f977bf72e376c5d78ff0678"
 dependencies = [
  "cc",
 ]
+
+[[package]]
+name = "collection_macros"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50b180e6a75e306052a61658f832b4fc565a6e5a204da05f0fe7f50a31fb827a"
 
 [[package]]
 name = "colorchoice"
@@ -1701,6 +1712,12 @@ checksum = "54b4a22553d4242c49fddb9ba998a99962b5cc6f22cb5a3482bec22522403ce4"
 dependencies = [
  "http 1.4.2",
 ]
+
+[[package]]
+name = "heck"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hex"
@@ -4358,6 +4375,24 @@ name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
+
+[[package]]
+name = "strum"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9628de9b8791db39ceda2b119bbe13134770b56c138ec1d3af810d045c04f9bd"
+
+[[package]]
+name = "strum_macros"
+version = "0.27.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7695ce3845ea4b33927c055a39dc438a45b059f7c1b3d91d38d10355fb8cbca7"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "subtle"

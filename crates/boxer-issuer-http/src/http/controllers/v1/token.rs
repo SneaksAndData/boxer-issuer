@@ -1,8 +1,8 @@
-use crate::models::api::external::identity_provider::ExternalIdentityProvider;
-use crate::services::token_service::TokenProvider;
 use actix_web::get;
 use actix_web::web::{Data, Path, ReqData};
 use boxer_core::models::external_token::ExternalToken;
+use boxer_core::services::token_service::internal_token_service::external_identity_validator_provider::external_identity_provider::ExternalIdentityProvider;
+use boxer_core::services::token_service::TokenService;
 use log::error;
 use std::sync::Arc;
 
@@ -15,13 +15,16 @@ use std::sync::Arc;
 #[get("/token/{identity_provider}")]
 pub async fn token(
     external_token: ReqData<ExternalToken>,
-    data: Data<Arc<dyn TokenProvider>>,
+    token_service: Data<Arc<dyn TokenService>>,
     identity_provider: Path<String>,
 ) -> actix_web::Result<String> {
     let ip = ExternalIdentityProvider::from(identity_provider.to_string());
-    let internal_token = data.issue_token(ip, external_token.into_inner()).await.map_err(|err| {
-        error!("Token issuance failed: {}", err);
-        actix_web::error::ErrorUnauthorized("Unauthorized")
-    })?;
-    Ok(internal_token)
+    token_service
+        .into_inner()
+        .issue_internal_token(ip, external_token.into_inner())
+        .await
+        .map_err(|err| {
+            error!("Failed to issue internal token: {}", err);
+            actix_web::error::ErrorUnauthorized("Unauthorized")
+        })
 }
