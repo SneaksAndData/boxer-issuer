@@ -6,8 +6,8 @@ version: 0.0.0
 appVersion: "0.0.0"
 dependencies:
   - name: boxer-crd
-    version: "v0.0.5"
-    repository: "oci://ghcr.io/sneaksanddata/helm"
+    version: v0.0.5
+    repository: oci://ghcr.io/sneaksanddata/helm
   - name: boxer-validator-nginx
-    version: "v0.0.16"
-    repository: "oci://ghcr.io/sneaksanddata/helm"
+    version: v0.0.17
+    repository: oci://ghcr.io/sneaksanddata/helm
