@@ -19,7 +19,7 @@ pub async fn token(
     external_token: ReqData<ExternalToken>,
     token_service: Data<Arc<dyn TokenService>>,
     identity_provider: Path<String>,
-    audit_event: Data<AuditEvent>,
+    audit_event: ReqData<AuditEvent>,
 ) -> actix_web::Result<String> {
     let ip = ExternalIdentityProvider::from(identity_provider.to_string());
     let token_audit_event = audit_event
