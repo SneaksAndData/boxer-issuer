@@ -607,7 +607,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=polish-error-handling#5b3eaac9ecb7cf1db7dbe3b92b5fa15600ebcaa3"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.32#9d3c0f2c2370f4267efca2fbd2ef519314553ca7"
 dependencies = [
  "actix-web",
  "anyhow",
