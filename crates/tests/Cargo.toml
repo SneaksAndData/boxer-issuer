@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 boxer-issuer-http = { path = "../boxer-issuer-http" }
 #boxer_core = { path = "../../../boxer-core/" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.32" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.34" }
 actix-web = "4.14.0"
 tokio = "1.52.3"
 anyhow = "1.0.103"
