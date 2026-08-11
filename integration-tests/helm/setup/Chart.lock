@@ -4,6 +4,6 @@ dependencies:
   version: v0.0.5
 - name: boxer-validator-nginx
   repository: oci://ghcr.io/sneaksanddata/helm
-  version: v0.0.18
-digest: sha256:01d48c14b649e15f813a37d7e218501eb5432257bfca2d3dee9e4b3beb3da7ed
-generated: "2026-07-23T15:53:29.17753+02:00"
+  version: v0.0.19
+digest: sha256:bdf482e2856f03fe16291b73e7e820221ddbd2cfb00078035fe7c3b4de8b8274
+generated: "2026-08-11T11:50:46.071408+02:00"

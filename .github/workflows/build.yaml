@@ -32,8 +32,8 @@ jobs:
           toolchain: nightly
           components: rustfmt, clippy
 
-      - name: Install just, cargo-llvm-cov, cargo-nextest
-        uses: taiki-e/install-action@v2.62.33
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2.85.11
         with:
           tool: cargo-llvm-cov
 
