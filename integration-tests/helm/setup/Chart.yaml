@@ -9,5 +9,5 @@ dependencies:
     version: v0.0.5
     repository: oci://ghcr.io/sneaksanddata/helm
   - name: boxer-validator-nginx
-    version: v0.0.17
+    version: v0.0.19
     repository: oci://ghcr.io/sneaksanddata/helm
