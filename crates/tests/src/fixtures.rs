@@ -62,8 +62,15 @@ pub async fn external_token() -> String {
 }
 
 pub type TestServerHandles = (ServerHandle, JoinHandle<std::io::Result<()>>, SocketAddr);
+
+pub fn default_audit_writer() -> MockAuditWriter {
+    let mut audit_writer = MockAuditWriter::new();
+    audit_writer.expect_write().returning(|_event| ());
+    audit_writer
+}
+
 #[fixture]
-pub async fn with_test_server() -> TestServerHandles {
+pub async fn with_test_server(#[default(default_audit_writer())] audit_writer: MockAuditWriter) -> TestServerHandles {
     let server_address = "127.0.0.1:8080".parse().unwrap();
     let app_settings = AppSettings {
         deploy_environment: "integration-tests".to_string(),
@@ -99,9 +106,6 @@ pub async fn with_test_server() -> TestServerHandles {
     let current_backend = load_backend(BackendType::Kubernetes, &app_settings)
         .await
         .expect("Failed to load backend");
-
-    let mut audit_writer = MockAuditWriter::new();
-    audit_writer.expect_write().returning(|_event| ());
 
     let audit_writer = Arc::new(audit_writer);
     let server = boxer_issuer_http::start_api_server(current_backend, audit_writer, app_settings, "test")

@@ -2,10 +2,10 @@ use actix_web::error::ErrorInternalServerError;
 use actix_web::get;
 use actix_web::web::{Data, Path, ReqData};
 use boxer_core::models::external_token::ExternalToken;
-use boxer_core::services::audit::chained::audit_event::intermediate_audit_event::IntermediateAuditEvent;
 use boxer_core::services::audit::chained::audit_event::AuditEvent;
-use boxer_core::services::token_service::internal_token_service::external_identity_validator_provider::external_identity_provider::ExternalIdentityProvider;
+use boxer_core::services::audit::chained::audit_event::intermediate_audit_event::IntermediateAuditEvent;
 use boxer_core::services::token_service::TokenService;
+use boxer_core::services::token_service::internal_token_service::external_identity_validator_provider::external_identity_provider::ExternalIdentityProvider;
 use log::error;
 use std::sync::Arc;
 
@@ -40,6 +40,6 @@ pub async fn token(
         .await
         .map_err(|err| {
             error!("Failed to issue internal token: {}", err);
-            actix_web::error::ErrorUnauthorized("Unauthorized")
+            actix_web::error::ErrorUnauthorized(format!("Unauthorized, err: {}", err))
         })
 }
