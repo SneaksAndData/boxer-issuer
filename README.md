@@ -1,15 +1,18 @@
 # Introduction
 
-Boxer Authorization (AuthZ) API with AWS Cedar-based policy evaluation JWT-based authorization and authentication
-for applications.
+Boxer Authorization (AuthZ) API with AWS Cedar-based policy evaluation JWT-based authorization and authentication for
+applications.
 
 Learn more about Cedar: https://www.cedarpolicy.com/en
 
-The purpose of this project is to provide a flexible and extensible integration layers for different OIDC providers
-and authentication schemas, allowing applications to leverage the power of AWS Cedar for fine-grained policy-based
-access control integrated with the modern IaC instruments and practices.
+The purpose of this project is to provide a flexible and extensible integration layers for different OIDC providers and
+authentication schemas, allowing applications to leverage the power of AWS Cedar for fine-grained policy-based access
+control integrated with the modern IaC instruments and practices.
 
 # Usage
+
+The overview of the Boxer usage is described in [docs/client.md](docs/client.md). Please refer to this document for
+details on how Boxer works as an API client and how to integrate it with your application.
 
 ## Quickstart
 
