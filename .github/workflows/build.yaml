@@ -22,7 +22,7 @@ jobs:
       pull-requests: write # required for dependabot PRs
       contents: read       # required for dependabot PRs
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # We use nightly build for code coverage since we use the coverage(off) attribute that is
       # only available in nightly builds.
