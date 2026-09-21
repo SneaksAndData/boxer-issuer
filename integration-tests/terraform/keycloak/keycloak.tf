@@ -50,6 +50,16 @@ resource "keycloak_user" "test_user" {
   }
 }
 
+resource "keycloak_user" "broken_user" {
+  realm_id = data.keycloak_realm.master.id
+  username = "broken_user"
+  enabled  = true
+
+  initial_password {
+    value = "test-root-password"
+  }
+}
+
 resource "keycloak_user" "test_root" {
   realm_id = data.keycloak_realm.master.id
   username = "test_root"

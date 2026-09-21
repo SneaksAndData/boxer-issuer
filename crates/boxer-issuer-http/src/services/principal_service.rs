@@ -4,6 +4,7 @@ use crate::services::backends::kubernetes::principal_repository::principal_ident
 use anyhow::Result;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::external_identity_validator::external_identity::ExternalIdentity;
 use boxer_core::services::token_service::internal_token_service::token_provider::principal::Principal;
 use boxer_core::services::token_service::internal_token_service::token_provider::principal_service::PrincipalService;
@@ -37,7 +38,17 @@ impl PrincipalService for PrincipalServiceImpl {
         let registration = self
             .identities
             .get((external_identity.identity_provider(), external_identity.user_id()))
-            .await?;
+            .await
+            .map_err(|e| match e {
+                Status::NotFound(_) => {
+                    anyhow::anyhow!(
+                        "No such identity registration found for provider: {}, user_id: {}",
+                        external_identity.identity_provider(),
+                        external_identity.user_id()
+                    )
+                }
+                _ => anyhow::anyhow!("Error retrieving identity registration: {:?}", e),
+            })?;
         let uid = EntityUid::from_str(registration.principal_id.as_str())?;
         let schema_id = registration.principal_schema.clone();
         let pid = PrincipalIdentity::new(registration.principal_schema, uid);

@@ -14,7 +14,7 @@ use k8s_openapi::api::core::v1::Secret;
 use kube::{Api, Client};
 use rstest::fixture;
 use serde_json::{Value, from_str};
-use std::net::SocketAddr;
+use std::net::{SocketAddr, TcpListener};
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 
@@ -32,8 +32,7 @@ pub fn token_review_endpoint() -> String {
     "http://localhost:5555/validator/api/v1/token/review".to_string()
 }
 
-#[fixture]
-pub async fn external_token() -> String {
+async fn fetch_external_token(username: &str) -> String {
     const KEYCLOAK_URL: &str = "http://localhost:5555/auth/realms/master/protocol/openid-connect/token";
     let client = reqwest::Client::new();
     let response = client
@@ -41,7 +40,7 @@ pub async fn external_token() -> String {
         .form(&[
             ("client_id", "test_client"),
             ("client_secret", "test_client_secret"),
-            ("username", "test_root"),
+            ("username", username),
             ("password", "test-root-password"),
             ("grant_type", "password"),
         ])
@@ -49,11 +48,9 @@ pub async fn external_token() -> String {
         .await
         .expect("Failed to send request to Keycloak");
 
-    let body = response
-        .text()
-        .await
-        .expect("Failed to read response body from Keycloak");
-    let claims = from_str::<Value>(&body).expect("Failed to parse response body from Keycloak as JSON");
+    let body = response.text().await;
+    let b = body.expect("Failed to read response body from Keycloak");
+    let claims = from_str::<Value>(&b).expect("Failed to parse response body from Keycloak as JSON");
 
     let access_token = claims["access_token"]
         .as_str()
@@ -61,14 +58,33 @@ pub async fn external_token() -> String {
     access_token.to_string()
 }
 
-pub type TestServerHandles = (ServerHandle, JoinHandle<std::io::Result<()>>, SocketAddr);
 #[fixture]
-pub async fn with_test_server() -> TestServerHandles {
-    let server_address = "127.0.0.1:8080".parse().unwrap();
+pub async fn external_token(#[default("test_root")] username: &str) -> String {
+    fetch_external_token(username).await
+}
+
+pub type TestServerHandles = (ServerHandle, JoinHandle<std::io::Result<()>>, SocketAddr);
+
+pub fn default_audit_writer() -> MockAuditWriter {
+    let mut audit_writer = MockAuditWriter::new();
+    audit_writer.expect_write().returning(|_event| ());
+    audit_writer
+}
+
+#[fixture]
+pub async fn with_test_server(#[default(default_audit_writer())] audit_writer: MockAuditWriter) -> TestServerHandles {
+    let server_address = {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to allocate a random local port");
+        let addr = listener
+            .local_addr()
+            .expect("Failed to get local address for test listener");
+        addr
+    };
+
     let app_settings = AppSettings {
         deploy_environment: "integration-tests".to_string(),
         instance_name: "integration-tests".to_string(),
-        listen_address: SocketAddr::from(server_address),
+        listen_address: server_address,
         init: InitializationSettings {
             backend_type: BackendType::Kubernetes,
         },
@@ -99,9 +115,6 @@ pub async fn with_test_server() -> TestServerHandles {
     let current_backend = load_backend(BackendType::Kubernetes, &app_settings)
         .await
         .expect("Failed to load backend");
-
-    let mut audit_writer = MockAuditWriter::new();
-    audit_writer.expect_write().returning(|_event| ());
 
     let audit_writer = Arc::new(audit_writer);
     let server = boxer_issuer_http::start_api_server(current_backend, audit_writer, app_settings, "test")
