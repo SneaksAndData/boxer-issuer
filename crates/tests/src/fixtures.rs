@@ -14,7 +14,7 @@ use k8s_openapi::api::core::v1::Secret;
 use kube::{Api, Client};
 use rstest::fixture;
 use serde_json::{Value, from_str};
-use std::net::SocketAddr;
+use std::net::{SocketAddr, TcpListener};
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 
@@ -70,12 +70,19 @@ pub fn default_audit_writer() -> MockAuditWriter {
 }
 
 #[fixture]
-pub async fn with_test_server(#[default(default_audit_writer())] audit_writer: MockAuditWriter) -> TestServerHandles {
-    let server_address = "127.0.0.1:8080".parse().unwrap();
+pub async fn with_test_server(#[default(
+    default_audit_writer()
+)] audit_writer: MockAuditWriter) -> TestServerHandles {
+    let server_address = {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to allocate a random local port");
+        let addr = listener.local_addr().expect("Failed to get local address for test listener");
+        addr
+    };
+
     let app_settings = AppSettings {
         deploy_environment: "integration-tests".to_string(),
         instance_name: "integration-tests".to_string(),
-        listen_address: SocketAddr::from(server_address),
+        listen_address: server_address,
         init: InitializationSettings {
             backend_type: BackendType::Kubernetes,
         },
