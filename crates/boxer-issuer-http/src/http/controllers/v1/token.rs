@@ -1,4 +1,4 @@
-use actix_web::error::ErrorInternalServerError;
+use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};
 use actix_web::get;
 use actix_web::web::{Data, Path, ReqData};
 use boxer_core::models::external_token::ExternalToken;
@@ -40,6 +40,6 @@ pub async fn token(
         .await
         .map_err(|err| {
             error!("Failed to issue internal token: {}", err);
-            actix_web::error::ErrorUnauthorized(format!("Unauthorized, err: {}", err))
+            ErrorUnauthorized(format!("err: {}", err))
         })
 }

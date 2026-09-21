@@ -32,8 +32,7 @@ pub fn token_review_endpoint() -> String {
     "http://localhost:5555/validator/api/v1/token/review".to_string()
 }
 
-#[fixture]
-pub async fn external_token() -> String {
+async fn fetch_external_token(username: &str) -> String {
     const KEYCLOAK_URL: &str = "http://localhost:5555/auth/realms/master/protocol/openid-connect/token";
     let client = reqwest::Client::new();
     let response = client
@@ -41,7 +40,7 @@ pub async fn external_token() -> String {
         .form(&[
             ("client_id", "test_client"),
             ("client_secret", "test_client_secret"),
-            ("username", "test_root"),
+            ("username", username),
             ("password", "test-root-password"),
             ("grant_type", "password"),
         ])
@@ -49,16 +48,19 @@ pub async fn external_token() -> String {
         .await
         .expect("Failed to send request to Keycloak");
 
-    let body = response
-        .text()
-        .await
-        .expect("Failed to read response body from Keycloak");
-    let claims = from_str::<Value>(&body).expect("Failed to parse response body from Keycloak as JSON");
+    let body = response.text().await;
+    let b = body.expect("Failed to read response body from Keycloak");
+    let claims = from_str::<Value>(&b).expect("Failed to parse response body from Keycloak as JSON");
 
     let access_token = claims["access_token"]
         .as_str()
         .expect("Failed to extract access_token from Keycloak response");
     access_token.to_string()
+}
+
+#[fixture]
+pub async fn external_token(#[default("test_root")] username: &str) -> String {
+    fetch_external_token(username).await
 }
 
 pub type TestServerHandles = (ServerHandle, JoinHandle<std::io::Result<()>>, SocketAddr);

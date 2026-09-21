@@ -100,6 +100,56 @@ async fn test_identity_provider_does_not_exist(_with_logging: (), #[future] exte
     thread_handle.await.unwrap().expect("Failed to join server thread");
 }
 
+#[rstest]
+#[timeout(Duration::from_secs(15))]
+#[actix_web::test]
+async fn test_user_id_does_not_exist(
+    _with_logging: (),
+    #[future]
+    #[with("broken_user")]
+    external_token: String,
+) -> () {
+    // Arrange
+    let mut audit_writer = MockAuditWriter::new();
+    audit_writer
+        .expect_write()
+        .withf(|event| {
+            matches!(
+                event,
+                AuditEvent::Final(FinalAuditEvent {
+                    policy_evaluation_result: PolicyEvaluationResult {
+                        decision: Decision::Deny,
+                        reason: Some(Reason {
+                            errors,
+                            ..
+                        }),
+                        ..
+                    },
+                    ..
+                }) if errors.contains("Boxer produced response with status status: 401 Unauthorized: err: No such identity registration found for provider: keycloak, user_id: broken_user")
+            )
+        })
+        .times(1)
+        .returning(|_event| ());
+
+    let (server_handle, thread_handle, server_address) = with_test_server(audit_writer).await;
+    let external_token = external_token.await;
+
+    // Act
+    let result = Client::new()
+        .get(format!("http://{}/api/v1/token/keycloak", server_address))
+        .bearer_auth(external_token)
+        .send()
+        .await;
+
+    // Assert
+    assert_eq!(result.unwrap().status(), 401);
+
+    // Cleanup
+    server_handle.stop(true).await;
+    thread_handle.await.unwrap().expect("Failed to join server thread");
+}
+
 async fn get_internal_token(external_token: String, server_address: SocketAddr) -> Result<String> {
     Ok(Client::new()
         .get(format!("http://{}/api/v1/token/keycloak", server_address))
