@@ -70,12 +70,12 @@ pub fn default_audit_writer() -> MockAuditWriter {
 }
 
 #[fixture]
-pub async fn with_test_server(#[default(
-    default_audit_writer()
-)] audit_writer: MockAuditWriter) -> TestServerHandles {
+pub async fn with_test_server(#[default(default_audit_writer())] audit_writer: MockAuditWriter) -> TestServerHandles {
     let server_address = {
         let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to allocate a random local port");
-        let addr = listener.local_addr().expect("Failed to get local address for test listener");
+        let addr = listener
+            .local_addr()
+            .expect("Failed to get local address for test listener");
         addr
     };
 
