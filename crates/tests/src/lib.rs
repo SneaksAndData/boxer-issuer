@@ -60,7 +60,7 @@ async fn test_identity_provider_does_not_exist(_with_logging: (), #[future] exte
     audit_writer
         .expect_write()
         .withf(|event| {
-            let error_text = "Error response with status: 401 Unauthorized: Unauthorized, err: \
+            let error_text = "Boxer produced response with status status: 401 Unauthorized: err: \
             Resource not found: Resource of kind 'IdentityProviderDocument' with name: 'non-exitent-idp',  \
             namespace 'default' not found";
 
@@ -114,6 +114,9 @@ async fn test_user_id_does_not_exist(
     audit_writer
         .expect_write()
         .withf(|event| {
+            let error_text = "Boxer produced response with status status: 401 Unauthorized: \
+            err: No such identity registration found for provider: keycloak, user_id: broken_user";
+
             matches!(
                 event,
                 AuditEvent::Final(FinalAuditEvent {
@@ -126,7 +129,7 @@ async fn test_user_id_does_not_exist(
                         ..
                     },
                     ..
-                }) if errors.contains("Boxer produced response with status status: 401 Unauthorized: err: No such identity registration found for provider: keycloak, user_id: broken_user")
+                }) if errors.contains(error_text)
             )
         })
         .times(1)
