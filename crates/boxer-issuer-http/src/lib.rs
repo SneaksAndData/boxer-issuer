@@ -88,6 +88,6 @@ pub fn start_api_server(
                 actix_web::HttpResponse::Unauthorized().finish()
             }))
     })
-        .bind(cm.listen_address.clone())?;
+    .bind(cm.listen_address.clone())?;
     Ok(server_builder.run())
 }
