@@ -202,6 +202,37 @@ async fn test_authorization_header_missing(
     thread_handle.await.unwrap().expect("Failed to join server thread");
 }
 
+/// This test demonstrates an current issue with audit writer. Instead of returning and expected 500
+/// it drops the connection and the actix web thread crashes (due to the panic)
+#[rstest]
+#[timeout(Duration::from_secs(15))]
+#[actix_web::test]
+async fn test_audit_writer_drops_connection_instead_of_500(
+    _with_logging: (),
+    #[future]
+    #[with("broken_user")]
+    external_token: String,
+) -> () {
+    // Arrange
+    let mut audit_writer = MockAuditWriter::new();
+    audit_writer.expect_write().withf(|_event| false).returning(|_event| ());
+
+    let (server_handle, thread_handle, server_address) = with_test_server(audit_writer).await;
+
+    // Act
+    let result = Client::new()
+        .get(format!("http://{}/api/v1/token/keycloak", server_address))
+        .send()
+        .await;
+
+    // Assert
+    assert_eq!(result.unwrap().status(), 500);
+
+    // Cleanup
+    server_handle.stop(true).await;
+    thread_handle.await.unwrap().expect("Failed to join server thread");
+}
+
 async fn get_internal_token(external_token: String, server_address: SocketAddr) -> Result<String> {
     Ok(Client::new()
         .get(format!("http://{}/api/v1/token/keycloak", server_address))
