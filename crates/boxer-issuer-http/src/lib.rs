@@ -84,7 +84,10 @@ pub fn start_api_server(
             .service(v1::urls(audit_writer.clone()))
             .service(health::urls())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
+            .default_service(actix_web::web::to(|| async {
+                actix_web::HttpResponse::Unauthorized().finish()
+            }))
     })
-    .bind(cm.listen_address.clone())?;
+        .bind(cm.listen_address.clone())?;
     Ok(server_builder.run())
 }
