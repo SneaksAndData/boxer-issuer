@@ -153,6 +153,51 @@ async fn test_user_id_does_not_exist(
     thread_handle.await.unwrap().expect("Failed to join server thread");
 }
 
+
+#[rstest]
+#[timeout(Duration::from_secs(15))]
+#[actix_web::test]
+async fn test_no_external_token(_with_logging: ()) -> () {
+    // Arrange
+    let mut audit_writer = MockAuditWriter::new();
+    audit_writer
+        .expect_write()
+        .withf(|event| {
+            let error_text = "External token not present in request extensions";
+
+            matches!(
+                event,
+                AuditEvent::Final(FinalAuditEvent {
+                    policy_evaluation_result: PolicyEvaluationResult {
+                        decision: Decision::Deny,
+                        reason: Some(Reason {
+                            errors,
+                            ..
+                        }),
+                        ..
+                    },
+                    ..
+                }) if errors.contains(error_text)
+            )
+        })
+        .times(1)
+        .returning(|_event| ());
+
+    let (server_handle, thread_handle, server_address) = with_test_server(audit_writer).await;
+
+    // Act
+    let result = Client::new()
+        .get(format!("http://{}/api/v1/token/keycloak", server_address))
+        .send()
+        .await;
+
+    // Assert
+    assert_eq!(result.unwrap().status(), 401);
+
+    // Cleanup
+    server_handle.stop(true).await;
+    thread_handle.await.unwrap().expect("Failed to join server thread");
+}
 async fn get_internal_token(external_token: String, server_address: SocketAddr) -> Result<String> {
     Ok(Client::new()
         .get(format!("http://{}/api/v1/token/keycloak", server_address))

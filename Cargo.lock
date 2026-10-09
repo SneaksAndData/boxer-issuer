@@ -585,7 +585,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=add-more-finalize-on-fail-call#a197c69f8ac35ff0ce466b1e18b2e4c057d7a141"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.41#a39f794139d33b8bb6f8d1db4b1baf663ee98f0a"
 dependencies = [
  "actix-web",
  "anyhow",
