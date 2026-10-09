@@ -153,7 +153,6 @@ async fn test_user_id_does_not_exist(
     thread_handle.await.unwrap().expect("Failed to join server thread");
 }
 
-
 #[rstest]
 #[timeout(Duration::from_secs(15))]
 #[actix_web::test]
